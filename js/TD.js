@@ -705,8 +705,8 @@ var __hasProp = {}.hasOwnProperty,
 
     Camera.prototype.getProjectionMatrix = function() {
       var tmp;
-      tmp = Matrix4.multiply(this.matrix, this.projectionMatrix);
-      return Matrix4.multiply(this.matrixWorld, tmp);
+      tmp = Matrix4.multiply(this.matrixWorld, this.matrix);
+      return Matrix4.multiply(tmp, this.projectionMatrix);
     };
 
     Camera.prototype.updateProjectionMatrix = function() {

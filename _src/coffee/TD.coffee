@@ -687,8 +687,8 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
             @matrixWorld = m
 
         getProjectionMatrix: ->
-            tmp = Matrix4.multiply @matrix, @projectionMatrix
-            Matrix4.multiply @matrixWorld, tmp
+            tmp = Matrix4.multiply @matrixWorld, @matrix
+            Matrix4.multiply tmp, @projectionMatrix
 
         updateProjectionMatrix: ->
             @projectionMatrix.perspectiveLH(@fov, @aspect, @near, @far)

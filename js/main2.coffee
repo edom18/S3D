@@ -211,8 +211,9 @@ do (win = window, doc = window.document, exports = window) ->
         img.src = 'http://jsrun.it/assets/a/X/j/i/aXjiA.png'
         img2.src = 'http://jsrun.it/assets/8/u/u/1/8uu1X.png'
 
-        camera = new Camera 90, aspect, 1, 2000
-        camera.position.z = 10
+        camera = new Camera 90, aspect, 1, 200
+        camera.position.y = 30
+        camera.position.z = 30
         camera.lookAt new Vector3
         scene = new Scene
         renderer = new Renderer cv
@@ -269,6 +270,8 @@ do (win = window, doc = window.document, exports = window) ->
             renderer.render scene, camera
 
     dragging = false
+    prevX = 0
+    prevY = 0
 
     # Events
     win.addEventListener 'mousewheel', (e) ->
@@ -300,6 +303,8 @@ do (win = window, doc = window.document, exports = window) ->
 
         rotY += (prevX - pageX) / 100
         rotX += (prevY - pageY) / 100
+
+        camera.setWorld(Matrix4.multiply((new Matrix4()).rotY(rotY), (new Matrix4()).rotX(rotX)))
 
         prevX = pageX
         prevY = pageY
