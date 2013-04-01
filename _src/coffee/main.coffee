@@ -1,6 +1,7 @@
 do (win = window, doc = window.document, exports = window) ->
  
     {sqrt, sin, cos, tan, PI, random} = Math
+    {Matrix4, Camera, Renderer, Scene, Vector3, Particle} = window.S3D
 
     isTouch = 'ontouchstart' of window
     MOUSE_DOWN = if isTouch then 'touchstart' else 'mousedown'
@@ -40,7 +41,7 @@ do (win = window, doc = window.document, exports = window) ->
         camera = new Camera 90, cWidth / cHeight, 1, FAR
         camera.position.z = 1000
         scene = new Scene
-        renderer = new Renderer cv
+        renderer = new Renderer cv, 'rgba(0, 0, 0, 0.08)'
 
         hw = cWidth / 2
         hh = cHeight / 2
@@ -120,7 +121,7 @@ do (win = window, doc = window.document, exports = window) ->
         rotY += (prevX - pageX) / 100
         rotX += (prevY - pageY) / 100
 
-        camera.setWorld(Matrix4.mul((new Matrix4()).rotY(rotY), (new Matrix4()).rotX(rotX)))
+        camera.setWorld(Matrix4.multiply((new Matrix4()).rotY(rotY), (new Matrix4()).rotX(rotX)))
 
         prevX = pageX
         prevY = pageY

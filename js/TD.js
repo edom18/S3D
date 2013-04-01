@@ -12,10 +12,10 @@ var __hasProp = {}.hasOwnProperty,
     var Ax, Ay, Bx, By, a, b, c, d, height, m, mi, width, _Ax, _Ay, _Bx, _By;
     width = img.width;
     height = img.height;
-    _Ax = vertex_list[2] - vertex_list[0];
-    _Ay = vertex_list[3] - vertex_list[1];
-    _Bx = vertex_list[4] - vertex_list[0];
-    _By = vertex_list[5] - vertex_list[1];
+    _Ax = vertex_list[3] - vertex_list[0];
+    _Ay = vertex_list[4] - vertex_list[1];
+    _Bx = vertex_list[6] - vertex_list[0];
+    _By = vertex_list[7] - vertex_list[1];
     if (((_Ax * (vertex_list[5] - vertex_list[3])) - (_Ay * (vertex_list[4] - vertex_list[2]))) < 0) {
       return;
     }
@@ -46,336 +46,6 @@ var __hasProp = {}.hasOwnProperty,
     g.drawImage(img, 0, 0);
     return g.restore();
   };
-  Object3D = (function() {
-
-    function Object3D() {
-      this.parent = null;
-      this.children = [];
-      this.position = new Vector3;
-      this.rotation = new Vector3;
-      this.scale = new Vector3(1, 1, 1);
-      this.matrix = new Matrix4;
-      this.matrixWorld = new Matrix4;
-    }
-
-    return Object3D;
-
-  })();
-  /**
-      Camera class
-      @constructor
-      @param {number} fov Field of view.
-      @param {number} aspect Aspect ratio.
-      @param {number} near Near clip.
-      @param {number} far far clip.
-      @param {Vector3} position Position vector.
-  */
-
-  Camera = (function(_super) {
-
-    __extends(Camera, _super);
-
-    function Camera(fov, aspect, near, far, position) {
-      this.fov = fov;
-      this.aspect = aspect;
-      this.near = near;
-      this.far = far;
-      this.position = position != null ? position : new Vector3(0, 0, 20);
-      Camera.__super__.constructor.apply(this, arguments);
-      this.matrix = Matrix4.translate(this.position);
-      this.projectionMatrix = new Matrix4;
-      this.updateProjectionMatrix();
-    }
-
-    Camera.prototype.setWorld = function(m) {
-      return this.matrixWorld = m;
-    };
-
-    Camera.prototype.getProjectionMatrix = function() {
-      var tmp;
-      tmp = Matrix4.multiply(this.matrix, this.projectionMatrix);
-      return Matrix4.multiply(this.matrixWorld, tmp);
-    };
-
-    Camera.prototype.updateProjectionMatrix = function() {
-      this.matrix = Matrix4.translate(this.position);
-      return this.projectionMatrix.perspectiveLH(this.fov, this.aspect, this.near, this.far);
-    };
-
-    return Camera;
-
-  })(Object3D);
-  Texture = (function() {
-
-    function Texture(uv_data, uv_list) {
-      this.uv_data = uv_data;
-      this.uv_list = uv_list;
-    }
-
-    return Texture;
-
-  })();
-  Mesh = (function() {
-
-    function Mesh(vertex, texture) {
-      this.vertex = vertex;
-      this.texture = texture;
-    }
-
-    return Mesh;
-
-  })();
-  Particle = (function() {
-
-    function Particle(v, sp, size, r, g, b) {
-      this.v = v;
-      this.sp = sp != null ? sp : 1;
-      this.size = size != null ? size : 1000;
-      this.r = r != null ? r : 255;
-      this.g = g != null ? g : 255;
-      this.b = b != null ? b : 255;
-      this.vec = new Vector3(1, 0, 1);
-    }
-
-    Particle.prototype.update = function() {
-      var p, q, r, rad;
-      p = new Quaternion(0, this.v);
-      rad = this.sp * DEG_TO_RAD;
-      q = makeRotatialQuaternion(rad, this.vec);
-      r = makeRotatialQuaternion(-rad, this.vec);
-      p = r.multiply(p);
-      p = p.multiply(q);
-      return this.v = p.v;
-    };
-
-    return Particle;
-
-  })();
-  Color = (function() {
-
-    function Color(r, g, b, a) {
-      this.r = r;
-      this.g = g;
-      this.b = b;
-      this.a = a;
-    }
-
-    return Color;
-
-  })();
-  Light = (function() {
-
-    function Light(color) {
-      this.color = color;
-    }
-
-    return Light;
-
-  })();
-  AmbientLight = (function(_super) {
-
-    __extends(AmbientLight, _super);
-
-    function AmbientLight(color) {
-      this.color = color;
-      AmbientLight.__super__.constructor.apply(this, arguments);
-    }
-
-    return AmbientLight;
-
-  })(Light);
-  DirectionalLight = (function(_super) {
-
-    __extends(DirectionalLight, _super);
-
-    function DirectionalLight(color) {
-      this.color = color;
-      DirectionalLight.__super__.constructor.apply(this, arguments);
-    }
-
-    return DirectionalLight;
-
-  })(Light);
-  Scene = (function() {
-
-    function Scene() {
-      this.materials = [];
-    }
-
-    Scene.prototype.add = function(material) {
-      return this.materials.push(material);
-    };
-
-    Scene.prototype.sort = function(func) {
-      if (func) {
-        return this.materials.sort(func);
-      }
-    };
-
-    Scene.prototype.each = function(func) {
-      if (func) {
-        return this.materials.forEach(func);
-      }
-    };
-
-    return Scene;
-
-  })();
-  Renderer = (function() {
-
-    function Renderer(cv) {
-      this.cv = cv;
-      this.g = cv.getContext('2d');
-      this.w = cv.width;
-      this.h = cv.height;
-    }
-
-    Renderer.prototype.render = function(scene, camera) {
-      var matProj;
-      camera.updateProjectionMatrix();
-      matProj = camera.getProjectionMatrix();
-      this.g.beginPath();
-      this.g.fillStyle = "rgba(0, 0, 0, 0.08)";
-      this.g.fillRect(0, 0, this.w, this.h);
-      return this.transformAndDraw(matProj, scene.materials);
-    };
-
-    /**
-        Transform and draw.
-        @param {Matrix4} mat matrix.
-        @param {Array} materials.
-    */
-
-
-    Renderer.prototype.transformAndDraw = function(mat, materials) {
-      var g, m, out_list, r, results, uv_image, uv_list, vertex_list, w, weight, x, y, _i, _j, _len, _len1, _results;
-      g = this.g;
-      results = [];
-      for (_i = 0, _len = materials.length; _i < _len; _i++) {
-        m = materials[_i];
-        if (m instanceof Mesh) {
-          vertex_list = material.vertex;
-          uv_image = material.texture.uv_data;
-          uv_list = material.texture.uv_list;
-          this.transformPoints(out_list, vertex_list, mat, this.w, this.h);
-          drawTriangle(g, uv_image, out_list, uv_list);
-        } else if (m instanceof Particle) {
-          vertex_list = [m.v.x, m.v.y, m.v.z];
-          out_list = new Array(6);
-          this.transformPoints2(out_list, vertex_list, mat, this.w, this.h);
-          x = out_list[0];
-          y = out_list[1];
-          w = out_list[2];
-          weight = m.size / w;
-          if (weight < 0) {
-            continue;
-          }
-          results.push({
-            material: m,
-            x: x,
-            y: y,
-            w: w,
-            r: m.r,
-            g: m.g,
-            b: m.b,
-            weight: weight
-          });
-        }
-      }
-      results.sort(function(a, b) {
-        return b.w - a.w;
-      });
-      _results = [];
-      for (_j = 0, _len1 = results.length; _j < _len1; _j++) {
-        r = results[_j];
-        g.save();
-        g.fillStyle = "rgba(" + r.r + ", " + r.g + ", " + r.b + ", " + r.weight + ")";
-        g.beginPath();
-        g.arc(r.x, r.y, r.weight, 0, ANGLE, true);
-        g.closePath();
-        g.fill();
-        _results.push(g.restore());
-      }
-      return _results;
-    };
-
-    /**
-        スクリーン座標変換
-        Transform points
-        @param {Array} out
-        @param {Array} pts
-        @param {Matrix4} mat matrix
-        @param {number} viewWidth
-        @param {number} viewHeight
-    
-        計算された座標変換行列をスクリーンの座標系に変換するために計算する
-        基本はスケーリング（&Y軸反転）と平行移動。
-        行列で表すと
-        w = width  / 2
-        h = height / 2
-        とすると
-                    |w  0  0  0|
-        M(screen) = |0 -h  0  0|
-                    |0  0  1  0|
-                    |w  h  0  1|
-        以下の計算式で言うと、
-    
-        transformed_temp[0] *=  viewWidth
-        transformed_temp[1] *= -viewHeight
-        transformed_temp[0] +=  viewWidth  / 2
-        transformed_temp[1] +=  viewHeight / 2
-    
-        となる。
-    */
-
-
-    Renderer.prototype.transformPoints = function(out, pts, mat, viewWidth, viewHeight) {
-      var W, i, len, oi, transformed_temp, _h, _i, _results, _w;
-      len = pts.length;
-      transformed_temp = [0, 0, 0, 0];
-      oi = 0;
-      _w = viewWidth / 2;
-      _h = viewHeight / 2;
-      _results = [];
-      for (i = _i = 0; _i < len; i = _i += 3) {
-        mat.transVec3(transformed_temp, pts[i + 0], pts[i + 1], pts[i + 2]);
-        W = transformed_temp[3];
-        transformed_temp[0] /= W;
-        transformed_temp[1] /= W;
-        transformed_temp[2] /= W;
-        transformed_temp[0] *= _w;
-        transformed_temp[1] *= -_h;
-        transformed_temp[0] += _w;
-        transformed_temp[1] += _h;
-        out[oi++] = transformed_temp[0];
-        _results.push(out[oi++] = transformed_temp[1]);
-      }
-      return _results;
-    };
-
-    Renderer.prototype.transformPoints2 = function(out, pts, mat, viewWidth, viewHeight) {
-      var W, oi, transformed_temp, _h, _w;
-      transformed_temp = [0, 0, 0, 0];
-      oi = 0;
-      _w = viewWidth / 2;
-      _h = viewHeight / 2;
-      mat.transVec3(transformed_temp, pts[0], pts[1], pts[2]);
-      W = transformed_temp[3];
-      transformed_temp[0] /= W;
-      transformed_temp[1] /= W;
-      transformed_temp[2] /= W;
-      transformed_temp[0] *= _w;
-      transformed_temp[1] *= -_h;
-      transformed_temp[0] += _w;
-      transformed_temp[1] += _h;
-      out[0] = transformed_temp[0];
-      out[1] = transformed_temp[1];
-      return out[2] = W;
-    };
-
-    return Renderer;
-
-  })();
   /**
       Vector3 class
       @constructor
@@ -400,6 +70,13 @@ var __hasProp = {}.hasOwnProperty,
       this.x -= v.x;
       this.y -= v.y;
       this.z -= v.z;
+      return this;
+    };
+
+    Vector3.prototype.subVectors = function(a, b) {
+      this.x = a.x - b.x;
+      this.y = a.y - b.y;
+      this.z = a.z - b.z;
       return this;
     };
 
@@ -480,71 +157,56 @@ var __hasProp = {}.hasOwnProperty,
     return Vector3;
 
   })();
-  Quaternion = (function() {
-
-    function Quaternion(t, v) {
-      this.t = t != null ? t : 0;
-      this.v = v;
-    }
-
-    Quaternion.prototype.set = function(t, v) {
-      this.t = t;
-      this.v = v;
-    };
-
-    Quaternion.prototype.multiply = function(A) {
-      return Quaternion.multiply(this, A);
-    };
-
-    Quaternion.multiply = function(A, B) {
-      var Av, Bv, d1, d2, d3, d4, t, x, y, z;
-      Av = A.v;
-      Bv = B.v;
-      d1 = A.t * B.t;
-      d2 = -Av.x * Bv.x;
-      d3 = -Av.y * Bv.y;
-      d4 = -Av.z * Bv.z;
-      t = parseFloat((d1 + d2 + d3 + d4).toFixed(5));
-      d1 = (A.t * Bv.x) + (B.t * Av.x);
-      d2 = (Av.y * Bv.z) - (Av.z * Bv.y);
-      x = parseFloat((d1 + d2).toFixed(5));
-      d1 = (A.t * Bv.y) + (B.t * Av.y);
-      d2 = (Av.z * Bv.x) - (Av.x * Bv.z);
-      y = parseFloat((d1 + d2).toFixed(5));
-      d1 = (A.t * Bv.z) + (B.t * Av.z);
-      d2 = (Av.x * Bv.y) - (Av.y * Bv.x);
-      z = parseFloat((d1 + d2).toFixed(5));
-      return new Quaternion(t, new Vector3(x, y, z));
-    };
-
-    return Quaternion;
-
-  })();
   /**
-      Make rotation quaternion
-      @param {number} radian.
-      @param {Vector3} vector.
+      Matrix2 class
+      @constructor
   */
 
-  makeRotatialQuaternion = function(radian, vector) {
-    var axis, ccc, norm, ret, sss, t;
-    ret = new Quaternion;
-    ccc = 0;
-    sss = 0;
-    axis = new Vector3;
-    axis.copy(vector);
-    norm = vector.norm();
-    if (norm <= 0.0) {
-      return ret;
+  Matrix2 = (function() {
+
+    function Matrix2() {
+      var te;
+      this.elements = te = new Float32Array(4);
+      te[0] = 1;
+      te[2] = 0;
+      te[1] = 0;
+      te[3] = 1;
     }
-    axis.normalize();
-    ccc = cos(0.5 * radian);
-    sss = sin(0.5 * radian);
-    t = ccc;
-    axis.multiplyScalar(sss);
-    ret.set(t, axis);
-    return ret;
-  };
+
+    /**
+        逆行列を生成
+        
+        [逆行列の公式]
+    
+        A = |a b|
+            |c d|
+    
+        について、detA = ad - bc ≠0のときAの逆行列が存在する
+    
+        A^-1 = | d -b| * 1 / detA
+               |-c  a|
+    */
+
+
+    Matrix2.prototype.getInvert = function() {
+      var det, oe, out, te;
+      out = new Matrix2();
+      oe = out.elements;
+      te = this.elements;
+      det = te[0] * te[3] - te[2] * te[1];
+      if ((0.0001 > det && det > -0.0001)) {
+        return null;
+      }
+      oe[0] = te[3] / det;
+      oe[1] = -te[1] / det;
+      oe[2] = -te[2] / det;
+      oe[3] = te[0] / det;
+      return out;
+    };
+
+    return Matrix2;
+
+  })();
   /**
       Matrix4 class
       @constructor
@@ -802,6 +464,21 @@ var __hasProp = {}.hasOwnProperty,
     };
 
     /**
+        Multiply Matrices
+        A, Bふたつの行列の掛け算した結果をthisに保存
+        @param {Matrix4} A.
+        @param {Matrix4} B.
+    */
+
+
+    Matrix4.prototype.multiplyMatrices = function(A, B) {
+      var tmp;
+      tmp = Matrix4.multiply(A, B);
+      this.copy(tmp);
+      return this;
+    };
+
+    /**
         @param {Vector3} v
     */
 
@@ -841,6 +518,43 @@ var __hasProp = {}.hasOwnProperty,
       te[15] = 1;
       return tmp;
     };
+
+    /**
+        @param {Vector3} eye
+        @param {Vector3} target
+        @param {Vector3} up
+    */
+
+
+    Matrix4.prototype.lookAt = (function() {
+      var x, y, z;
+      x = new Vector3;
+      y = new Vector3;
+      z = new Vector3;
+      return function(eye, target, up) {
+        var te, tx, ty, tz;
+        te = this.elements;
+        z.subVectors(eye, target).normalize();
+        x.crossVector(up, z).normalize();
+        y.crossVector(z, x).normalize();
+        tx = eye.dot(x);
+        ty = eye.dot(y);
+        tz = eye.dot(z);
+        te[0] = x.x;
+        te[4] = y.x;
+        te[8] = z.x;
+        te[1] = x.y;
+        te[5] = y.y;
+        te[9] = z.y;
+        te[2] = x.z;
+        te[6] = y.z;
+        te[10] = z.z;
+        te[3] = tx;
+        te[7] = ty;
+        te[11] = tz;
+        return this;
+      };
+    })();
 
     /**
         @param {number} r Rotate X
@@ -932,56 +646,393 @@ var __hasProp = {}.hasOwnProperty,
     return Matrix4;
 
   })();
-  /**
-      Matrix2 class
-      @constructor
-  */
+  Object3D = (function() {
 
-  Matrix2 = (function() {
-
-    function Matrix2() {
-      var te;
-      this.elements = te = new Float32Array(4);
-      te[0] = 1;
-      te[2] = 0;
-      te[1] = 0;
-      te[3] = 1;
+    function Object3D() {
+      this.parent = null;
+      this.children = [];
+      this.position = new Vector3;
+      this.rotation = new Vector3;
+      this.scale = new Vector3(1, 1, 1);
+      this.up = new Vector3(0, 1, 0);
+      this.matrix = new Matrix4;
+      this.matrixWorld = new Matrix4;
     }
 
+    return Object3D;
+
+  })();
+  /**
+      Camera class
+      @constructor
+      @param {number} fov Field of view.
+      @param {number} aspect Aspect ratio.
+      @param {number} near Near clip.
+      @param {number} far far clip.
+      @param {Vector3} position Position vector.
+  */
+
+  Camera = (function(_super) {
+
+    __extends(Camera, _super);
+
+    function Camera(fov, aspect, near, far, position) {
+      this.fov = fov;
+      this.aspect = aspect;
+      this.near = near;
+      this.far = far;
+      this.position = position != null ? position : new Vector3(0, 0, 20);
+      Camera.__super__.constructor.apply(this, arguments);
+      this.matrix = Matrix4.translate(this.position);
+      this.projectionMatrix = new Matrix4;
+      this.updateProjectionMatrix();
+    }
+
+    Camera.prototype.setWorld = function(m) {
+      return this.matrixWorld = m;
+    };
+
+    Camera.prototype.getProjectionMatrix = function() {
+      var tmp;
+      tmp = Matrix4.multiply(this.matrix, this.projectionMatrix);
+      return Matrix4.multiply(this.matrixWorld, tmp);
+    };
+
+    Camera.prototype.updateProjectionMatrix = function() {
+      this.lookAt(new Vector3(0, 500, 0));
+      return this.projectionMatrix.perspectiveLH(this.fov, this.aspect, this.near, this.far);
+    };
+
+    Camera.prototype.lookAt = (function() {
+      var m1;
+      m1 = new Matrix4;
+      return function(vector) {
+        m1.lookAt(this.position, vector, this.up);
+        return this.matrix.copy(m1);
+      };
+    })();
+
+    return Camera;
+
+  })(Object3D);
+  Texture = (function() {
+
+    function Texture(uv_data, uv_list) {
+      this.uv_data = uv_data;
+      this.uv_list = uv_list;
+    }
+
+    return Texture;
+
+  })();
+  Mesh = (function() {
+
+    function Mesh(vertex, texture) {
+      this.vertex = vertex;
+      this.texture = texture;
+    }
+
+    return Mesh;
+
+  })();
+  Particle = (function() {
+
+    function Particle(v, sp, size, r, g, b) {
+      this.v = v;
+      this.sp = sp != null ? sp : 1;
+      this.size = size != null ? size : 1000;
+      this.r = r != null ? r : 255;
+      this.g = g != null ? g : 255;
+      this.b = b != null ? b : 255;
+      this.vec = new Vector3(1, 0, 1);
+    }
+
+    Particle.prototype.update = function() {
+      var p, q, r, rad;
+      p = new Quaternion(0, this.v);
+      rad = this.sp * DEG_TO_RAD;
+      q = makeRotatialQuaternion(rad, this.vec);
+      r = makeRotatialQuaternion(-rad, this.vec);
+      p = r.multiply(p);
+      p = p.multiply(q);
+      return this.v = p.v;
+    };
+
+    return Particle;
+
+  })();
+  Color = (function() {
+
+    function Color(r, g, b, a) {
+      this.r = r;
+      this.g = g;
+      this.b = b;
+      this.a = a;
+    }
+
+    return Color;
+
+  })();
+  Light = (function() {
+
+    function Light(color) {
+      this.color = color;
+    }
+
+    return Light;
+
+  })();
+  AmbientLight = (function(_super) {
+
+    __extends(AmbientLight, _super);
+
+    function AmbientLight(color) {
+      this.color = color;
+      AmbientLight.__super__.constructor.apply(this, arguments);
+    }
+
+    return AmbientLight;
+
+  })(Light);
+  DirectionalLight = (function(_super) {
+
+    __extends(DirectionalLight, _super);
+
+    function DirectionalLight(color) {
+      this.color = color;
+      DirectionalLight.__super__.constructor.apply(this, arguments);
+    }
+
+    return DirectionalLight;
+
+  })(Light);
+  Scene = (function() {
+
+    function Scene() {
+      this.materials = [];
+    }
+
+    Scene.prototype.add = function(material) {
+      return this.materials.push(material);
+    };
+
+    Scene.prototype.sort = function(func) {
+      if (func) {
+        return this.materials.sort(func);
+      }
+    };
+
+    Scene.prototype.each = function(func) {
+      if (func) {
+        return this.materials.forEach(func);
+      }
+    };
+
+    return Scene;
+
+  })();
+  Renderer = (function() {
+
+    function Renderer(cv, clearColor) {
+      this.cv = cv;
+      this.clearColor = clearColor != null ? clearColor : '#fff';
+      this.g = cv.getContext('2d');
+      this.w = cv.width;
+      this.h = cv.height;
+    }
+
+    Renderer.prototype.render = function(scene, camera) {
+      var matProj;
+      camera.updateProjectionMatrix();
+      matProj = camera.getProjectionMatrix();
+      this.g.beginPath();
+      this.g.fillStyle = this.clearColor;
+      this.g.fillRect(0, 0, this.w, this.h);
+      return this.transformAndDraw(matProj, scene.materials);
+    };
+
     /**
-        逆行列を生成
-        
-        [逆行列の公式]
-    
-        A = |a b|
-            |c d|
-    
-        について、detA = ad - bc ≠0のときAの逆行列が存在する
-    
-        A^-1 = | d -b| * 1 / detA
-               |-c  a|
+        Transform and draw.
+        @param {Matrix4} mat matrix.
+        @param {Array} materials.
     */
 
 
-    Matrix2.prototype.getInvert = function() {
-      var det, oe, out, te;
-      out = new Matrix2();
-      oe = out.elements;
-      te = this.elements;
-      det = te[0] * te[3] - te[2] * te[1];
-      if ((0.0001 > det && det > -0.0001)) {
-        return null;
+    Renderer.prototype.transformAndDraw = function(mat, materials) {
+      var g, m, out_list, r, results, uv_image, uv_list, vertex_list, w, weight, x, y, _i, _j, _len, _len1, _results;
+      g = this.g;
+      results = [];
+      out_list = [];
+      for (_i = 0, _len = materials.length; _i < _len; _i++) {
+        m = materials[_i];
+        if (m instanceof Mesh) {
+          vertex_list = material.vertex;
+          uv_image = material.texture.uv_data;
+          uv_list = material.texture.uv_list;
+          this.transformPoints(out_list, vertex_list, mat, this.w, this.h);
+          drawTriangle(g, uv_image, out_list, uv_list);
+        } else if (m instanceof Particle) {
+          vertex_list = [m.v.x, m.v.y, m.v.z];
+          this.transformPoints(out_list, vertex_list, mat, this.w, this.h);
+          x = out_list[0];
+          y = out_list[1];
+          w = out_list[2];
+          weight = m.size / w;
+          if (weight < 0) {
+            continue;
+          }
+          results.push({
+            material: m,
+            x: x,
+            y: y,
+            w: w,
+            r: m.r,
+            g: m.g,
+            b: m.b,
+            weight: weight
+          });
+        }
       }
-      oe[0] = te[3] / det;
-      oe[1] = -te[1] / det;
-      oe[2] = -te[2] / det;
-      oe[3] = te[0] / det;
-      return out;
+      results.sort(function(a, b) {
+        return b.w - a.w;
+      });
+      _results = [];
+      for (_j = 0, _len1 = results.length; _j < _len1; _j++) {
+        r = results[_j];
+        g.save();
+        g.fillStyle = "rgba(" + r.r + ", " + r.g + ", " + r.b + ", " + r.weight + ")";
+        g.beginPath();
+        g.arc(r.x, r.y, r.weight, 0, ANGLE, true);
+        g.closePath();
+        g.fill();
+        _results.push(g.restore());
+      }
+      return _results;
     };
 
-    return Matrix2;
+    /**
+        スクリーン座標変換
+        Transform points
+        @param {Array} out
+        @param {Array} pts
+        @param {Matrix4} mat matrix
+        @param {number} viewWidth
+        @param {number} viewHeight
+    
+        計算された座標変換行列をスクリーンの座標系に変換するために計算する
+        基本はスケーリング（&Y軸反転）と平行移動。
+        行列で表すと
+        w = width  / 2
+        h = height / 2
+        とすると
+                    |w  0  0  0|
+        M(screen) = |0 -h  0  0|
+                    |0  0  1  0|
+                    |w  h  0  1|
+        以下の計算式で言うと、
+    
+        transformed_temp[0] *=  viewWidth
+        transformed_temp[1] *= -viewHeight
+        transformed_temp[0] +=  viewWidth  / 2
+        transformed_temp[1] +=  viewHeight / 2
+    
+        となる。
+    */
+
+
+    Renderer.prototype.transformPoints = function(out, pts, mat, viewWidth, viewHeight) {
+      var W, i, len, oi, transformed_temp, _h, _i, _results, _w;
+      len = pts.length;
+      transformed_temp = [0, 0, 0, 0];
+      oi = 0;
+      _w = viewWidth / 2;
+      _h = viewHeight / 2;
+      _results = [];
+      for (i = _i = 0; _i < len; i = _i += 3) {
+        mat.transVec3(transformed_temp, pts[i + 0], pts[i + 1], pts[i + 2]);
+        W = transformed_temp[3];
+        transformed_temp[0] /= W;
+        transformed_temp[1] /= W;
+        transformed_temp[2] /= W;
+        transformed_temp[0] *= _w;
+        transformed_temp[1] *= -_h;
+        transformed_temp[0] += _w;
+        transformed_temp[1] += _h;
+        out[oi++] = transformed_temp[0];
+        out[oi++] = transformed_temp[1];
+        _results.push(out[oi++] = W);
+      }
+      return _results;
+    };
+
+    return Renderer;
 
   })();
+  Quaternion = (function() {
+
+    function Quaternion(t, v) {
+      this.t = t != null ? t : 0;
+      this.v = v;
+    }
+
+    Quaternion.prototype.set = function(t, v) {
+      this.t = t;
+      this.v = v;
+    };
+
+    Quaternion.prototype.multiply = function(A) {
+      return Quaternion.multiply(this, A);
+    };
+
+    Quaternion.multiply = function(A, B) {
+      var Av, Bv, d1, d2, d3, d4, t, x, y, z;
+      Av = A.v;
+      Bv = B.v;
+      d1 = A.t * B.t;
+      d2 = -Av.x * Bv.x;
+      d3 = -Av.y * Bv.y;
+      d4 = -Av.z * Bv.z;
+      t = parseFloat((d1 + d2 + d3 + d4).toFixed(5));
+      d1 = (A.t * Bv.x) + (B.t * Av.x);
+      d2 = (Av.y * Bv.z) - (Av.z * Bv.y);
+      x = parseFloat((d1 + d2).toFixed(5));
+      d1 = (A.t * Bv.y) + (B.t * Av.y);
+      d2 = (Av.z * Bv.x) - (Av.x * Bv.z);
+      y = parseFloat((d1 + d2).toFixed(5));
+      d1 = (A.t * Bv.z) + (B.t * Av.z);
+      d2 = (Av.x * Bv.y) - (Av.y * Bv.x);
+      z = parseFloat((d1 + d2).toFixed(5));
+      return new Quaternion(t, new Vector3(x, y, z));
+    };
+
+    return Quaternion;
+
+  })();
+  /**
+      Make rotation quaternion
+      @param {number} radian.
+      @param {Vector3} vector.
+  */
+
+  makeRotatialQuaternion = function(radian, vector) {
+    var axis, ccc, norm, ret, sss, t;
+    ret = new Quaternion;
+    ccc = 0;
+    sss = 0;
+    axis = new Vector3;
+    axis.copy(vector);
+    norm = vector.norm();
+    if (norm <= 0.0) {
+      return ret;
+    }
+    axis.normalize();
+    ccc = cos(0.5 * radian);
+    sss = sin(0.5 * radian);
+    t = ccc;
+    axis.multiplyScalar(sss);
+    ret.set(t, axis);
+    return ret;
+  };
   exports.Matrix2 = Matrix2;
   exports.Matrix4 = Matrix4;
   exports.Camera = Camera;
@@ -992,4 +1043,4 @@ var __hasProp = {}.hasOwnProperty,
   exports.Texture = Texture;
   exports.Vector3 = Vector3;
   return exports.Quaternion = Quaternion;
-})(window, window.document, window);
+})(window, window.document, window.S3D || (window.S3D = {}));
