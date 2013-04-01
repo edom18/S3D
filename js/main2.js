@@ -79,7 +79,8 @@
     img.src = 'http://jsrun.it/assets/a/X/j/i/aXjiA.png';
     img2.src = 'http://jsrun.it/assets/8/u/u/1/8uu1X.png';
     camera = new Camera(90, aspect, 1, 2000);
-    camera.position.z = 2;
+    camera.position.z = 10;
+    camera.lookAt(new Vector3);
     scene = new Scene;
     renderer = new Renderer(cv);
     return create = function() {

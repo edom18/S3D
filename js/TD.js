@@ -710,7 +710,6 @@ var __hasProp = {}.hasOwnProperty,
     };
 
     Camera.prototype.updateProjectionMatrix = function() {
-      this.lookAt(new Vector3(0, 500, 0));
       return this.projectionMatrix.perspectiveLH(this.fov, this.aspect, this.near, this.far);
     };
 

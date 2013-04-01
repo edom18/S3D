@@ -691,7 +691,6 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
             Matrix4.multiply @matrixWorld, tmp
 
         updateProjectionMatrix: ->
-            @lookAt new Vector3 0, 500, 0
             @projectionMatrix.perspectiveLH(@fov, @aspect, @near, @far)
 
         lookAt: do ->

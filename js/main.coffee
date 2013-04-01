@@ -40,6 +40,7 @@ do (win = window, doc = window.document, exports = window) ->
 
         camera = new Camera 90, cWidth / cHeight, 1, FAR
         camera.position.z = 1000
+        camera.lookAt new Vector3
         scene = new Scene
         renderer = new Renderer cv, 'rgba(0, 0, 0, 0.08)'
 
