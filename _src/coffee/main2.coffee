@@ -211,10 +211,12 @@ do (win = window, doc = window.document, exports = window) ->
         img.src = 'http://jsrun.it/assets/a/X/j/i/aXjiA.png'
         img2.src = 'http://jsrun.it/assets/8/u/u/1/8uu1X.png'
 
-        camera = new Camera 30, aspect, 1, 2000
-        camera.position.y = 0
-        camera.position.z = 20
-        camera.lookAt new Vector3 10, 1, 0
+        camera = new Camera 60, aspect, 1, 2000
+        camera.position.x = 10
+        camera.position.y = 100
+        camera.position.z = 60
+        #camera.up = new Vector3 1, 0, 0
+        camera.lookAt new Vector3 0, 0, 0
         scene = new Scene
         renderer = new Renderer cv
 

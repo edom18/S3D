@@ -232,11 +232,11 @@ var __hasProp = {}.hasOwnProperty,
       if (cpy) {
         this.copy(cpy);
       } else {
-        this.ident();
+        this.identity();
       }
     }
 
-    Matrix4.prototype.ident = function() {
+    Matrix4.prototype.identity = function() {
       var te;
       te = this.elements;
       te[0] = 1;
@@ -394,16 +394,16 @@ var __hasProp = {}.hasOwnProperty,
       zoomY = 2 * near / vh;
       te[0] = zoomX;
       te[4] = 0;
-      te[8] = (xmax + xmin) / (xmax - xmin);
+      te[8] = 0;
       te[12] = 0;
       te[1] = 0;
       te[5] = zoomY;
-      te[9] = (ymax + ymin) / (ymax - ymin);
+      te[9] = 0;
       te[13] = 0;
       te[2] = 0;
       te[6] = 0;
       te[10] = -(far + near) / (far - near);
-      te[14] = -2 * near * far / (far - near);
+      te[14] = -(2 * near * far) / (far - near);
       te[3] = 0;
       te[7] = 0;
       te[11] = -1;
@@ -496,39 +496,16 @@ var __hasProp = {}.hasOwnProperty,
 
 
     Matrix4.prototype.translate = function(v) {
-      var tmp;
-      tmp = Matrix4.translate(v);
-      this.multiply(tmp);
+      var te, x, y, z;
+      te = this.elements;
+      x = v.x;
+      y = v.y;
+      z = v.z;
+      te[12] = te[0] * x + te[4] * y + te[8] * z + te[12];
+      te[13] = te[1] * x + te[5] * y + te[9] * z + te[13];
+      te[14] = te[2] * x + te[6] * y + te[10] * z + te[14];
+      te[15] = te[3] * x + te[7] * y + te[11] * z + te[15];
       return this;
-    };
-
-    /**
-        translate by vector3
-        @param {Vector3} v
-    */
-
-
-    Matrix4.translate = function(v) {
-      var te, tmp;
-      tmp = new Matrix4;
-      te = tmp.elements;
-      te[0] = 1;
-      te[4] = 0;
-      te[8] = 0;
-      te[12] = 0;
-      te[1] = 0;
-      te[5] = 1;
-      te[9] = 0;
-      te[13] = 0;
-      te[2] = 0;
-      te[6] = 0;
-      te[10] = 1;
-      te[14] = 0;
-      te[3] = v.x;
-      te[7] = v.y;
-      te[11] = v.z;
-      te[15] = 1;
-      return tmp;
     };
 
     /**
@@ -553,17 +530,17 @@ var __hasProp = {}.hasOwnProperty,
         ty = eye.dot(y);
         tz = eye.dot(z);
         te[0] = x.x;
-        te[4] = y.x;
-        te[8] = z.x;
-        te[1] = x.y;
+        te[4] = x.y;
+        te[8] = x.z;
+        te[12] = -tx;
+        te[1] = y.x;
         te[5] = y.y;
-        te[9] = z.y;
-        te[2] = x.z;
-        te[6] = y.z;
+        te[9] = y.z;
+        te[13] = -ty;
+        te[2] = z.x;
+        te[6] = z.y;
         te[10] = z.z;
-        te[3] = tx;
-        te[7] = ty;
-        te[11] = tz;
+        te[14] = -tz;
         return this;
       };
     })();
@@ -584,10 +561,10 @@ var __hasProp = {}.hasOwnProperty,
       te[12] = 0;
       te[1] = 0;
       te[5] = c;
-      te[9] = s;
+      te[9] = -s;
       te[13] = 0;
       te[2] = 0;
-      te[6] = -s;
+      te[6] = s;
       te[10] = c;
       te[14] = 0;
       te[3] = 0;
@@ -609,13 +586,13 @@ var __hasProp = {}.hasOwnProperty,
       s = sin(r);
       te[0] = c;
       te[4] = 0;
-      te[8] = -s;
+      te[8] = s;
       te[12] = 0;
       te[1] = 0;
       te[5] = 1;
       te[9] = 0;
       te[13] = 0;
-      te[2] = s;
+      te[2] = -s;
       te[6] = 0;
       te[10] = c;
       te[14] = 0;
@@ -637,10 +614,10 @@ var __hasProp = {}.hasOwnProperty,
       c = cos(r);
       s = sin(r);
       te[0] = c;
-      te[4] = s;
+      te[4] = -s;
       te[8] = 0;
       te[12] = 0;
-      te[1] = -s;
+      te[1] = s;
       te[5] = c;
       te[9] = 0;
       te[13] = 0;
@@ -715,7 +692,7 @@ var __hasProp = {}.hasOwnProperty,
       this.far = far;
       this.position = position != null ? position : new Vector3(0, 0, 20);
       Camera.__super__.constructor.apply(this, arguments);
-      this.matrix = Matrix4.translate(this.position);
+      this.viewMatrix = new Matrix4;
       this.projectionMatrix = new Matrix4;
       this.updateProjectionMatrix();
     }
@@ -726,8 +703,8 @@ var __hasProp = {}.hasOwnProperty,
 
     Camera.prototype.getProjectionMatrix = function() {
       var tmp;
-      tmp = Matrix4.multiply(this.matrixWorld, this.matrix);
-      return Matrix4.multiply(tmp, this.projectionMatrix);
+      tmp = Matrix4.multiply(this.projectionMatrix, this.viewMatrix);
+      return Matrix4.multiply(tmp, this.matrixWorld);
     };
 
     Camera.prototype.updateProjectionMatrix = function() {
@@ -739,7 +716,7 @@ var __hasProp = {}.hasOwnProperty,
       m1 = new Matrix4;
       return function(vector) {
         m1.lookAt(this.position, vector, this.up);
-        return this.matrix.copy(m1);
+        return this.viewMatrix.copy(m1);
       };
     })();
 

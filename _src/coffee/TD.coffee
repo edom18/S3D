@@ -280,15 +280,26 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
     class Matrix4
         constructor: (cpy) ->
             @elements = new Float32Array 16
-            if (cpy) then @copy cpy else @ident()
+            if (cpy) then @copy cpy else @identity()
 
-        ident: ->
+        identity: ->
 
             # 以下のように初期化
             # |1 0 0 0|
             # |0 1 0 0|
             # |0 0 1 0|
             # |0 0 0 1|
+            #
+            # |m11 m12 m13 m14|
+            # |m21 m22 m23 m24|
+            # |m31 m32 m33 m34|
+            # |m41 m42 m43 m44|
+            #
+            # OpenGLでは以下の一次元配列となる（縦横に注意）
+            # |m[0] m[4] m[8]  m[12]|
+            # |m[1] m[5] m[9]  m[13]|
+            # |m[2] m[6] m[10] m[14]|
+            # |m[3] m[7] m[11] m[15]|
 
             te = @elements
 
@@ -296,13 +307,6 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
             te[1] = 0; te[5] = 1; te[9]  = 0; te[13] = 0;
             te[2] = 0; te[6] = 0; te[10] = 1; te[14] = 0;
             te[3] = 0; te[7] = 0; te[11] = 0; te[15] = 1;
-
-            #@_12 = @_13 = @_14 = 0
-            #@_21 = @_23 = @_24 = 0
-            #@_31 = @_32 = @_34 = 0
-            #@_41 = @_42 = @_43 = 0
-
-            #@_11 = @_22 = @_33 = @_44 = 1
 
             return @
 
@@ -455,15 +459,13 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
             # X軸方向のzoom値
             te[0]  = zoomX;
             te[4]  = 0
-            #te[8]  = 0
-            te[8]  = (xmax + xmin) / (xmax - xmin)
+            te[8]  = 0
             te[12] = 0
 
             # Y軸方向のzoom値
             te[1]  = 0
             te[5]  = zoomY
-            #te[9]  = 0
-            te[9]  = (ymax + ymin) / (ymax - ymin)
+            te[9]  = 0
             te[13] = 0
 
             # W値用の値を算出
@@ -473,14 +475,11 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
             # バイアスされ、スケーリングされる。
             te[2]  = 0
             te[6]  = 0
-            #te[10] = far + near / (far - near)
             te[10] = - (far + near) / (far - near)
-            #te[14] = 2 * near * far / (near - far)
-            te[14] = - 2 * near * far / (far - near)
+            te[14] = -(2 * near * far) / (far - near)
 
             te[3]  = 0
             te[7]  = 0
-            #te[11] = 2 * near * far / (near - far)
             te[11] = -1
             te[15] = 0
 
@@ -542,7 +541,6 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
             @param {Matrix4} B.
         ###
         multiplyMatrices: (A, B) ->
-
             tmp = Matrix4.multiply A, B
             @copy tmp
 
@@ -552,32 +550,18 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
             @param {Vector3} v
         ###
         translate: (v) ->
-            tmp = Matrix4.translate v
-            @multiply tmp
+
+            te = @elements
+            x = v.x
+            y = v.y
+            z = v.z
+
+            te[12] = te[0] * x + te[4] * y + te[8]  * z + te[12]
+            te[13] = te[1] * x + te[5] * y + te[9]  * z + te[13]
+            te[14] = te[2] * x + te[6] * y + te[10] * z + te[14]
+            te[15] = te[3] * x + te[7] * y + te[11] * z + te[15]
 
             return @
-
-        ###*
-            translate by vector3
-            @param {Vector3} v
-        ###
-        @translate: (v) ->
-
-            tmp = new Matrix4
-            te  = tmp.elements
-
-            # As result like this
-            # |1 0 0 0|
-            # |0 1 0 0|
-            # |0 0 1 0|
-            # |x y z 1|
-
-            te[0] = 1;   te[4] = 0;   te[8]  = 0;   te[12] = 0
-            te[1] = 0;   te[5] = 1;   te[9]  = 0;   te[13] = 0
-            te[2] = 0;   te[6] = 0;   te[10] = 1;   te[14] = 0
-            te[3] = v.x; te[7] = v.y; te[11] = v.z; te[15] = 1
-
-            return tmp
 
         ###*
             @param {Vector3} eye
@@ -602,33 +586,32 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
                 ty = eye.dot y
                 tz = eye.dot z
 
-                te[0] = x.x; te[4] = y.x; te[8]  = z.x;
-                te[1] = x.y; te[5] = y.y; te[9]  = z.y;
-                te[2] = x.z; te[6] = y.z; te[10] = z.z;
-                te[3] =  tx; te[7] =  ty; te[11] =  tz;
+                te[0] = x.x; te[4] = x.y; te[8]  = x.z; te[12] = -tx;
+                te[1] = y.x; te[5] = y.y; te[9]  = y.z; te[13] = -ty;
+                te[2] = z.x; te[6] = z.y; te[10] = z.z; te[14] = -tz;
+                #te[3] =  tx; te[7] =  ty; te[11] =  tz;
 
                 return @
-            
 
         ###*
             @param {number} r Rotate X
         ###
         rotX: (r) ->
 
-            # X軸による回転行列
-            # |1       0      0 0|
-            # |0  cos(r) sin(r) 0|
-            # |0 -sin(r) cos(r) 0|
-            # |0       0      0 1|
+            # OpenGLのX軸による回転行列
+            # |1       0      0  0|
+            # |0  cos(r) -sin(r) 0|
+            # |0  sin(r)  cos(r) 0|
+            # |0       0      0  1|
 
             te = @elements
             c = cos r
             s = sin r
 
-            te[0] = 1; te[4] =  0; te[8]  = 0; te[12] = 0;
-            te[1] = 0; te[5] =  c; te[9]  = s; te[13] = 0;
-            te[2] = 0; te[6] = -s; te[10] = c; te[14] = 0;
-            te[3] = 0; te[7] =  0; te[11] = 0; te[15] = 1;
+            te[0] = 1; te[4] = 0; te[8]  =  0; te[12] = 0;
+            te[1] = 0; te[5] = c; te[9]  = -s; te[13] = 0;
+            te[2] = 0; te[6] = s; te[10] =  c; te[14] = 0;
+            te[3] = 0; te[7] = 0; te[11] =  0; te[15] = 1;
 
             return @
 
@@ -637,20 +620,20 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
         ###
         rotY: (r) ->
 
-            # Y軸による回転行列
-            # |cos(r)  0 -sin(r)  0|
-            # |     0  1       0  0|
-            # |sin(r)  0  cos(r)  0|
-            # |     0  0       0  1|
+            # OpenGLのY軸による回転行列
+            # | cos(r)  0  sin(r)  0|
+            # |      0  1       0  0|
+            # |-sin(r)  0  cos(r)  0|
+            # |      0  0       0  1|
             
             te = @elements
             c = cos r
             s = sin r
 
-            te[0] = c; te[4] = 0; te[8]  = -s; te[12] = 0;
-            te[1] = 0; te[5] = 1; te[9]  =  0; te[13] = 0;
-            te[2] = s; te[6] = 0; te[10] =  c; te[14] = 0;
-            te[3] = 0; te[7] = 0; te[11] =  0; te[15] = 1;
+            te[0] =  c; te[4] = 0; te[8]  = s; te[12] = 0;
+            te[1] =  0; te[5] = 1; te[9]  = 0; te[13] = 0;
+            te[2] = -s; te[6] = 0; te[10] = c; te[14] = 0;
+            te[3] =  0; te[7] = 0; te[11] = 0; te[15] = 1;
 
             return @
 
@@ -659,20 +642,20 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
         ###
         rotZ: (r) ->
 
-            # Z軸による回転行列
-            # | cos(r) sin(r)  0  0|
-            # |-sin(r) cos(r)  0  0|
-            # |      0      0  1  0|
-            # |      0      0  0  1|
+            # OpenGLのZ軸による回転行列
+            # | cos(r) -sin(r)  0  0|
+            # | sin(r)  cos(r)  0  0|
+            # |      0      0   1  0|
+            # |      0      0   0  1|
 
             te = @elements
             c = cos r
             s = sin r
 
-            te[0] =  c; te[4] = s; te[8]  = 0; te[12] = 0;
-            te[1] = -s; te[5] = c; te[9]  = 0; te[13] = 0;
-            te[2] =  0; te[6] = 0; te[10] = 1; te[14] = 0;
-            te[3] =  0; te[7] = 0; te[11] = 0; te[15] = 1;
+            te[0] = c; te[4] = -s; te[8]  = 0; te[12] = 0;
+            te[1] = s; te[5] =  c; te[9]  = 0; te[13] = 0;
+            te[2] = 0; te[6] =  0; te[10] = 1; te[14] = 0;
+            te[3] = 0; te[7] =  0; te[11] = 0; te[15] = 1;
 
             return @
 
@@ -720,7 +703,7 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
         constructor: (@fov, @aspect, @near, @far, @position = new Vector3(0, 0, 20)) ->
             super
 
-            @matrix = Matrix4.translate @position
+            @viewMatrix = new Matrix4
             @projectionMatrix = new Matrix4
             @updateProjectionMatrix()
 
@@ -728,12 +711,10 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
             @matrixWorld = m
 
         getProjectionMatrix: ->
-            tmp = Matrix4.multiply @matrixWorld, @matrix
-            Matrix4.multiply tmp, @projectionMatrix
+            tmp = Matrix4.multiply @projectionMatrix, @viewMatrix
+            Matrix4.multiply tmp, @matrixWorld
 
         updateProjectionMatrix: ->
-            #TODO
-            #@matrix = Matrix4.translate @position
             @projectionMatrix.perspectiveLH(@fov, @aspect, @near, @far)
 
         lookAt: do ->
@@ -742,7 +723,7 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
 
             return (vector) ->
                 m1.lookAt @position, vector, @up
-                @matrix.copy m1
+                @viewMatrix.copy m1
 
 # -------------------------------------------------------------------------------
 
