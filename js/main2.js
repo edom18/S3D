@@ -78,10 +78,10 @@
     };
     img.src = 'http://jsrun.it/assets/a/X/j/i/aXjiA.png';
     img2.src = 'http://jsrun.it/assets/8/u/u/1/8uu1X.png';
-    camera = new Camera(90, aspect, 1, 200);
-    camera.position.y = 30;
-    camera.position.z = 30;
-    camera.lookAt(new Vector3);
+    camera = new Camera(30, aspect, 1, 2000);
+    camera.position.y = 0;
+    camera.position.z = 20;
+    camera.lookAt(new Vector3(10, 1, 0));
     scene = new Scene;
     renderer = new Renderer(cv);
     return create = function() {

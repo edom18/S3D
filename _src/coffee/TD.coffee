@@ -110,6 +110,7 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
         g.transform(a, b, c, d,
             x1 - (a * uv_list[0] * width + c * uv_list[1] * height),
             y1 - (b * uv_list[0] * width + d * uv_list[1] * height))
+        g.stroke()
         g.drawImage(img, 0, 0)
         g.restore()
 
@@ -406,10 +407,30 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
         transVec3: (out, x, y, z) ->
             te = @elements
 
-            out[0] = x * te[0]  + y * te[1]  + z * te[2]  + te[3]
-            out[1] = x * te[4]  + y * te[5]  + z * te[6]  + te[7]
-            out[2] = x * te[8]  + y * te[9]  + z * te[10] + te[11]
-            out[3] = x * te[12] + y * te[13] + z * te[14] + te[15]
+            #   |m11 m12 m13 m14|   |x|
+            #   |m21 m22 m23 m24| x |y|
+            #   |m31 m32 m33 m34|   |z|
+            #   |m41 m42 m43 m44|   |1|
+            #
+            #   |m11 * x + m12 * y + m13 * z + m14|
+            # = |m21 * x + m22 * y + m23 * z + m24|
+            #   |m31 * x + m32 * y + m33 * z + m34|
+            #   |m41 * x + m42 * y + m43 * z + m44|
+            #
+
+            #out[0] = x * te[0]  + y * te[1]  + z * te[2]  + te[3]
+            #out[1] = x * te[4]  + y * te[5]  + z * te[6]  + te[7]
+            #out[2] = x * te[8]  + y * te[9]  + z * te[10] + te[11]
+            #out[3] = x * te[12] + y * te[13] + z * te[14] + te[15]
+
+            # X
+            out[0] = te[0] * x + te[4] * y + te[8]  * z + te[12]
+            # Y
+            out[1] = te[1] * x + te[5] * y + te[9]  * z + te[13]
+            # Z
+            out[2] = te[2] * x + te[6] * y + te[10] * z + te[14]
+            # W
+            out[3] = te[3] * x + te[7] * y + te[11] * z + te[15]
 
         perspectiveLH: (fov, aspect, near, far) ->
             tmp = Matrix4.perspectiveLH(fov, aspect, near, far)
@@ -434,13 +455,15 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
             # X軸方向のzoom値
             te[0]  = zoomX;
             te[4]  = 0
-            te[8]  = 0
+            #te[8]  = 0
+            te[8]  = (xmax + xmin) / (xmax - xmin)
             te[12] = 0
 
             # Y軸方向のzoom値
             te[1]  = 0
             te[5]  = zoomY
-            te[9]  = 0
+            #te[9]  = 0
+            te[9]  = (ymax + ymin) / (ymax - ymin)
             te[13] = 0
 
             # W値用の値を算出
@@ -450,12 +473,15 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
             # バイアスされ、スケーリングされる。
             te[2]  = 0
             te[6]  = 0
-            te[10] = far + near / (far - near)
-            te[14] = 1
+            #te[10] = far + near / (far - near)
+            te[10] = - (far + near) / (far - near)
+            #te[14] = 2 * near * far / (near - far)
+            te[14] = - 2 * near * far / (far - near)
 
             te[3]  = 0
             te[7]  = 0
-            te[11] = 2 * near * far / (near - far)
+            #te[11] = 2 * near * far / (near - far)
+            te[11] = -1
             te[15] = 0
 
             return tmp
@@ -664,6 +690,21 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
             @matrix = new Matrix4
             @matrixWorld = new Matrix4
 
+        add: (object) ->
+            return null if @ is object
+
+            @children.push object
+            object.parent = @
+
+        remove: (object) ->
+            return null if @ is object
+
+            index = @children.indexOf object
+
+            return null if index is -1
+
+            ret = @children.splice index, 1
+
 # -------------------------------------------------------------------------------
 
     ###*
@@ -691,6 +732,8 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
             Matrix4.multiply tmp, @projectionMatrix
 
         updateProjectionMatrix: ->
+            #TODO
+            #@matrix = Matrix4.translate @position
             @projectionMatrix.perspectiveLH(@fov, @aspect, @near, @far)
 
         lookAt: do ->

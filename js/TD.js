@@ -54,6 +54,7 @@ var __hasProp = {}.hasOwnProperty,
     g.lineTo(x3, y3);
     g.clip();
     g.transform(a, b, c, d, x1 - (a * uv_list[0] * width + c * uv_list[1] * height), y1 - (b * uv_list[0] * width + d * uv_list[1] * height));
+    g.stroke();
     g.drawImage(img, 0, 0);
     return g.restore();
   };
@@ -367,10 +368,10 @@ var __hasProp = {}.hasOwnProperty,
     Matrix4.prototype.transVec3 = function(out, x, y, z) {
       var te;
       te = this.elements;
-      out[0] = x * te[0] + y * te[1] + z * te[2] + te[3];
-      out[1] = x * te[4] + y * te[5] + z * te[6] + te[7];
-      out[2] = x * te[8] + y * te[9] + z * te[10] + te[11];
-      return out[3] = x * te[12] + y * te[13] + z * te[14] + te[15];
+      out[0] = te[0] * x + te[4] * y + te[8] * z + te[12];
+      out[1] = te[1] * x + te[5] * y + te[9] * z + te[13];
+      out[2] = te[2] * x + te[6] * y + te[10] * z + te[14];
+      return out[3] = te[3] * x + te[7] * y + te[11] * z + te[15];
     };
 
     Matrix4.prototype.perspectiveLH = function(fov, aspect, near, far) {
@@ -393,19 +394,19 @@ var __hasProp = {}.hasOwnProperty,
       zoomY = 2 * near / vh;
       te[0] = zoomX;
       te[4] = 0;
-      te[8] = 0;
+      te[8] = (xmax + xmin) / (xmax - xmin);
       te[12] = 0;
       te[1] = 0;
       te[5] = zoomY;
-      te[9] = 0;
+      te[9] = (ymax + ymin) / (ymax - ymin);
       te[13] = 0;
       te[2] = 0;
       te[6] = 0;
-      te[10] = far + near / (far - near);
-      te[14] = 1;
+      te[10] = -(far + near) / (far - near);
+      te[14] = -2 * near * far / (far - near);
       te[3] = 0;
       te[7] = 0;
-      te[11] = 2 * near * far / (near - far);
+      te[11] = -1;
       te[15] = 0;
       return tmp;
     };
@@ -669,6 +670,26 @@ var __hasProp = {}.hasOwnProperty,
       this.matrix = new Matrix4;
       this.matrixWorld = new Matrix4;
     }
+
+    Object3D.prototype.add = function(object) {
+      if (this === object) {
+        return null;
+      }
+      this.children.push(object);
+      return object.parent = this;
+    };
+
+    Object3D.prototype.remove = function(object) {
+      var index, ret;
+      if (this === object) {
+        return null;
+      }
+      index = this.children.indexOf(object);
+      if (index === -1) {
+        return null;
+      }
+      return ret = this.children.splice(index, 1);
+    };
 
     return Object3D;
 
