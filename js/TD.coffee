@@ -17,18 +17,23 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
         #_Bx = vertex_list[4] - vertex_list[0]
         #_By = vertex_list[5] - vertex_list[1]
 
+        x1 = vertex_list[0]; x2 = vertex_list[3]; x3 = vertex_list[6];
+        y1 = vertex_list[1]; y2 = vertex_list[4]; y3 = vertex_list[7];
+        z1 = vertex_list[2]; z2 = vertex_list[5]; z3 = vertex_list[8];
+
+
         #   0,  1,  2,  3,  4,  5,  6,  7,  8
         # [x1, y1, z1, x2, y2, z2, x3, y3, z3]
-        _Ax = vertex_list[3] - vertex_list[0]
-        _Ay = vertex_list[4] - vertex_list[1]
-        _Bx = vertex_list[6] - vertex_list[0]
-        _By = vertex_list[7] - vertex_list[1]
+        _Ax = x2 - x1
+        _Ay = y2 - y1
+        _Bx = x3 - x1
+        _By = y3 - y1
 
         # 裏面カリング
         # 頂点を結ぶ順が反時計回りの場合は「裏面」になり、その場合は描画をスキップ
         # 裏面かどうかの判定は外積を利用する
         # 判定は、3点の内、1-2点目と2-3点目との外積を計算し、結果がマイナスの場合は反時計回り。（外積の結果はZ軸に対しての数値）
-        return if(((_Ax * (vertex_list[5] - vertex_list[3])) - (_Ay * (vertex_list[4] - vertex_list[2]))) < 0)
+        return if(((_Ax * (y3 - y2)) - (_Ay * (x3 - x2))) < 0)
 
         # 変換前のベクトル成分を計算
         Ax = (uv_list[2] - uv_list[0]) * width
@@ -60,13 +65,17 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
         # |Bx By|    |_Bx| = |c|
 
         m = new Matrix2()
+        me = m.elements
 
         # 上記の
         # |Ax Ay|
         # |Bx By|
         # を生成
-        m._11 = Ax; m._12 = Ay
-        m._21 = Bx; m._22 = By
+        me[0] = Ax; me[2] = Ay;
+        me[1] = Bx; me[3] = By;
+
+        #m._11 = Ax; m._12 = Ay
+        #m._21 = Bx; m._22 = By
 
         # 逆行列を取得
         # 上記の
@@ -74,27 +83,33 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
         # |Bx By|
         # を生成
         mi = m.getInvert()
+        mie = mi.elements
 
         # 逆行列が存在しない場合はスキップ
         return if not mi
 
-        a = mi._11 * _Ax + mi._12 * _Bx
-        c = mi._21 * _Ax + mi._22 * _Bx
+        #a = mi._11 * _Ax + mi._12 * _Bx
+        #c = mi._21 * _Ax + mi._22 * _Bx
 
-        b = mi._11 * _Ay + mi._12 * _By
-        d = mi._21 * _Ay + mi._22 * _By
+        #b = mi._11 * _Ay + mi._12 * _By
+        #d = mi._21 * _Ay + mi._22 * _By
+        
+        a = mie[0] * _Ax + mie[2] * _Bx
+        c = mie[1] * _Ax + mie[3] * _Bx
+        b = mie[0] * _Ay + mie[2] * _By
+        d = mie[1] * _Ay + mie[3] * _By
 
         # 各頂点座標を元に三角形を作り、それでクリッピング
         g.save()
         g.beginPath()
-        g.moveTo(vertex_list[0], vertex_list[1])
-        g.lineTo(vertex_list[2], vertex_list[3])
-        g.lineTo(vertex_list[4], vertex_list[5])
+        g.moveTo(x1, y1)
+        g.lineTo(x2, y2)
+        g.lineTo(x3, y3)
         g.clip()
 
         g.transform(a, b, c, d,
-            vertex_list[0] - (a * uv_list[0] * width + c * uv_list[1] * height),
-            vertex_list[1] - (b * uv_list[0] * width + d * uv_list[1] * height))
+            x1 - (a * uv_list[0] * width + c * uv_list[1] * height),
+            y1 - (b * uv_list[0] * width + d * uv_list[1] * height))
         g.drawImage(img, 0, 0)
         g.restore()
 
@@ -208,6 +223,9 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
 
             # |1 0|
             # |0 1|
+            # ----------
+            # |m11 m12|
+            # |m21 m22|
             # の行列で初期化
 
             te[0] = 1; te[2] = 0;
@@ -784,10 +802,12 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
             out_list = []
 
             for m in materials
+                out_list = []
+
                 if m instanceof Mesh
-                    vertex_list = material.vertex
-                    uv_image    = material.texture.uv_data
-                    uv_list     = material.texture.uv_list
+                    vertex_list = m.vertex
+                    uv_image    = m.texture.uv_data
+                    uv_list     = m.texture.uv_list
 
                     @transformPoints(out_list, vertex_list, mat, @w, @h)
                     drawTriangle(g, uv_image, out_list, uv_list)
@@ -962,6 +982,7 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
     exports.Camera = Camera
     exports.Renderer = Renderer
     exports.Scene = Scene
+    exports.Texture = Texture
     exports.Mesh = Mesh
     exports.Particle = Particle
     exports.Texture = Texture

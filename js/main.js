@@ -98,7 +98,6 @@
     if (dragging === false) {
       return;
     }
-    debugger;
     pageX = isTouch ? e.touches[0].pageX : e.pageX;
     pageY = isTouch ? e.touches[0].pageY : e.pageY;
     rotY += (prevX - pageX) / 100;

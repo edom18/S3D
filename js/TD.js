@@ -9,14 +9,23 @@ var __hasProp = {}.hasOwnProperty,
   DEG_TO_RAD = PI / 180;
   ANGLE = PI * 2;
   drawTriangle = function(g, img, vertex_list, uv_list) {
-    var Ax, Ay, Bx, By, a, b, c, d, height, m, mi, width, _Ax, _Ay, _Bx, _By;
+    var Ax, Ay, Bx, By, a, b, c, d, height, m, me, mi, mie, width, x1, x2, x3, y1, y2, y3, z1, z2, z3, _Ax, _Ay, _Bx, _By;
     width = img.width;
     height = img.height;
-    _Ax = vertex_list[3] - vertex_list[0];
-    _Ay = vertex_list[4] - vertex_list[1];
-    _Bx = vertex_list[6] - vertex_list[0];
-    _By = vertex_list[7] - vertex_list[1];
-    if (((_Ax * (vertex_list[5] - vertex_list[3])) - (_Ay * (vertex_list[4] - vertex_list[2]))) < 0) {
+    x1 = vertex_list[0];
+    x2 = vertex_list[3];
+    x3 = vertex_list[6];
+    y1 = vertex_list[1];
+    y2 = vertex_list[4];
+    y3 = vertex_list[7];
+    z1 = vertex_list[2];
+    z2 = vertex_list[5];
+    z3 = vertex_list[8];
+    _Ax = x2 - x1;
+    _Ay = y2 - y1;
+    _Bx = x3 - x1;
+    _By = y3 - y1;
+    if (((_Ax * (y3 - y2)) - (_Ay * (x3 - x2))) < 0) {
       return;
     }
     Ax = (uv_list[2] - uv_list[0]) * width;
@@ -24,25 +33,27 @@ var __hasProp = {}.hasOwnProperty,
     Bx = (uv_list[4] - uv_list[0]) * width;
     By = (uv_list[5] - uv_list[1]) * height;
     m = new Matrix2();
-    m._11 = Ax;
-    m._12 = Ay;
-    m._21 = Bx;
-    m._22 = By;
+    me = m.elements;
+    me[0] = Ax;
+    me[2] = Ay;
+    me[1] = Bx;
+    me[3] = By;
     mi = m.getInvert();
+    mie = mi.elements;
     if (!mi) {
       return;
     }
-    a = mi._11 * _Ax + mi._12 * _Bx;
-    c = mi._21 * _Ax + mi._22 * _Bx;
-    b = mi._11 * _Ay + mi._12 * _By;
-    d = mi._21 * _Ay + mi._22 * _By;
+    a = mie[0] * _Ax + mie[2] * _Bx;
+    c = mie[1] * _Ax + mie[3] * _Bx;
+    b = mie[0] * _Ay + mie[2] * _By;
+    d = mie[1] * _Ay + mie[3] * _By;
     g.save();
     g.beginPath();
-    g.moveTo(vertex_list[0], vertex_list[1]);
-    g.lineTo(vertex_list[2], vertex_list[3]);
-    g.lineTo(vertex_list[4], vertex_list[5]);
+    g.moveTo(x1, y1);
+    g.lineTo(x2, y2);
+    g.lineTo(x3, y3);
     g.clip();
-    g.transform(a, b, c, d, vertex_list[0] - (a * uv_list[0] * width + c * uv_list[1] * height), vertex_list[1] - (b * uv_list[0] * width + d * uv_list[1] * height));
+    g.transform(a, b, c, d, x1 - (a * uv_list[0] * width + c * uv_list[1] * height), y1 - (b * uv_list[0] * width + d * uv_list[1] * height));
     g.drawImage(img, 0, 0);
     return g.restore();
   };
@@ -865,10 +876,11 @@ var __hasProp = {}.hasOwnProperty,
       out_list = [];
       for (_i = 0, _len = materials.length; _i < _len; _i++) {
         m = materials[_i];
+        out_list = [];
         if (m instanceof Mesh) {
-          vertex_list = material.vertex;
-          uv_image = material.texture.uv_data;
-          uv_list = material.texture.uv_list;
+          vertex_list = m.vertex;
+          uv_image = m.texture.uv_data;
+          uv_list = m.texture.uv_list;
           this.transformPoints(out_list, vertex_list, mat, this.w, this.h);
           drawTriangle(g, uv_image, out_list, uv_list);
         } else if (m instanceof Particle) {
@@ -1038,6 +1050,7 @@ var __hasProp = {}.hasOwnProperty,
   exports.Camera = Camera;
   exports.Renderer = Renderer;
   exports.Scene = Scene;
+  exports.Texture = Texture;
   exports.Mesh = Mesh;
   exports.Particle = Particle;
   exports.Texture = Texture;

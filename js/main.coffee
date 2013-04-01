@@ -114,7 +114,6 @@ do (win = window, doc = window.document, exports = window) ->
     doc.addEventListener MOUSE_MOVE, (e) ->
         return if dragging is false
 
-        debugger
         pageX = if isTouch then e.touches[0].pageX else e.pageX
         pageY = if isTouch then e.touches[0].pageY else e.pageY
 
