@@ -187,6 +187,19 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
 
             return @
 
+        applyMatrix4: (m) ->
+            e = m.elements
+
+            x = @x
+            y = @y
+            z = @z
+
+            @x = e[0] * x + e[4] * y + e[8]  * z + e[12]
+            @x = e[1] * x + e[5] * y + e[9]  * z + e[13]
+            @x = e[2] * x + e[5] * y + e[10] * z + e[14]
+
+            return @
+
         toString: ->
             "#{@x},#{@y},#{@z}"
 
@@ -406,6 +419,34 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
             out[2] = te[2] * x + te[6] * y + te[10] * z + te[14]
             # W
             out[3] = te[3] * x + te[7] * y + te[11] * z + te[15]
+
+        makeFrustum: (left, right, bottom, top, near, far) ->
+
+            te = @elements
+            vw = right - left
+            vh = top - bottom
+
+            x = 2 * near / vw
+            y = 2 * near / vh
+
+            z = - (far + near) / (far - near)
+            w = - (2 * near * far) / (far - near)
+
+            #a = (right + left) / (right - left)
+            #b = (top + bottom) / (top - bottom)
+
+            # W値用の値を算出
+            #
+            # Z座標は、ニアクリップ面では z/w = -1、
+            # ファークリップ面では z/w = 1 になるように
+            # バイアスされ、スケーリングされる。
+            te[0]  = x; te[4] = 0; te[8]  =  0; te[12] = 0;
+            te[1]  = 0; te[5] = y; te[9]  =  0; te[13] = 0;
+            te[2]  = 0; te[6] = 0; te[10] =  z; te[14] = w;
+            te[3]  = 0; te[7] = 0; te[11] = -1; te[15] = 0;
+
+            return @
+
 
         perspectiveLH: (fov, aspect, near, far) ->
             tmp = Matrix4.perspectiveLH(fov, aspect, near, far)
@@ -646,8 +687,25 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
             @matrix = new Matrix4
             @matrixWorld = new Matrix4
 
+        updateMatrix: ->
+            @matrix.translate @position
+            c.updateMatrix() for c in @children
+
+        updateMatrixWorld: ->
+            if not @parent
+                @matrixWorld.copy @matrix
+            else
+                @matrixWorld.multiplyMatrices @parent.matrixWorld, @matrix
+
+            c.updateMatrixWorld() for c in @children
+
+        localToWorld: (vector) ->
+            return vector.applyMatrix4 @matrixWorld
+
         add: (object) ->
             return null if @ is object
+
+            object.parent?.remove object
 
             @children.push object
             object.parent = @
@@ -688,6 +746,7 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
             Matrix4.multiply tmp, @matrixWorld
 
         updateProjectionMatrix: ->
+            @lookAt()
             @projectionMatrix.perspectiveLH(@fov, @aspect, @near, @far)
 
         lookAt: do ->
@@ -695,8 +754,65 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
             m1 = new Matrix4
 
             return (vector) ->
-                m1.lookAt @position, vector, @up
+                @vector = vector or @vector or new Vector3
+                m1.lookAt @position, @vector, @up
                 @viewMatrix.copy m1
+
+# -------------------------------------------------------------------------------
+
+    class Face extends Object3D
+        constructor: (x1, y1, x2, y2, img, uvData1, uvData2) ->
+            super
+
+            texture1 = new Texture(img, uvData1)
+            triangle1 = new Triangle([
+                x1, y1, 0
+                x2, y1, 0
+                x1, y2, 0
+            ], texture1)
+
+            @add triangle1
+
+            texture2 = new Texture(img, uvData2)
+            triangle2 = new Triangle([
+                x1, y2, 0
+                x2, y1, 0
+                x2, y2, 0
+            ], texture2)
+
+            @add triangle2
+
+# -------------------------------------------------------------------------------
+
+    class Triangle extends Object3D
+        constructor: (@vertex, @texture) ->
+            super
+
+# -------------------------------------------------------------------------------
+
+    class Cube extends Object3D
+        constructor: (w, h, p, sx, sy, sz, materials) ->
+            super
+
+            w *= 0.5
+            h *= 0.5
+            p *= 0.5
+
+            for i in [0...12]
+                triangle = new Triangle([
+                    -w,  h, p
+                     w,  h, p
+                    -w, -h, p
+                ], new Texture(materials[0].uv_data, [
+                    0  , 0  ,
+                    0.5, 0  ,
+                    0  , 0.5
+                ]))
+
+                @add triangle
+
+                #texture = new Texture(groundImage, ground_1_uv)
+                #triangle = new Triangle(ground_1, texture)
 
 # -------------------------------------------------------------------------------
 
@@ -704,11 +820,6 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
         constructor: (@uv_data, @uv_list) ->
 
 # -------------------------------------------------------------------------------
-
-    class Mesh
-        constructor: (@vertex, @texture) ->
-
-# -------------------------------------------------------
 
     class Particle
         constructor: (@v, @sp = 1, @size = 1000, @r = 255, @g = 255, @b = 255) ->
@@ -799,14 +910,36 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
 
             for m in materials
                 out_list = []
+                debugger
+                m.updateMatrix()
+                m.updateMatrixWorld()
 
-                if m instanceof Mesh
+                if m instanceof Triangle
                     vertex_list = m.vertex
                     uv_image    = m.texture.uv_data
                     uv_list     = m.texture.uv_list
 
                     @transformPoints(out_list, vertex_list, mat, @w, @h)
                     drawTriangle(g, uv_image, out_list, uv_list)
+
+                else if m instanceof Face
+                    for c in m.children
+                        vertex_list = c.vertex
+                        uv_image    = c.texture.uv_data
+                        uv_list     = c.texture.uv_list
+
+                        @transformPoints(out_list, vertex_list, mat, @w, @h)
+                        drawTriangle(g, uv_image, out_list, uv_list)
+
+                else if m instanceof Cube
+                    for c in m.children
+                        out_list = []
+                        vertex_list = c.vertex
+                        uv_image    = c.texture.uv_data
+                        uv_list     = c.texture.uv_list
+
+                        @transformPoints(out_list, vertex_list, mat, @w, @h)
+                        drawTriangle(g, uv_image, out_list, uv_list)
 
                 else if m instanceof Particle
                     vertex_list = [m.v.x, m.v.y, m.v.z]
@@ -979,7 +1112,9 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
     exports.Renderer = Renderer
     exports.Scene = Scene
     exports.Texture = Texture
-    exports.Mesh = Mesh
+    exports.Face = Face
+    exports.Triangle = Triangle
+    exports.Cube = Cube
     exports.Particle = Particle
     exports.Texture = Texture
     exports.Vector3 = Vector3
