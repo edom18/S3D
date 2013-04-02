@@ -11,19 +11,12 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
         width  = img.width
         height = img.height
 
-        # 変換後のベクトル成分を計算
-        #_Ax = vertex_list[2] - vertex_list[0]
-        #_Ay = vertex_list[3] - vertex_list[1]
-        #_Bx = vertex_list[4] - vertex_list[0]
-        #_By = vertex_list[5] - vertex_list[1]
-
         x1 = vertex_list[0]; x2 = vertex_list[3]; x3 = vertex_list[6];
         y1 = vertex_list[1]; y2 = vertex_list[4]; y3 = vertex_list[7];
         z1 = vertex_list[2]; z2 = vertex_list[5]; z3 = vertex_list[8];
 
 
-        #   0,  1,  2,  3,  4,  5,  6,  7,  8
-        # [x1, y1, z1, x2, y2, z2, x3, y3, z3]
+        # 変換後のベクトル成分を計算
         _Ax = x2 - x1
         _Ay = y2 - y1
         _Bx = x3 - x1
@@ -64,18 +57,12 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
         # |Ax Ay|^-1 |_Ax| = |a|
         # |Bx By|    |_Bx| = |c|
 
-        m = new Matrix2()
-        me = m.elements
-
         # 上記の
         # |Ax Ay|
         # |Bx By|
         # を生成
-        me[0] = Ax; me[2] = Ay;
-        me[1] = Bx; me[3] = By;
-
-        #m._11 = Ax; m._12 = Ay
-        #m._21 = Bx; m._22 = By
+        m = new Matrix2(Ax, Ay, Bx, By)
+        me = m.elements
 
         # 逆行列を取得
         # 上記の
@@ -88,12 +75,6 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
         # 逆行列が存在しない場合はスキップ
         return if not mi
 
-        #a = mi._11 * _Ax + mi._12 * _Bx
-        #c = mi._21 * _Ax + mi._22 * _Bx
-
-        #b = mi._11 * _Ay + mi._12 * _By
-        #d = mi._21 * _Ay + mi._22 * _By
-        
         a = mie[0] * _Ax + mie[2] * _Bx
         c = mie[1] * _Ax + mie[3] * _Bx
         b = mie[0] * _Ay + mie[2] * _By
@@ -110,7 +91,6 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
         g.transform(a, b, c, d,
             x1 - (a * uv_list[0] * width + c * uv_list[1] * height),
             y1 - (b * uv_list[0] * width + d * uv_list[1] * height))
-        g.stroke()
         g.drawImage(img, 0, 0)
         g.restore()
 
@@ -218,7 +198,7 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
         @constructor
     ###
     class Matrix2
-        constructor: ->
+        constructor: (m11 = 1, m12 = 0, m21 = 0, m22 = 1) ->
 
             @elements = te = new Float32Array 4
 
@@ -229,11 +209,8 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
             # |m21 m22|
             # の行列で初期化
 
-            te[0] = 1; te[2] = 0;
-            te[1] = 0; te[3] = 1;
-
-            #@_11 = 1; @_12 = 0;
-            #@_21 = 0; @_22 = 1;
+            te[0] = m11; te[2] = m12;
+            te[1] = m21; te[3] = m22;
 
         ###*
             逆行列を生成
@@ -254,7 +231,6 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
             te  = @elements
 
             det = te[0] * te[3] - te[2] * te[1]
-            #det = @_11 * @_22 - @_12 * @_21
 
             return null if 0.0001 > det > -0.0001
 
@@ -262,11 +238,6 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
             oe[1] = -te[1] / det
             oe[2] = -te[2] / det
             oe[3] =  te[0] / det
-
-            #out._11 =  @_22 / det
-            #out._22 =  @_11 / det
-            #out._12 = -@_12 / det
-            #out._21 = -@_21 / det
 
             return out
 
@@ -450,40 +421,42 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
             xmin = ymin * aspect
             xmax = ymax * aspect
 
-            vw = xmax - xmin
-            vh = ymax - ymin
+            return tmp.makeFrustum xmin, xmax, ymin, ymax, near, far
 
-            zoomX = 2 * near / vw
-            zoomY = 2 * near / vh
-
-            # X軸方向のzoom値
-            te[0]  = zoomX;
-            te[4]  = 0
-            te[8]  = 0
-            te[12] = 0
-
-            # Y軸方向のzoom値
-            te[1]  = 0
-            te[5]  = zoomY
-            te[9]  = 0
-            te[13] = 0
-
-            # W値用の値を算出
+            #vw = xmax - xmin
+            #vh = ymax - ymin
             #
-            # Z座標は、ニアクリップ面では z/w = -1、
-            # ファークリップ面では z/w = 1 になるように
-            # バイアスされ、スケーリングされる。
-            te[2]  = 0
-            te[6]  = 0
-            te[10] = - (far + near) / (far - near)
-            te[14] = -(2 * near * far) / (far - near)
-
-            te[3]  = 0
-            te[7]  = 0
-            te[11] = -1
-            te[15] = 0
-
-            return tmp
+            #zoomX = 2 * near / vw
+            #zoomY = 2 * near / vh
+            #
+            ## X軸方向のzoom値
+            #te[0]  = zoomX;
+            #te[4]  = 0
+            #te[8]  = 0
+            #te[12] = 0
+            #
+            ## Y軸方向のzoom値
+            #te[1]  = 0
+            #te[5]  = zoomY
+            #te[9]  = 0
+            #te[13] = 0
+            #
+            ## W値用の値を算出
+            ##
+            ## Z座標は、ニアクリップ面では z/w = -1、
+            ## ファークリップ面では z/w = 1 になるように
+            ## バイアスされ、スケーリングされる。
+            #te[2]  = 0
+            #te[6]  = 0
+            #te[10] = - (far + near) / (far - near)
+            #te[14] = -(2 * near * far) / (far - near)
+            #
+            #te[3]  = 0
+            #te[7]  = 0
+            #te[11] = -1
+            #te[15] = 0
+            #
+            #return tmp
 
         multiply: (A) ->
             tmp = Matrix4.multiply(@, A)
