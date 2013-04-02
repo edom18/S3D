@@ -8,18 +8,20 @@ var __hasProp = {}.hasOwnProperty,
   sqrt = Math.sqrt, tan = Math.tan, cos = Math.cos, sin = Math.sin, PI = Math.PI;
   DEG_TO_RAD = PI / 180;
   ANGLE = PI * 2;
-  drawTriangle = function(g, img, vertex_list, uv_list) {
-    var Ax, Ay, Bx, By, a, b, c, d, height, m, me, mi, mie, width, x1, x2, x3, y1, y2, y3, z1, z2, z3, _Ax, _Ay, _Bx, _By;
+  drawTriangle = function(g, img, vertex_list, uv_list, vw, vh) {
+    var Ax, Ay, Bx, By, a, b, c, d, height, hvh, hvw, m, me, mi, mie, width, x1, x2, x3, y1, y2, y3, z1, z2, z3, _Ax, _Ay, _Bx, _By;
     width = img.width;
     height = img.height;
-    x1 = vertex_list[0];
-    x2 = vertex_list[3];
-    x3 = vertex_list[6];
-    y1 = vertex_list[1];
-    y2 = vertex_list[4];
-    y3 = vertex_list[7];
+    hvw = vw * 0.5;
+    hvh = vh * 0.5;
+    x1 = vertex_list[0] * hvw + hvw;
+    y1 = vertex_list[1] * -hvh + hvh;
     z1 = vertex_list[2];
+    x2 = vertex_list[3] * hvw + hvw;
+    y2 = vertex_list[4] * -hvh + hvh;
     z2 = vertex_list[5];
+    x3 = vertex_list[6] * hvw + hvw;
+    y3 = vertex_list[7] * -hvh + hvh;
     z3 = vertex_list[8];
     _Ax = x2 - x1;
     _Ay = y2 - y1;
@@ -167,6 +169,30 @@ var __hasProp = {}.hasOwnProperty,
       this.x = e[1] * x + e[5] * y + e[9] * z + e[13];
       this.x = e[2] * x + e[5] * y + e[10] * z + e[14];
       return this;
+    };
+
+    Vector3.prototype.applyProjection = function(m) {
+      var e, w, x, y, z;
+      x = this.x;
+      y = this.y;
+      z = this.z;
+      e = m.elements;
+      w = 1 / (e[3] * x + e[7] * y + e[11] * z + e[15]);
+      this.x = (e[0] * x + e[4] * y + e[8] * z + e[12]) * w;
+      this.y = (e[1] * x + e[5] * y + e[9] * z + e[13]) * w;
+      this.z = (e[2] * x + e[6] * y + e[10] * z + e[14]) * w;
+      return this;
+    };
+
+    Vector3.prototype.clone = function() {
+      var vec3;
+      vec3 = new Vector3;
+      vec3.copy(this);
+      return vec3;
+    };
+
+    Vector3.prototype.toArray = function() {
+      return [this.x, this.y, this.z];
     };
 
     Vector3.prototype.toString = function() {
@@ -677,7 +703,6 @@ var __hasProp = {}.hasOwnProperty,
 
     Object3D.prototype.updateMatrix = function() {
       var c, _i, _len, _ref, _results;
-      this.matrix.translate(this.position);
       _ref = this.children;
       _results = [];
       for (_i = 0, _len = _ref.length; _i < _len; _i++) {
@@ -810,11 +835,28 @@ var __hasProp = {}.hasOwnProperty,
 
     __extends(Triangle, _super);
 
-    function Triangle(vertex, texture) {
-      this.vertex = vertex;
+    function Triangle(vertices, texture) {
+      var i, v, vec3, _i, _len;
       this.texture = texture;
       Triangle.__super__.constructor.apply(this, arguments);
+      this.vertices = [];
+      for (i = _i = 0, _len = vertices.length; _i < _len; i = _i += 3) {
+        v = vertices[i];
+        vec3 = new Vector3(vertices[i + 0], vertices[i + 1], vertices[i + 2]);
+        this.vertices.push(vec3);
+      }
     }
+
+    Triangle.prototype.getVerticesByProjectionMatrix = function(m) {
+      var ret, v, _i, _len, _ref;
+      ret = [];
+      _ref = this.vertices;
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        v = _ref[_i];
+        ret = ret.concat(v.clone().applyProjection(m).toArray());
+      }
+      return ret;
+    };
 
     return Triangle;
 
@@ -972,36 +1014,22 @@ var __hasProp = {}.hasOwnProperty,
 
 
     Renderer.prototype.transformAndDraw = function(mat, materials) {
-      var c, g, m, out_list, r, results, uv_image, uv_list, vertex_list, w, weight, x, y, _i, _j, _k, _l, _len, _len1, _len2, _len3, _ref, _ref1, _results;
+      var c, g, m, out_list, r, results, uv_image, uv_list, vertex_list, w, weight, x, y, _i, _j, _k, _len, _len1, _len2, _ref, _results;
       g = this.g;
       results = [];
       out_list = [];
       for (_i = 0, _len = materials.length; _i < _len; _i++) {
         m = materials[_i];
         out_list = [];
-        debugger;
-        m.updateMatrix();
-        m.updateMatrixWorld();
         if (m instanceof Triangle) {
-          vertex_list = m.vertex;
+          vertex_list = m.getVerticesByProjectionMatrix(mat);
           uv_image = m.texture.uv_data;
           uv_list = m.texture.uv_list;
-          this.transformPoints(out_list, vertex_list, mat, this.w, this.h);
-          drawTriangle(g, uv_image, out_list, uv_list);
-        } else if (m instanceof Face) {
+          drawTriangle(g, uv_image, vertex_list, uv_list, this.w, this.h);
+        } else if (m instanceof Cube) {
           _ref = m.children;
           for (_j = 0, _len1 = _ref.length; _j < _len1; _j++) {
             c = _ref[_j];
-            vertex_list = c.vertex;
-            uv_image = c.texture.uv_data;
-            uv_list = c.texture.uv_list;
-            this.transformPoints(out_list, vertex_list, mat, this.w, this.h);
-            drawTriangle(g, uv_image, out_list, uv_list);
-          }
-        } else if (m instanceof Cube) {
-          _ref1 = m.children;
-          for (_k = 0, _len2 = _ref1.length; _k < _len2; _k++) {
-            c = _ref1[_k];
             out_list = [];
             vertex_list = c.vertex;
             uv_image = c.texture.uv_data;
@@ -1035,8 +1063,8 @@ var __hasProp = {}.hasOwnProperty,
         return b.w - a.w;
       });
       _results = [];
-      for (_l = 0, _len3 = results.length; _l < _len3; _l++) {
-        r = results[_l];
+      for (_k = 0, _len2 = results.length; _k < _len2; _k++) {
+        r = results[_k];
         g.save();
         g.fillStyle = "rgba(" + r.r + ", " + r.g + ", " + r.b + ", " + r.weight + ")";
         g.beginPath();

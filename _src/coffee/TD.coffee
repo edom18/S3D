@@ -6,15 +6,27 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
     DEG_TO_RAD = PI / 180
     ANGLE = PI * 2
 
-    drawTriangle = (g, img, vertex_list, uv_list) ->
+    drawTriangle = (g, img, vertex_list, uv_list, vw, vh) ->
 
         width  = img.width
         height = img.height
 
-        x1 = vertex_list[0]; x2 = vertex_list[3]; x3 = vertex_list[6];
-        y1 = vertex_list[1]; y2 = vertex_list[4]; y3 = vertex_list[7];
-        z1 = vertex_list[2]; z2 = vertex_list[5]; z3 = vertex_list[8];
+        hvw = vw * 0.5
+        hvh = vh * 0.5
 
+        #x1 = vertex_list[0]; x2 = vertex_list[3]; x3 = vertex_list[6];
+        #y1 = vertex_list[1]; y2 = vertex_list[4]; y3 = vertex_list[7];
+        #z1 = vertex_list[2]; z2 = vertex_list[5]; z3 = vertex_list[8];
+
+        x1 = vertex_list[0] *  hvw + hvw
+        y1 = vertex_list[1] * -hvh + hvh
+        z1 = vertex_list[2]
+        x2 = vertex_list[3] *  hvw + hvw
+        y2 = vertex_list[4] * -hvh + hvh
+        z2 = vertex_list[5]
+        x3 = vertex_list[6] *  hvw + hvw
+        y3 = vertex_list[7] * -hvh + hvh
+        z3 = vertex_list[8]
 
         # 変換後のベクトル成分を計算
         _Ax = x2 - x1
@@ -199,6 +211,31 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
             @x = e[2] * x + e[5] * y + e[10] * z + e[14]
 
             return @
+
+        applyProjection: (m) ->
+
+            x = @x
+            y = @y
+            z = @z
+
+            e = m.elements
+
+            #Perspective divide
+            w = 1 / (e[3] * x + e[7] * y + e[11] * z + e[15])
+
+            @x = (e[0] * x + e[4] * y + e[8]  * z + e[12]) * w
+            @y = (e[1] * x + e[5] * y + e[9]  * z + e[13]) * w
+            @z = (e[2] * x + e[6] * y + e[10] * z + e[14]) * w
+
+            return @
+
+        clone: ->
+            vec3 = new Vector3
+            vec3.copy @
+            return vec3
+
+        toArray: ->
+            return [@x, @y, @z]
 
         toString: ->
             "#{@x},#{@y},#{@z}"
@@ -405,11 +442,6 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
             #   |m31 * x + m32 * y + m33 * z + m34|
             #   |m41 * x + m42 * y + m43 * z + m44|
             #
-
-            #out[0] = x * te[0]  + y * te[1]  + z * te[2]  + te[3]
-            #out[1] = x * te[4]  + y * te[5]  + z * te[6]  + te[7]
-            #out[2] = x * te[8]  + y * te[9]  + z * te[10] + te[11]
-            #out[3] = x * te[12] + y * te[13] + z * te[14] + te[15]
 
             # X
             out[0] = te[0] * x + te[4] * y + te[8]  * z + te[12]
@@ -688,7 +720,6 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
             @matrixWorld = new Matrix4
 
         updateMatrix: ->
-            @matrix.translate @position
             c.updateMatrix() for c in @children
 
         updateMatrixWorld: ->
@@ -785,8 +816,21 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
 # -------------------------------------------------------------------------------
 
     class Triangle extends Object3D
-        constructor: (@vertex, @texture) ->
+        constructor: (vertices, @texture) ->
             super
+
+            @vertices = []
+            for v, i in vertices by 3
+                vec3 = new Vector3 vertices[i + 0], vertices[i + 1], vertices[i + 2]
+                @vertices.push vec3
+
+        getVerticesByProjectionMatrix: (m) ->
+            ret = []
+            for v in @vertices
+                ret = ret.concat(v.clone().applyProjection(m).toArray())
+
+            return ret
+
 
 # -------------------------------------------------------------------------------
 
@@ -910,26 +954,26 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
 
             for m in materials
                 out_list = []
-                debugger
-                m.updateMatrix()
-                m.updateMatrixWorld()
+                #m.updateMatrix()
+                #m.updateMatrixWorld()
 
                 if m instanceof Triangle
-                    vertex_list = m.vertex
+                    vertex_list = m.getVerticesByProjectionMatrix(mat)
                     uv_image    = m.texture.uv_data
                     uv_list     = m.texture.uv_list
 
-                    @transformPoints(out_list, vertex_list, mat, @w, @h)
-                    drawTriangle(g, uv_image, out_list, uv_list)
+                    #@transformPoints(out_list, vertex_list, mat, @w, @h)
+                    #drawTriangle(g, uv_image, out_list, uv_list, @w, @h)
+                    drawTriangle(g, uv_image, vertex_list, uv_list, @w, @h)
 
-                else if m instanceof Face
-                    for c in m.children
-                        vertex_list = c.vertex
-                        uv_image    = c.texture.uv_data
-                        uv_list     = c.texture.uv_list
+                #else if m instanceof Face
+                #    for c in m.children
+                #        vertex_list = c.vertex
+                #        uv_image    = c.texture.uv_data
+                #        uv_list     = c.texture.uv_list
 
-                        @transformPoints(out_list, vertex_list, mat, @w, @h)
-                        drawTriangle(g, uv_image, out_list, uv_list)
+                #        @transformPoints(out_list, vertex_list, mat, @w, @h)
+                #        drawTriangle(g, uv_image, out_list, uv_list)
 
                 else if m instanceof Cube
                     for c in m.children
