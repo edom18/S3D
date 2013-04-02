@@ -2,7 +2,7 @@ do (win = window, doc = window.document, exports = window) ->
 
     #Import
     {tan, cos, sin, PI} = Math
-    {Texture, Mesh, Matrix4, Camera, Renderer, Scene, Vector3, Particle} = window.S3D
+    {Face, Cube, Texture, Triangle, Matrix4, Camera, Renderer, Scene, Vector3, Particle} = window.S3D
 
     DEG_TO_RAD = PI / 180
 
@@ -185,8 +185,8 @@ do (win = window, doc = window.document, exports = window) ->
             groundImage = img2
             renderer.render scene, camera
 
-        img.src = 'http://jsrun.it/assets/a/X/j/i/aXjiA.png'
-        img2.src = 'http://jsrun.it/assets/8/u/u/1/8uu1X.png'
+        img.src = 'img/aXjiA.png'
+        img2.src = 'img/8uu1X.png'
 
     init = ->
 
@@ -208,66 +208,79 @@ do (win = window, doc = window.document, exports = window) ->
             groundImage = img2
             --cnt or create()
 
-        img.src = 'http://jsrun.it/assets/a/X/j/i/aXjiA.png'
-        img2.src = 'http://jsrun.it/assets/8/u/u/1/8uu1X.png'
+        img.src = 'img/aXjiA.png'
+        img2.src = 'img/8uu1X.png'
 
-        camera = new Camera 60, aspect, 1, 2000
+        camera = new Camera 60, aspect, 5, 2000
         camera.position.x = 10
-        camera.position.y = 100
-        camera.position.z = 60
+        camera.position.y = 10
+        camera.position.z = 30
         #camera.up = new Vector3 1, 0, 0
         camera.lookAt new Vector3 0, 0, 0
         scene = new Scene
         renderer = new Renderer cv
 
         create = ->
+            materials = [
+                new Texture(textureImage) #left
+                new Texture(textureImage) #right
+                new Texture(textureImage) #top
+                new Texture(textureImage) #bottom
+            ]
+
+            #cube = new Cube 20, 20, 20, 2, 2, 2, materials
+
             texture = new Texture(groundImage, ground_1_uv)
-            mesh = new Mesh(ground_1, texture)
-            scene.add mesh
+            triangle = new Triangle(ground_1, texture)
+            scene.add triangle
 
             texture = new Texture(groundImage, ground_2_uv)
-            mesh = new Mesh(ground_2, texture)
-            scene.add mesh
+            triangle = new Triangle(ground_2, texture)
+            scene.add triangle
 
             texture = new Texture(textureImage, roof_1_uv)
-            mesh = new Mesh(roof_1, texture)
-            scene.add mesh
+            triangle = new Triangle(roof_1, texture)
+            scene.add triangle
 
             texture = new Texture(textureImage, roof_2_uv)
-            mesh = new Mesh(roof_2, texture)
-            scene.add mesh
+            triangle = new Triangle(roof_2, texture)
+            scene.add triangle
 
             texture = new Texture(textureImage, wall_1_uv)
-            mesh = new Mesh(wall_1, texture)
-            scene.add mesh
+            triangle = new Triangle(wall_1, texture)
+            scene.add triangle
 
             texture = new Texture(textureImage, wall_2_uv)
-            mesh = new Mesh(wall_2, texture)
-            scene.add mesh
+            triangle = new Triangle(wall_2, texture)
+            scene.add triangle
 
             texture = new Texture(textureImage, wall_3_uv)
-            mesh = new Mesh(wall_3, texture)
-            scene.add mesh
+            triangle = new Triangle(wall_3, texture)
+            scene.add triangle
 
             texture = new Texture(textureImage, wall_4_uv)
-            mesh = new Mesh(wall_4, texture)
-            scene.add mesh
+            triangle = new Triangle(wall_4, texture)
+            scene.add triangle
 
             texture = new Texture(textureImage, wall_5_uv)
-            mesh = new Mesh(wall_5, texture)
-            scene.add mesh
+            triangle = new Triangle(wall_5, texture)
+            scene.add triangle
 
             texture = new Texture(textureImage, wall_6_uv)
-            mesh = new Mesh(wall_6, texture)
-            scene.add mesh
+            triangle = new Triangle(wall_6, texture)
+            scene.add triangle
 
             texture = new Texture(textureImage, wall_7_uv)
-            mesh = new Mesh(wall_7, texture)
-            scene.add mesh
+            triangle = new Triangle(wall_7, texture)
+            scene.add triangle
 
             texture = new Texture(textureImage, wall_8_uv)
-            mesh = new Mesh(wall_8, texture)
-            scene.add mesh
+            triangle = new Triangle(wall_8, texture)
+            scene.add triangle
+
+            face = new Face -10, 10, 10, -10,  textureImage, roof_1_uv, roof_2_uv
+            face.position.z = 10
+            scene.add face
 
             renderer.render scene, camera
 
@@ -277,13 +290,8 @@ do (win = window, doc = window.document, exports = window) ->
 
     # Events
     win.addEventListener 'mousewheel', (e) ->
-        fov = (fov - (e.wheelDelta / 100))
-
-        fov = 10 if fov < 10
-        fov = 170 if fov > 170
-
+        camera.position.z += (e.wheelDelta / 100)
         renderer.render scene, camera
-
         e.preventDefault()
     , false
 

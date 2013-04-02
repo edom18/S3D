@@ -4,7 +4,7 @@ var __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
 (function(win, doc, exports) {
-  var ANGLE, AmbientLight, Camera, Color, DEG_TO_RAD, DirectionalLight, Light, Matrix2, Matrix4, Mesh, Object3D, PI, Particle, Quaternion, Renderer, Scene, Texture, Vector3, cos, drawTriangle, makeRotatialQuaternion, sin, sqrt, tan;
+  var ANGLE, AmbientLight, Camera, Color, Cube, DEG_TO_RAD, DirectionalLight, Face, Light, Matrix2, Matrix4, Object3D, PI, Particle, Quaternion, Renderer, Scene, Texture, Triangle, Vector3, cos, drawTriangle, makeRotatialQuaternion, sin, sqrt, tan;
   sqrt = Math.sqrt, tan = Math.tan, cos = Math.cos, sin = Math.sin, PI = Math.PI;
   DEG_TO_RAD = PI / 180;
   ANGLE = PI * 2;
@@ -32,12 +32,8 @@ var __hasProp = {}.hasOwnProperty,
     Ay = (uv_list[3] - uv_list[1]) * height;
     Bx = (uv_list[4] - uv_list[0]) * width;
     By = (uv_list[5] - uv_list[1]) * height;
-    m = new Matrix2();
+    m = new Matrix2(Ax, Ay, Bx, By);
     me = m.elements;
-    me[0] = Ax;
-    me[2] = Ay;
-    me[1] = Bx;
-    me[3] = By;
     mi = m.getInvert();
     mie = mi.elements;
     if (!mi) {
@@ -54,7 +50,6 @@ var __hasProp = {}.hasOwnProperty,
     g.lineTo(x3, y3);
     g.clip();
     g.transform(a, b, c, d, x1 - (a * uv_list[0] * width + c * uv_list[1] * height), y1 - (b * uv_list[0] * width + d * uv_list[1] * height));
-    g.stroke();
     g.drawImage(img, 0, 0);
     return g.restore();
   };
@@ -162,6 +157,18 @@ var __hasProp = {}.hasOwnProperty,
       return this;
     };
 
+    Vector3.prototype.applyMatrix4 = function(m) {
+      var e, x, y, z;
+      e = m.elements;
+      x = this.x;
+      y = this.y;
+      z = this.z;
+      this.x = e[0] * x + e[4] * y + e[8] * z + e[12];
+      this.x = e[1] * x + e[5] * y + e[9] * z + e[13];
+      this.x = e[2] * x + e[5] * y + e[10] * z + e[14];
+      return this;
+    };
+
     Vector3.prototype.toString = function() {
       return "" + this.x + "," + this.y + "," + this.z;
     };
@@ -176,13 +183,25 @@ var __hasProp = {}.hasOwnProperty,
 
   Matrix2 = (function() {
 
-    function Matrix2() {
+    function Matrix2(m11, m12, m21, m22) {
       var te;
+      if (m11 == null) {
+        m11 = 1;
+      }
+      if (m12 == null) {
+        m12 = 0;
+      }
+      if (m21 == null) {
+        m21 = 0;
+      }
+      if (m22 == null) {
+        m22 = 1;
+      }
       this.elements = te = new Float32Array(4);
-      te[0] = 1;
-      te[2] = 0;
-      te[1] = 0;
-      te[3] = 1;
+      te[0] = m11;
+      te[2] = m12;
+      te[1] = m21;
+      te[3] = m22;
     }
 
     /**
@@ -374,6 +393,34 @@ var __hasProp = {}.hasOwnProperty,
       return out[3] = te[3] * x + te[7] * y + te[11] * z + te[15];
     };
 
+    Matrix4.prototype.makeFrustum = function(left, right, bottom, top, near, far) {
+      var te, vh, vw, w, x, y, z;
+      te = this.elements;
+      vw = right - left;
+      vh = top - bottom;
+      x = 2 * near / vw;
+      y = 2 * near / vh;
+      z = -(far + near) / (far - near);
+      w = -(2 * near * far) / (far - near);
+      te[0] = x;
+      te[4] = 0;
+      te[8] = 0;
+      te[12] = 0;
+      te[1] = 0;
+      te[5] = y;
+      te[9] = 0;
+      te[13] = 0;
+      te[2] = 0;
+      te[6] = 0;
+      te[10] = z;
+      te[14] = w;
+      te[3] = 0;
+      te[7] = 0;
+      te[11] = -1;
+      te[15] = 0;
+      return this;
+    };
+
     Matrix4.prototype.perspectiveLH = function(fov, aspect, near, far) {
       var tmp;
       tmp = Matrix4.perspectiveLH(fov, aspect, near, far);
@@ -381,34 +428,14 @@ var __hasProp = {}.hasOwnProperty,
     };
 
     Matrix4.perspectiveLH = function(fov, aspect, near, far) {
-      var te, tmp, vh, vw, xmax, xmin, ymax, ymin, zoomX, zoomY;
+      var te, tmp, xmax, xmin, ymax, ymin;
       tmp = new Matrix4;
       te = tmp.elements;
       ymax = near * tan(fov * DEG_TO_RAD * 0.5);
       ymin = -ymax;
       xmin = ymin * aspect;
       xmax = ymax * aspect;
-      vw = xmax - xmin;
-      vh = ymax - ymin;
-      zoomX = 2 * near / vw;
-      zoomY = 2 * near / vh;
-      te[0] = zoomX;
-      te[4] = 0;
-      te[8] = 0;
-      te[12] = 0;
-      te[1] = 0;
-      te[5] = zoomY;
-      te[9] = 0;
-      te[13] = 0;
-      te[2] = 0;
-      te[6] = 0;
-      te[10] = -(far + near) / (far - near);
-      te[14] = -(2 * near * far) / (far - near);
-      te[3] = 0;
-      te[7] = 0;
-      te[11] = -1;
-      te[15] = 0;
-      return tmp;
+      return tmp.makeFrustum(xmin, xmax, ymin, ymax, near, far);
     };
 
     Matrix4.prototype.multiply = function(A) {
@@ -648,9 +675,45 @@ var __hasProp = {}.hasOwnProperty,
       this.matrixWorld = new Matrix4;
     }
 
+    Object3D.prototype.updateMatrix = function() {
+      var c, _i, _len, _ref, _results;
+      this.matrix.translate(this.position);
+      _ref = this.children;
+      _results = [];
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        c = _ref[_i];
+        _results.push(c.updateMatrix());
+      }
+      return _results;
+    };
+
+    Object3D.prototype.updateMatrixWorld = function() {
+      var c, _i, _len, _ref, _results;
+      if (!this.parent) {
+        this.matrixWorld.copy(this.matrix);
+      } else {
+        this.matrixWorld.multiplyMatrices(this.parent.matrixWorld, this.matrix);
+      }
+      _ref = this.children;
+      _results = [];
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        c = _ref[_i];
+        _results.push(c.updateMatrixWorld());
+      }
+      return _results;
+    };
+
+    Object3D.prototype.localToWorld = function(vector) {
+      return vector.applyMatrix4(this.matrixWorld);
+    };
+
     Object3D.prototype.add = function(object) {
+      var _ref;
       if (this === object) {
         return null;
+      }
+      if ((_ref = object.parent) != null) {
+        _ref.remove(object);
       }
       this.children.push(object);
       return object.parent = this;
@@ -708,6 +771,7 @@ var __hasProp = {}.hasOwnProperty,
     };
 
     Camera.prototype.updateProjectionMatrix = function() {
+      this.lookAt();
       return this.projectionMatrix.perspectiveLH(this.fov, this.aspect, this.near, this.far);
     };
 
@@ -715,12 +779,63 @@ var __hasProp = {}.hasOwnProperty,
       var m1;
       m1 = new Matrix4;
       return function(vector) {
-        m1.lookAt(this.position, vector, this.up);
+        this.vector = vector || this.vector || new Vector3;
+        m1.lookAt(this.position, this.vector, this.up);
         return this.viewMatrix.copy(m1);
       };
     })();
 
     return Camera;
+
+  })(Object3D);
+  Face = (function(_super) {
+
+    __extends(Face, _super);
+
+    function Face(x1, y1, x2, y2, img, uvData1, uvData2) {
+      var texture1, texture2, triangle1, triangle2;
+      Face.__super__.constructor.apply(this, arguments);
+      texture1 = new Texture(img, uvData1);
+      triangle1 = new Triangle([x1, y1, 0, x2, y1, 0, x1, y2, 0], texture1);
+      this.add(triangle1);
+      texture2 = new Texture(img, uvData2);
+      triangle2 = new Triangle([x1, y2, 0, x2, y1, 0, x2, y2, 0], texture2);
+      this.add(triangle2);
+    }
+
+    return Face;
+
+  })(Object3D);
+  Triangle = (function(_super) {
+
+    __extends(Triangle, _super);
+
+    function Triangle(vertex, texture) {
+      this.vertex = vertex;
+      this.texture = texture;
+      Triangle.__super__.constructor.apply(this, arguments);
+    }
+
+    return Triangle;
+
+  })(Object3D);
+  Cube = (function(_super) {
+
+    __extends(Cube, _super);
+
+    function Cube(w, h, p, sx, sy, sz, materials) {
+      var i, triangle, _i;
+      Cube.__super__.constructor.apply(this, arguments);
+      w *= 0.5;
+      h *= 0.5;
+      p *= 0.5;
+      for (i = _i = 0; _i < 12; i = ++_i) {
+        triangle = new Triangle([-w, h, p, w, h, p, -w, -h, p], new Texture(materials[0].uv_data, [0, 0, 0.5, 0, 0, 0.5]));
+        this.add(triangle);
+      }
+    }
+
+    return Cube;
 
   })(Object3D);
   Texture = (function() {
@@ -731,16 +846,6 @@ var __hasProp = {}.hasOwnProperty,
     }
 
     return Texture;
-
-  })();
-  Mesh = (function() {
-
-    function Mesh(vertex, texture) {
-      this.vertex = vertex;
-      this.texture = texture;
-    }
-
-    return Mesh;
 
   })();
   Particle = (function() {
@@ -867,19 +972,43 @@ var __hasProp = {}.hasOwnProperty,
 
 
     Renderer.prototype.transformAndDraw = function(mat, materials) {
-      var g, m, out_list, r, results, uv_image, uv_list, vertex_list, w, weight, x, y, _i, _j, _len, _len1, _results;
+      var c, g, m, out_list, r, results, uv_image, uv_list, vertex_list, w, weight, x, y, _i, _j, _k, _l, _len, _len1, _len2, _len3, _ref, _ref1, _results;
       g = this.g;
       results = [];
       out_list = [];
       for (_i = 0, _len = materials.length; _i < _len; _i++) {
         m = materials[_i];
         out_list = [];
-        if (m instanceof Mesh) {
+        debugger;
+        m.updateMatrix();
+        m.updateMatrixWorld();
+        if (m instanceof Triangle) {
           vertex_list = m.vertex;
           uv_image = m.texture.uv_data;
           uv_list = m.texture.uv_list;
           this.transformPoints(out_list, vertex_list, mat, this.w, this.h);
           drawTriangle(g, uv_image, out_list, uv_list);
+        } else if (m instanceof Face) {
+          _ref = m.children;
+          for (_j = 0, _len1 = _ref.length; _j < _len1; _j++) {
+            c = _ref[_j];
+            vertex_list = c.vertex;
+            uv_image = c.texture.uv_data;
+            uv_list = c.texture.uv_list;
+            this.transformPoints(out_list, vertex_list, mat, this.w, this.h);
+            drawTriangle(g, uv_image, out_list, uv_list);
+          }
+        } else if (m instanceof Cube) {
+          _ref1 = m.children;
+          for (_k = 0, _len2 = _ref1.length; _k < _len2; _k++) {
+            c = _ref1[_k];
+            out_list = [];
+            vertex_list = c.vertex;
+            uv_image = c.texture.uv_data;
+            uv_list = c.texture.uv_list;
+            this.transformPoints(out_list, vertex_list, mat, this.w, this.h);
+            drawTriangle(g, uv_image, out_list, uv_list);
+          }
         } else if (m instanceof Particle) {
           vertex_list = [m.v.x, m.v.y, m.v.z];
           this.transformPoints(out_list, vertex_list, mat, this.w, this.h);
@@ -906,8 +1035,8 @@ var __hasProp = {}.hasOwnProperty,
         return b.w - a.w;
       });
       _results = [];
-      for (_j = 0, _len1 = results.length; _j < _len1; _j++) {
-        r = results[_j];
+      for (_l = 0, _len3 = results.length; _l < _len3; _l++) {
+        r = results[_l];
         g.save();
         g.fillStyle = "rgba(" + r.r + ", " + r.g + ", " + r.b + ", " + r.weight + ")";
         g.beginPath();
@@ -1048,7 +1177,9 @@ var __hasProp = {}.hasOwnProperty,
   exports.Renderer = Renderer;
   exports.Scene = Scene;
   exports.Texture = Texture;
-  exports.Mesh = Mesh;
+  exports.Face = Face;
+  exports.Triangle = Triangle;
+  exports.Cube = Cube;
   exports.Particle = Particle;
   exports.Texture = Texture;
   exports.Vector3 = Vector3;
