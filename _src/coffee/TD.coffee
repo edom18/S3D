@@ -19,14 +19,14 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
             hvw = vw * 0.5
             hvh = vh * 0.5
 
-            x1 = vertexList[0] *  hvw + hvw
-            y1 = vertexList[1] * -hvh + hvh
+            x1 = (vertexList[0] *  hvw) + hvw
+            y1 = (vertexList[1] * -hvh) + hvh
             z1 = vertexList[2]
-            x2 = vertexList[3] *  hvw + hvw
-            y2 = vertexList[4] * -hvh + hvh
+            x2 = (vertexList[3] *  hvw) + hvw
+            y2 = (vertexList[4] * -hvh) + hvh
             z2 = vertexList[5]
-            x3 = vertexList[6] *  hvw + hvw
-            y3 = vertexList[7] * -hvh + hvh
+            x3 = (vertexList[6] *  hvw) + hvw
+            y3 = (vertexList[7] * -hvh) + hvh
             z3 = vertexList[8]
 
             # 変換後のベクトル成分を計算
@@ -47,10 +47,41 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
             Bx = (uvList[4] - uvList[0]) * width
             By = (uvList[5] - uvList[1]) * height
 
+            # move position from A(Ax, Ay) to _A(_Ax, _Ay)
+            # move position from B(Ax, Ay) to _B(_Bx, _By)
+            # A,Bのベクトルを、_A,_Bのベクトルに変換することが目的。
+            # 変換を達成するには、a, b, c, dそれぞれの係数を導き出す必要がある。
+            #
+            #    ↓まずは公式。アフィン変換の移動以外を考える。
+            #
+            # _Ax = a * Ax + c * Ay
+            # _Ay = b * Ax + d * Ay
+            # _Bx = a * Bx + c * By
+            # _By = b * Bx + d * By
+            #
+            #    ↓上記の公式を行列の計算で表すと以下に。
+            #
+            # |_Ax| = |Ax Ay||a|
+            # |_Bx| = |Bx By||c|
+            #
+            #    ↓a, cについて求めたいのだから、左に掛けているものを「1」にする必要がある。
+            #    　行列を1にするには、逆行列を左から掛ければいいので、両辺に逆行列を掛ける。（^-1は逆行列の意味）
+            #
+            # |Ax Ay|^-1 |_Ax| = |a|
+            # |Bx By|    |_Bx| = |c|
+
+            # 上記の
+            # |Ax Ay|
+            # |Bx By|
+            # を生成
             m = new Matrix2(Ax, Ay, Bx, By)
             me = m.elements
 
             # 逆行列を取得
+            # 上記の
+            # |Ax Ay|^-1
+            # |Bx By|
+            # を生成
             mi = m.getInvert()
             mie = mi.elements
 
@@ -76,102 +107,6 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
             g.drawImage(img, 0, 0)
             g.restore()
 
-    drawTriangle = (g, img, vertex_list, uv_list, vw, vh) ->
-
-        width  = img.width
-        height = img.height
-
-        hvw = vw * 0.5
-        hvh = vh * 0.5
-
-        x1 = vertex_list[0] *  hvw + hvw
-        y1 = vertex_list[1] * -hvh + hvh
-        z1 = vertex_list[2]
-        x2 = vertex_list[3] *  hvw + hvw
-        y2 = vertex_list[4] * -hvh + hvh
-        z2 = vertex_list[5]
-        x3 = vertex_list[6] *  hvw + hvw
-        y3 = vertex_list[7] * -hvh + hvh
-        z3 = vertex_list[8]
-
-        # 変換後のベクトル成分を計算
-        _Ax = x2 - x1
-        _Ay = y2 - y1
-        _Bx = x3 - x1
-        _By = y3 - y1
-
-        # 裏面カリング
-        # 頂点を結ぶ順が反時計回りの場合は「裏面」になり、その場合は描画をスキップ
-        # 裏面かどうかの判定は外積を利用する
-        # 判定は、3点の内、1-2点目と2-3点目との外積を計算し、結果がマイナスの場合は反時計回り。（外積の結果はZ軸に対しての数値）
-        return if(((_Ax * (y3 - y2)) - (_Ay * (x3 - x2))) < 0)
-
-        # 変換前のベクトル成分を計算
-        Ax = (uv_list[2] - uv_list[0]) * width
-        Ay = (uv_list[3] - uv_list[1]) * height
-        Bx = (uv_list[4] - uv_list[0]) * width
-        By = (uv_list[5] - uv_list[1]) * height
-
-        # move position from A(Ax, Ay) to _A(_Ax, _Ay)
-        # move position from B(Ax, Ay) to _B(_Bx, _By)
-        # A,Bのベクトルを、_A,_Bのベクトルに変換することが目的。
-        # 変換を達成するには、a, b, c, dそれぞれの係数を導き出す必要がある。
-        #
-        #    ↓まずは公式。アフィン変換の移動以外を考える。
-        #
-        # _Ax = a * Ax + c * Ay
-        # _Ay = b * Ax + d * Ay
-        # _Bx = a * Bx + c * By
-        # _By = b * Bx + d * By
-        #
-        #    ↓上記の公式を行列の計算で表すと以下に。
-        #
-        # |_Ax| = |Ax Ay||a|
-        # |_Bx| = |Bx By||c|
-        #
-        #    ↓a, cについて求めたいのだから、左に掛けているものを「1」にする必要がある。
-        #    　行列を1にするには、逆行列を左から掛ければいいので、両辺に逆行列を掛ける。（^-1は逆行列の意味）
-        #
-        # |Ax Ay|^-1 |_Ax| = |a|
-        # |Bx By|    |_Bx| = |c|
-
-        # 上記の
-        # |Ax Ay|
-        # |Bx By|
-        # を生成
-        m = new Matrix2(Ax, Ay, Bx, By)
-        me = m.elements
-
-        # 逆行列を取得
-        # 上記の
-        # |Ax Ay|^-1
-        # |Bx By|
-        # を生成
-        mi = m.getInvert()
-        mie = mi.elements
-
-        # 逆行列が存在しない場合はスキップ
-        return if not mi
-
-        a = mie[0] * _Ax + mie[2] * _Bx
-        c = mie[1] * _Ax + mie[3] * _Bx
-        b = mie[0] * _Ay + mie[2] * _By
-        d = mie[1] * _Ay + mie[3] * _By
-
-        # 各頂点座標を元に三角形を作り、それでクリッピング
-        g.save()
-        g.beginPath()
-        g.moveTo(x1, y1)
-        g.lineTo(x2, y2)
-        g.lineTo(x3, y3)
-        g.clip()
-
-        g.transform(a, b, c, d,
-            x1 - (a * uv_list[0] * width + c * uv_list[1] * height),
-            y1 - (b * uv_list[0] * width + d * uv_list[1] * height))
-        g.drawImage(img, 0, 0)
-        g.restore()
-
 # -------------------------------------------------------------------------------
 
     class Vertex
@@ -185,7 +120,6 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
                 ret += @vertecies[i + 2]
 
             return ret / cnt
-
 
 # -------------------------------------------------------------------------------
 
@@ -229,12 +163,12 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
             sqrt(@x * @x + @y * @y + @z * @z)
 
         normalize: ->
-            nrm = @norm()
+            nrm = 1 / @norm()
 
             if nrm isnt 0
-                @x /= nrm
-                @y /= nrm
-                @z /= nrm
+                @x *= nrm
+                @y *= nrm
+                @z *= nrm
 
             return @
 
@@ -288,8 +222,8 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
             z = @z
 
             @x = e[0] * x + e[4] * y + e[8]  * z + e[12]
-            @x = e[1] * x + e[5] * y + e[9]  * z + e[13]
-            @x = e[2] * x + e[5] * y + e[10] * z + e[14]
+            @y = e[1] * x + e[5] * y + e[9]  * z + e[13]
+            @z = e[2] * x + e[5] * y + e[10] * z + e[14]
 
             return @
 
@@ -306,22 +240,14 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
             M(screen) = |0 -h  0  0|
                         |0  0  1  0|
                         |w  h  0  1|
-            以下の計算式で言うと、
-
-            transformed_temp[0] *=  viewWidth
-            transformed_temp[1] *= -viewHeight
-            transformed_temp[0] +=  viewWidth  / 2
-            transformed_temp[1] +=  viewHeight / 2
-
-            となる。
 
             4x4の変換行列を対象の1x4行列[x, y, z, 1]に適用する
             1x4行列と4x4行列の掛け算を行う
 
-                        |@_11 @_12 @_13 @_14|
-            |x y z 1| x |@_21 @_22 @_23 @_24|
-                        |@_31 @_32 @_33 @_34|
-                        |@_41 @_42 @_43 @_44|
+            |@_11 @_12 @_13 @_14|   |x|
+            |@_21 @_22 @_23 @_24| x |y|
+            |@_31 @_32 @_33 @_34|   |z|
+            |@_41 @_42 @_43 @_44|   |1|
 
             @_4nは1x4行列の最後が1のため、ただ足すだけになる
 
@@ -646,10 +572,15 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
             y = v.y
             z = v.z
 
-            te[12] = te[0] * x + te[4] * y + te[8]  * z + te[12]
-            te[13] = te[1] * x + te[5] * y + te[9]  * z + te[13]
-            te[14] = te[2] * x + te[6] * y + te[10] * z + te[14]
-            te[15] = te[3] * x + te[7] * y + te[11] * z + te[15]
+            #te[12] = te[0] * x + te[4] * y + te[8]  * z + te[12]
+            #te[13] = te[1] * x + te[5] * y + te[9]  * z + te[13]
+            #te[14] = te[2] * x + te[6] * y + te[10] * z + te[14]
+            #te[15] = te[3] * x + te[7] * y + te[11] * z + te[15]
+
+            te[0] = 1; te[4] = 0; te[8]  = 0; te[12] = x;
+            te[1] = 0; te[5] = 1; te[9]  = 0; te[13] = y;
+            te[2] = 0; te[6] = 0; te[10] = 1; te[14] = z;
+            te[3] = 0; te[7] = 0; te[11] = 0; te[15] = 1;
 
             return @
 
@@ -679,7 +610,6 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
                 te[0] = x.x; te[4] = x.y; te[8]  = x.z; te[12] = -tx;
                 te[1] = y.x; te[5] = y.y; te[9]  = y.z; te[13] = -ty;
                 te[2] = z.x; te[6] = z.y; te[10] = z.z; te[14] = -tz;
-                #te[3] =  tx; te[7] =  ty; te[11] =  tz;
 
                 return @
 
@@ -762,7 +692,7 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
             @children = []
             @position = new Vector3
             @rotation = new Vector3
-            @scale = new Vector3 1, 1, 1
+            #@scale = new Vector3 1, 1, 1
             @up    = new Vector3 0, 1, 0
 
             @matrix = new Matrix4
@@ -798,8 +728,8 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
 
 
         updateMatrix: ->
-            tmp = @updateRotation()
-            tmp.multiply @updateTranslate()
+            tmp = new Matrix4
+            tmp.multiplyMatrices @updateTranslate(), @updateRotation()
             @matrix.copy tmp
 
             c.updateMatrix() for c in @children
@@ -849,14 +779,13 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
 
             @viewMatrix = new Matrix4
             @projectionMatrix = new Matrix4
-            #@updateProjectionMatrix()
 
         setWorld: (m) ->
             @matrixWorld = m
 
         getProjectionMatrix: ->
             tmp = Matrix4.multiply @projectionMatrix, @viewMatrix
-            Matrix4.multiply tmp, @matrixWorld
+            tmp.multiply @matrixWorld
 
         updateProjectionMatrix: ->
             @lookAt()
@@ -892,6 +821,22 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
             ], texture2)
 
             @add triangle2
+
+# -------------------------------------------------------------------------------
+
+    class Plate extends Object3D
+        constructor: (width, height, texture1, texture2) ->
+            super
+
+            hw = width  * 0.5
+            hh = height * 0.5
+
+            face1 = new Face -hw, hh, hw, -hh, texture1, texture2
+            face2 = new Face -hw, hh, hw, -hh, texture1, texture2
+            face2.rotation.y = 180
+
+            @add face1
+            @add face2
 
 # -------------------------------------------------------------------------------
 
@@ -937,6 +882,9 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
 
             #TOP
             topFace = new Face -w, h, w, -h, materials[0], materials[1]
+            topFace.rotation.x = 90
+            topFace.position.y = h
+            topFace.position.z = -h
 
             #BOTTOM
             bottomFace = new Face -w, h, w, -h, materials[2], materials[3]
@@ -946,14 +894,11 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
 
             #FRONT
             frontFace = new Face -w, h, w, -h, materials[4], materials[5]
-            frontFace.rotation.y = 180
-            frontFace.position.z = -w * 2
+            frontFace.position.z = -p * 2
 
             #BACK
             backFace = new Face -w, h, w, -h, materials[6], materials[7]
-            backFace.rotation.x = 90
-            backFace.position.y = h
-            backFace.position.z = -h
+            backFace.rotation.y = 180
 
             #LEFT
             leftFace = new Face -w, h, w, -h, materials[8], materials[9]
@@ -1079,12 +1024,7 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
 
                     results.push vertex
 
-                else if m instanceof Face
-                    for c in m.children
-                        tmp = @getTransformedPoint mat, c.children
-                        results = results.concat tmp
-
-                else if m instanceof Cube
+                else
                     for c in m.children
                         tmp = @getTransformedPoint mat, c.children
                         results = results.concat tmp
@@ -1171,16 +1111,17 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
 
 
     exports.Object3D = Object3D
-    exports.Matrix2 = Matrix2
-    exports.Matrix4 = Matrix4
-    exports.Camera = Camera
+    exports.Matrix2  = Matrix2
+    exports.Matrix4  = Matrix4
+    exports.Camera   = Camera
     exports.Renderer = Renderer
-    exports.Scene = Scene
-    exports.Texture = Texture
-    exports.Face = Face
+    exports.Texture  = Texture
     exports.Triangle = Triangle
-    exports.Cube = Cube
+    exports.Scene = Scene
+    exports.Plate = Plate
+    exports.Cube  = Cube
+    exports.Face  = Face
     exports.Particle = Particle
-    exports.Texture = Texture
-    exports.Vector3 = Vector3
+    exports.Texture  = Texture
+    exports.Vector3  = Vector3
     exports.Quaternion = Quaternion

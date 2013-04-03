@@ -2,7 +2,7 @@ do (win = window, doc = window.document, exports = window) ->
 
     #Import
     {tan, cos, sin, PI} = Math
-    {Face, Cube, Texture, Triangle, Matrix4, Camera, Renderer, Scene, Vector3, Particle} = window.S3D
+    {Plate, Face, Cube, Texture, Triangle, Matrix4, Camera, Renderer, Scene, Vector3, Particle} = window.S3D
 
     DEG_TO_RAD = PI / 180
 
@@ -109,10 +109,10 @@ do (win = window, doc = window.document, exports = window) ->
         img.src = 'img/aXjiA.png'
         #img.src = 'http://jsrun.it/assets/k/M/J/J/kMJJS.png'
 
-        camera = new Camera 60, aspect, 5, 2000
+        camera = new Camera 40, aspect, 5, 2000
         camera.position.x = 10
-        camera.position.y = 50
-        camera.position.z = 80
+        camera.position.y = 150
+        camera.position.z = 200
         #camera.up = new Vector3 1, 0, 0
         camera.lookAt new Vector3 0, 0, 0
         scene    = new Scene
@@ -149,11 +149,31 @@ do (win = window, doc = window.document, exports = window) ->
             cube3.position.x = 50
             cube3.position.y = 80
 
+            plate1 = new Plate 50, 50, new Texture(textureImage, wall_1_uv), new Texture(textureImage, wall_2_uv)
+            plate1.position.x = -50
+            plate1.position.z = -300
+
+            plate2 = new Plate 50, 50, new Texture(textureImage, wall_1_uv), new Texture(textureImage, wall_2_uv)
+            plate2.position.y = -100
+            plate2.position.z = -500
+
+            scene.add plate1
+            scene.add plate2
             scene.add cube3
             scene.add cube2
             scene.add cube1
 
-            renderer.render scene, camera
+            angle = 0
+            do _loop = ->
+                angle += 1
+                plate1.rotation.z = angle
+                cube1.rotation.z = angle
+                cube2.rotation.x = angle * 2
+                cube3.rotation.x = angle * 3
+                cube3.rotation.y = angle * 3
+                cube3.rotation.z = angle * 3
+                renderer.render scene, camera
+                setTimeout _loop, 32
 
     dragging = false
     prevX = 0
@@ -164,6 +184,19 @@ do (win = window, doc = window.document, exports = window) ->
         camera.position.z += (e.wheelDelta / 100)
         renderer.render scene, camera
         e.preventDefault()
+    , false
+
+    base = 100
+    startZoom = 0
+    document.addEventListener 'gesturechange', (e) ->
+        num =  e.scale * base - base
+        camera.position.z = startZoom - num
+        renderer.render scene, camera
+        e.preventDefault()
+    , false
+    
+    document.addEventListener 'gesturestart', ->
+        startZoom = camera.position.z
     , false
 
     doc.addEventListener 'touchstart', (e) ->

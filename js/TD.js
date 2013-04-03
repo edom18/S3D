@@ -4,7 +4,7 @@ var __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
 (function(win, doc, exports) {
-  var ANGLE, AmbientLight, Camera, Color, Cube, DEG_TO_RAD, DirectionalLight, Face, Light, Matrix2, Matrix4, Object3D, PI, Particle, Quaternion, Renderer, Scene, Texture, Triangle, Vector3, Vertex, cos, drawTriangle, drawTriangles, makeRotatialQuaternion, sin, sqrt, tan;
+  var ANGLE, AmbientLight, Camera, Color, Cube, DEG_TO_RAD, DirectionalLight, Face, Light, Matrix2, Matrix4, Object3D, PI, Particle, Plate, Quaternion, Renderer, Scene, Texture, Triangle, Vector3, Vertex, cos, drawTriangles, makeRotatialQuaternion, sin, sqrt, tan;
   sqrt = Math.sqrt, tan = Math.tan, cos = Math.cos, sin = Math.sin, PI = Math.PI;
   DEG_TO_RAD = PI / 180;
   ANGLE = PI * 2;
@@ -19,14 +19,14 @@ var __hasProp = {}.hasOwnProperty,
       height = img.height;
       hvw = vw * 0.5;
       hvh = vh * 0.5;
-      x1 = vertexList[0] * hvw + hvw;
-      y1 = vertexList[1] * -hvh + hvh;
+      x1 = (vertexList[0] * hvw) + hvw;
+      y1 = (vertexList[1] * -hvh) + hvh;
       z1 = vertexList[2];
-      x2 = vertexList[3] * hvw + hvw;
-      y2 = vertexList[4] * -hvh + hvh;
+      x2 = (vertexList[3] * hvw) + hvw;
+      y2 = (vertexList[4] * -hvh) + hvh;
       z2 = vertexList[5];
-      x3 = vertexList[6] * hvw + hvw;
-      y3 = vertexList[7] * -hvh + hvh;
+      x3 = (vertexList[6] * hvw) + hvw;
+      y3 = (vertexList[7] * -hvh) + hvh;
       z3 = vertexList[8];
       _Ax = x2 - x1;
       _Ay = y2 - y1;
@@ -60,53 +60,6 @@ var __hasProp = {}.hasOwnProperty,
       g.drawImage(img, 0, 0);
       g.restore();
     }
-  };
-  drawTriangle = function(g, img, vertex_list, uv_list, vw, vh) {
-    var Ax, Ay, Bx, By, a, b, c, d, height, hvh, hvw, m, me, mi, mie, width, x1, x2, x3, y1, y2, y3, z1, z2, z3, _Ax, _Ay, _Bx, _By;
-    width = img.width;
-    height = img.height;
-    hvw = vw * 0.5;
-    hvh = vh * 0.5;
-    x1 = vertex_list[0] * hvw + hvw;
-    y1 = vertex_list[1] * -hvh + hvh;
-    z1 = vertex_list[2];
-    x2 = vertex_list[3] * hvw + hvw;
-    y2 = vertex_list[4] * -hvh + hvh;
-    z2 = vertex_list[5];
-    x3 = vertex_list[6] * hvw + hvw;
-    y3 = vertex_list[7] * -hvh + hvh;
-    z3 = vertex_list[8];
-    _Ax = x2 - x1;
-    _Ay = y2 - y1;
-    _Bx = x3 - x1;
-    _By = y3 - y1;
-    if (((_Ax * (y3 - y2)) - (_Ay * (x3 - x2))) < 0) {
-      return;
-    }
-    Ax = (uv_list[2] - uv_list[0]) * width;
-    Ay = (uv_list[3] - uv_list[1]) * height;
-    Bx = (uv_list[4] - uv_list[0]) * width;
-    By = (uv_list[5] - uv_list[1]) * height;
-    m = new Matrix2(Ax, Ay, Bx, By);
-    me = m.elements;
-    mi = m.getInvert();
-    mie = mi.elements;
-    if (!mi) {
-      return;
-    }
-    a = mie[0] * _Ax + mie[2] * _Bx;
-    c = mie[1] * _Ax + mie[3] * _Bx;
-    b = mie[0] * _Ay + mie[2] * _By;
-    d = mie[1] * _Ay + mie[3] * _By;
-    g.save();
-    g.beginPath();
-    g.moveTo(x1, y1);
-    g.lineTo(x2, y2);
-    g.lineTo(x3, y3);
-    g.clip();
-    g.transform(a, b, c, d, x1 - (a * uv_list[0] * width + c * uv_list[1] * height), y1 - (b * uv_list[0] * width + d * uv_list[1] * height));
-    g.drawImage(img, 0, 0);
-    return g.restore();
   };
   Vertex = (function() {
 
@@ -186,11 +139,11 @@ var __hasProp = {}.hasOwnProperty,
 
     Vector3.prototype.normalize = function() {
       var nrm;
-      nrm = this.norm();
+      nrm = 1 / this.norm();
       if (nrm !== 0) {
-        this.x /= nrm;
-        this.y /= nrm;
-        this.z /= nrm;
+        this.x *= nrm;
+        this.y *= nrm;
+        this.z *= nrm;
       }
       return this;
     };
@@ -243,8 +196,8 @@ var __hasProp = {}.hasOwnProperty,
       y = this.y;
       z = this.z;
       this.x = e[0] * x + e[4] * y + e[8] * z + e[12];
-      this.x = e[1] * x + e[5] * y + e[9] * z + e[13];
-      this.x = e[2] * x + e[5] * y + e[10] * z + e[14];
+      this.y = e[1] * x + e[5] * y + e[9] * z + e[13];
+      this.z = e[2] * x + e[5] * y + e[10] * z + e[14];
       return this;
     };
 
@@ -261,22 +214,14 @@ var __hasProp = {}.hasOwnProperty,
         M(screen) = |0 -h  0  0|
                     |0  0  1  0|
                     |w  h  0  1|
-        以下の計算式で言うと、
-    
-        transformed_temp[0] *=  viewWidth
-        transformed_temp[1] *= -viewHeight
-        transformed_temp[0] +=  viewWidth  / 2
-        transformed_temp[1] +=  viewHeight / 2
-    
-        となる。
     
         4x4の変換行列を対象の1x4行列[x, y, z, 1]に適用する
         1x4行列と4x4行列の掛け算を行う
     
-                    |@_11 @_12 @_13 @_14|
-        |x y z 1| x |@_21 @_22 @_23 @_24|
-                    |@_31 @_32 @_33 @_34|
-                    |@_41 @_42 @_43 @_44|
+        |@_11 @_12 @_13 @_14|   |x|
+        |@_21 @_22 @_23 @_24| x |y|
+        |@_31 @_32 @_33 @_34|   |z|
+        |@_41 @_42 @_43 @_44|   |1|
     
         @_4nは1x4行列の最後が1のため、ただ足すだけになる
     
@@ -643,10 +588,22 @@ var __hasProp = {}.hasOwnProperty,
       x = v.x;
       y = v.y;
       z = v.z;
-      te[12] = te[0] * x + te[4] * y + te[8] * z + te[12];
-      te[13] = te[1] * x + te[5] * y + te[9] * z + te[13];
-      te[14] = te[2] * x + te[6] * y + te[10] * z + te[14];
-      te[15] = te[3] * x + te[7] * y + te[11] * z + te[15];
+      te[0] = 1;
+      te[4] = 0;
+      te[8] = 0;
+      te[12] = x;
+      te[1] = 0;
+      te[5] = 1;
+      te[9] = 0;
+      te[13] = y;
+      te[2] = 0;
+      te[6] = 0;
+      te[10] = 1;
+      te[14] = z;
+      te[3] = 0;
+      te[7] = 0;
+      te[11] = 0;
+      te[15] = 1;
       return this;
     };
 
@@ -791,7 +748,6 @@ var __hasProp = {}.hasOwnProperty,
       this.children = [];
       this.position = new Vector3;
       this.rotation = new Vector3;
-      this.scale = new Vector3(1, 1, 1);
       this.up = new Vector3(0, 1, 0);
       this.matrix = new Matrix4;
       this.matrixWorld = new Matrix4;
@@ -828,8 +784,8 @@ var __hasProp = {}.hasOwnProperty,
 
     Object3D.prototype.updateMatrix = function() {
       var c, tmp, _i, _len, _ref, _results;
-      tmp = this.updateRotation();
-      tmp.multiply(this.updateTranslate());
+      tmp = new Matrix4;
+      tmp.multiplyMatrices(this.updateTranslate(), this.updateRotation());
       this.matrix.copy(tmp);
       _ref = this.children;
       _results = [];
@@ -919,7 +875,7 @@ var __hasProp = {}.hasOwnProperty,
     Camera.prototype.getProjectionMatrix = function() {
       var tmp;
       tmp = Matrix4.multiply(this.projectionMatrix, this.viewMatrix);
-      return Matrix4.multiply(tmp, this.matrixWorld);
+      return tmp.multiply(this.matrixWorld);
     };
 
     Camera.prototype.updateProjectionMatrix = function() {
@@ -954,6 +910,25 @@ var __hasProp = {}.hasOwnProperty,
     }
 
     return Face;
+
+  })(Object3D);
+  Plate = (function(_super) {
+
+    __extends(Plate, _super);
+
+    function Plate(width, height, texture1, texture2) {
+      var face1, face2, hh, hw;
+      Plate.__super__.constructor.apply(this, arguments);
+      hw = width * 0.5;
+      hh = height * 0.5;
+      face1 = new Face(-hw, hh, hw, -hh, texture1, texture2);
+      face2 = new Face(-hw, hh, hw, -hh, texture1, texture2);
+      face2.rotation.y = 180;
+      this.add(face1);
+      this.add(face2);
+    }
+
+    return Plate;
 
   })(Object3D);
   Triangle = (function(_super) {
@@ -1020,17 +995,17 @@ var __hasProp = {}.hasOwnProperty,
       h *= 0.5;
       p *= 0.5;
       topFace = new Face(-w, h, w, -h, materials[0], materials[1]);
+      topFace.rotation.x = 90;
+      topFace.position.y = h;
+      topFace.position.z = -h;
       bottomFace = new Face(-w, h, w, -h, materials[2], materials[3]);
       bottomFace.rotation.x = -90;
       bottomFace.position.y = -h;
       bottomFace.position.z = -h;
       frontFace = new Face(-w, h, w, -h, materials[4], materials[5]);
-      frontFace.rotation.y = 180;
-      frontFace.position.z = -w * 2;
+      frontFace.position.z = -p * 2;
       backFace = new Face(-w, h, w, -h, materials[6], materials[7]);
-      backFace.rotation.x = 90;
-      backFace.position.y = h;
-      backFace.position.z = -h;
+      backFace.rotation.y = 180;
       leftFace = new Face(-w, h, w, -h, materials[8], materials[9]);
       leftFace.rotation.y = -90;
       leftFace.position.x = w;
@@ -1185,7 +1160,7 @@ var __hasProp = {}.hasOwnProperty,
     };
 
     Renderer.prototype.getTransformedPoint = function(mat, materials) {
-      var c, m, results, tmp, uvData, uvList, vertecies, vertex, _i, _j, _k, _len, _len1, _len2, _ref, _ref1;
+      var c, m, results, tmp, uvData, uvList, vertecies, vertex, _i, _j, _len, _len1, _ref;
       results = [];
       for (_i = 0, _len = materials.length; _i < _len; _i++) {
         m = materials[_i];
@@ -1198,17 +1173,10 @@ var __hasProp = {}.hasOwnProperty,
             continue;
           }
           results.push(vertex);
-        } else if (m instanceof Face) {
+        } else {
           _ref = m.children;
           for (_j = 0, _len1 = _ref.length; _j < _len1; _j++) {
             c = _ref[_j];
-            tmp = this.getTransformedPoint(mat, c.children);
-            results = results.concat(tmp);
-          }
-        } else if (m instanceof Cube) {
-          _ref1 = m.children;
-          for (_k = 0, _len2 = _ref1.length; _k < _len2; _k++) {
-            c = _ref1[_k];
             tmp = this.getTransformedPoint(mat, c.children);
             results = results.concat(tmp);
           }
@@ -1293,11 +1261,12 @@ var __hasProp = {}.hasOwnProperty,
   exports.Matrix4 = Matrix4;
   exports.Camera = Camera;
   exports.Renderer = Renderer;
-  exports.Scene = Scene;
   exports.Texture = Texture;
-  exports.Face = Face;
   exports.Triangle = Triangle;
+  exports.Scene = Scene;
+  exports.Plate = Plate;
   exports.Cube = Cube;
+  exports.Face = Face;
   exports.Particle = Particle;
   exports.Texture = Texture;
   exports.Vector3 = Vector3;
