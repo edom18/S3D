@@ -6,6 +6,76 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
     DEG_TO_RAD = PI / 180
     ANGLE = PI * 2
 
+    drawTriangles = (g, vertecies, vw, vh) ->
+
+        for v, i in vertecies
+
+            img = v.uvData
+            uvList = v.uvList
+            vertexList = v.vertecies
+            width  = img.width
+            height = img.height
+
+            hvw = vw * 0.5
+            hvh = vh * 0.5
+
+            x1 = vertexList[0] *  hvw + hvw
+            y1 = vertexList[1] * -hvh + hvh
+            z1 = vertexList[2]
+            x2 = vertexList[3] *  hvw + hvw
+            y2 = vertexList[4] * -hvh + hvh
+            z2 = vertexList[5]
+            x3 = vertexList[6] *  hvw + hvw
+            y3 = vertexList[7] * -hvh + hvh
+            z3 = vertexList[8]
+
+            # 変換後のベクトル成分を計算
+            _Ax = x2 - x1
+            _Ay = y2 - y1
+            _Bx = x3 - x1
+            _By = y3 - y1
+
+            # 裏面カリング
+            # 頂点を結ぶ順が反時計回りの場合は「裏面」になり、その場合は描画をスキップ
+            # 裏面かどうかの判定は外積を利用する
+            # 判定は、3点の内、1-2点目と2-3点目との外積を計算し、結果がマイナスの場合は反時計回り。（外積の結果はZ軸に対しての数値）
+            continue if(((_Ax * (y3 - y2)) - (_Ay * (x3 - x2))) < 0)
+
+            # 変換前のベクトル成分を計算
+            Ax = (uvList[2] - uvList[0]) * width
+            Ay = (uvList[3] - uvList[1]) * height
+            Bx = (uvList[4] - uvList[0]) * width
+            By = (uvList[5] - uvList[1]) * height
+
+            m = new Matrix2(Ax, Ay, Bx, By)
+            me = m.elements
+
+            # 逆行列を取得
+            mi = m.getInvert()
+            mie = mi.elements
+
+            # 逆行列が存在しない場合はスキップ
+            return if not mi
+
+            a = mie[0] * _Ax + mie[2] * _Bx
+            c = mie[1] * _Ax + mie[3] * _Bx
+            b = mie[0] * _Ay + mie[2] * _By
+            d = mie[1] * _Ay + mie[3] * _By
+
+            # 各頂点座標を元に三角形を作り、それでクリッピング
+            g.save()
+            g.beginPath()
+            g.moveTo(x1, y1)
+            g.lineTo(x2, y2)
+            g.lineTo(x3, y3)
+            g.clip()
+
+            g.transform(a, b, c, d,
+                x1 - (a * uvList[0] * width + c * uvList[1] * height),
+                y1 - (b * uvList[0] * width + d * uvList[1] * height))
+            g.drawImage(img, 0, 0)
+            g.restore()
+
     drawTriangle = (g, img, vertex_list, uv_list, vw, vh) ->
 
         width  = img.width
@@ -106,6 +176,16 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
 
     class Vertex
         constructor: (@vertecies, @uvData, @uvList) ->
+
+        getZPosition: ->
+            ret = 0
+            cnt = 0
+            for v, i in @vertecies by 3
+                cnt++
+                ret += @vertecies[i + 2]
+
+            return ret / cnt
+
 
 # -------------------------------------------------------------------------------
 
@@ -981,8 +1061,7 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
             scene.update()
             vertecies = @getTransformedPoint matProj, scene.materials
 
-            @transformAndDraw matProj, scene.materials
-
+            drawTriangles @g, vertecies, @w, @h
 
         getTransformedPoint: (mat, materials) ->
 
@@ -995,6 +1074,9 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
                     uvList    = m.texture.uv_list
 
                     vertex = new Vertex vertecies, uvData, uvList
+
+                    continue if vertex.getZPosition() < 0
+
                     results.push vertex
 
                 else if m instanceof Face
@@ -1007,45 +1089,10 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
                         tmp = @getTransformedPoint mat, c.children
                         results = results.concat tmp
 
+            results.sort (a, b) ->
+                 b.getZPosition() - a.getZPosition()
+
             return results
-
-        ###*
-            Transform and draw.
-            @param {Matrix4} mat matrix.
-            @param {Array} materials.
-        ###
-        transformAndDraw: (mat, materials) ->
-
-            g = @g
-            results = []
-
-            for m in materials
-                m.updateMatrix()
-                m.updateMatrixWorld()
-
-                if m instanceof Triangle
-                    vertex_list = m.getVerticesByProjectionMatrix(mat)
-                    uv_image    = m.texture.uv_data
-                    uv_list     = m.texture.uv_list
-
-                    drawTriangle(g, uv_image, vertex_list, uv_list, @w, @h)
-
-                else if m instanceof Face
-                    for c in m.children
-                        vertex_list = c.getVerticesByProjectionMatrix(mat)
-                        uv_image    = c.texture.uv_data
-                        uv_list     = c.texture.uv_list
-
-                        drawTriangle(g, uv_image, vertex_list, uv_list, @w, @h)
-
-                else if m instanceof Cube
-                    for c in m.children
-                        for t in c.children
-                            vertex_list = t.getVerticesByProjectionMatrix(mat)
-                            uv_image    = t.texture.uv_data
-                            uv_list     = t.texture.uv_list
-
-                            drawTriangle(g, uv_image, vertex_list, uv_list, @w, @h)
 
 # ---------------------------------------------------------------------
 
