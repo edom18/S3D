@@ -14,10 +14,6 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
         hvw = vw * 0.5
         hvh = vh * 0.5
 
-        #x1 = vertex_list[0]; x2 = vertex_list[3]; x3 = vertex_list[6];
-        #y1 = vertex_list[1]; y2 = vertex_list[4]; y3 = vertex_list[7];
-        #z1 = vertex_list[2]; z2 = vertex_list[5]; z3 = vertex_list[8];
-
         x1 = vertex_list[0] *  hvw + hvw
         y1 = vertex_list[1] * -hvh + hvh
         z1 = vertex_list[2]
@@ -105,6 +101,11 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
             y1 - (b * uv_list[0] * width + d * uv_list[1] * height))
         g.drawImage(img, 0, 0)
         g.restore()
+
+# -------------------------------------------------------------------------------
+
+    class Vertex
+        constructor: (@vertecies, @uvData, @uvList) ->
 
 # -------------------------------------------------------------------------------
 
@@ -835,6 +836,17 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
 
 # -------------------------------------------------------------------------------
 
+    ###*
+        Cube class
+        @constructor
+        @param {number} w width.
+        @param {number} h height.
+        @param {number} p profound.
+        @param {number} sx divide as x axis.
+        @param {number} sy divide as y axis.
+        @param {number} sz divide as z axis.
+        @param {<Array.<Texture>} materials texture materials.
+    ###
     class Cube extends Object3D
         constructor: (w, h, p, sx = 1, sy = 1, sz = 1, materials) ->
             super
@@ -843,38 +855,44 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
             h *= 0.5
             p *= 0.5
 
-            face1 = new Face -w, h, w, -h, materials[0], materials[1]
+            #TOP
+            topFace = new Face -w, h, w, -h, materials[0], materials[1]
 
-            face2 = new Face -w, h, w, -h, materials[2], materials[3]
-            face2.rotation.y = 90
-            face2.position.x = -w
-            face2.position.z = -w
+            #BOTTOM
+            bottomFace = new Face -w, h, w, -h, materials[2], materials[3]
+            bottomFace.rotation.x = -90
+            bottomFace.position.y = -h
+            bottomFace.position.z = -h
 
-            face3 = new Face -w, h, w, -h, materials[2], materials[3]
-            face3.rotation.y = -90
-            face3.position.x = w
-            face3.position.z = -w
+            #FRONT
+            frontFace = new Face -w, h, w, -h, materials[4], materials[5]
+            frontFace.rotation.y = 180
+            frontFace.position.z = -w * 2
 
-            face4 = new Face -w, h, w, -h, materials[2], materials[3]
-            face4.rotation.y = 180
-            face4.position.z = -w * 2
+            #BACK
+            backFace = new Face -w, h, w, -h, materials[6], materials[7]
+            backFace.rotation.x = 90
+            backFace.position.y = h
+            backFace.position.z = -h
 
-            face5 = new Face -w, h, w, -h, materials[2], materials[3]
-            face5.rotation.x = 90
-            face5.position.y = h
-            face5.position.z = -h
+            #LEFT
+            leftFace = new Face -w, h, w, -h, materials[8], materials[9]
+            leftFace.rotation.y = -90
+            leftFace.position.x = w
+            leftFace.position.z = -w
 
-            face6 = new Face -w, h, w, -h, materials[2], materials[3]
-            face6.rotation.x = -90
-            face6.position.y = -h
-            face6.position.z = -h
+            #RIGHT
+            rightFace = new Face -w, h, w, -h, materials[10], materials[11]
+            rightFace.rotation.y = 90
+            rightFace.position.x = -w
+            rightFace.position.z = -w
 
-            @add face6
-            @add face5
-            @add face4
-            @add face3
-            @add face2
-            @add face1
+            @add rightFace
+            @add leftFace
+            @add backFace
+            @add frontFace
+            @add bottomFace
+            @add topFace
 
 # -------------------------------------------------------------------------------
 
@@ -938,8 +956,11 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
         sort: (func) ->
             @materials.sort(func) if func
 
-        each: (func) ->
-            @materials.forEach(func) if func
+        update: ->
+
+            for m in @materials
+                m.updateMatrix()
+                m.updateMatrixWorld()
 
 # -------------------------------------------------------------------------------
 
@@ -957,7 +978,36 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
             @g.fillStyle = @clearColor
             @g.fillRect 0, 0, @w, @h
 
+            scene.update()
+            vertecies = @getTransformedPoint matProj, scene.materials
+
             @transformAndDraw matProj, scene.materials
+
+
+        getTransformedPoint: (mat, materials) ->
+
+            results = []
+
+            for m in materials
+                if m instanceof Triangle
+                    vertecies = m.getVerticesByProjectionMatrix(mat)
+                    uvData    = m.texture.uv_data
+                    uvList    = m.texture.uv_list
+
+                    vertex = new Vertex vertecies, uvData, uvList
+                    results.push vertex
+
+                else if m instanceof Face
+                    for c in m.children
+                        tmp = @getTransformedPoint mat, c.children
+                        results = results.concat tmp
+
+                else if m instanceof Cube
+                    for c in m.children
+                        tmp = @getTransformedPoint mat, c.children
+                        results = results.concat tmp
+
+            return results
 
         ###*
             Transform and draw.
@@ -996,38 +1046,6 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
                             uv_list     = t.texture.uv_list
 
                             drawTriangle(g, uv_image, vertex_list, uv_list, @w, @h)
-
-                else if m instanceof Particle
-                    vertex_list = [m.v.x, m.v.y, m.v.z]
-
-                    x = out_list[0]
-                    y = out_list[1]
-                    w = out_list[2]
-                    weight = m.size / w
-
-                    continue if weight < 0
-
-                    results.push
-                        material: m
-                        x: x
-                        y: y
-                        w: w
-                        r: m.r
-                        g: m.g
-                        b: m.b
-                        weight: weight
-
-            results.sort (a, b) ->
-                b.w - a.w
-
-            for r in results
-                g.save()
-                g.fillStyle = "rgba(#{r.r}, #{r.g}, #{r.b}, #{r.weight})"
-                g.beginPath()
-                g.arc(r.x, r.y, r.weight, 0, ANGLE, true)
-                g.closePath()
-                g.fill()
-                g.restore()
 
 # ---------------------------------------------------------------------
 
