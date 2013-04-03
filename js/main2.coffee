@@ -280,7 +280,10 @@ do (win = window, doc = window.document, exports = window) ->
 
             face = new Face -10, 10, 10, -10,  textureImage, roof_1_uv, roof_2_uv
             face.position.y = 10
-            face.position.z = -10
+            face.position.z = 10
+            face.rotation.x = 30
+            face.rotation.y = 30
+            face.rotation.z = 30
             scene.add face
 
             renderer.render scene, camera

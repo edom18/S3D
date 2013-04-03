@@ -741,8 +741,8 @@ var __hasProp = {}.hasOwnProperty,
         z = this.rotation.z * DEG_TO_RAD;
         tmp = new Matrix4;
         rmx.rotationX(x);
-        rmy.rotationX(y);
-        rmz.rotationX(z);
+        rmy.rotationY(y);
+        rmz.rotationZ(z);
         tmp.multiplyMatrices(rmx, rmy);
         tmp.multiply(rmz);
         return tmp;

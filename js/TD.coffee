@@ -707,8 +707,8 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
 
                 tmp = new Matrix4
                 rmx.rotationX x
-                rmy.rotationX y
-                rmz.rotationX z
+                rmy.rotationY y
+                rmz.rotationZ z
 
                 tmp.multiplyMatrices rmx, rmy
                 tmp.multiply rmz
