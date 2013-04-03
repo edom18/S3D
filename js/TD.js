@@ -867,13 +867,11 @@ var __hasProp = {}.hasOwnProperty,
 
     __extends(Face, _super);
 
-    function Face(x1, y1, x2, y2, img, uvData1, uvData2) {
-      var texture1, texture2, triangle1, triangle2;
+    function Face(x1, y1, x2, y2, texture1, texture2) {
+      var triangle1, triangle2;
       Face.__super__.constructor.apply(this, arguments);
-      texture1 = new Texture(img, uvData1);
       triangle1 = new Triangle([x1, y1, 0, x2, y1, 0, x1, y2, 0], texture1);
       this.add(triangle1);
-      texture2 = new Texture(img, uvData2);
       triangle2 = new Triangle([x1, y2, 0, x2, y1, 0, x2, y2, 0], texture2);
       this.add(triangle2);
     }
@@ -918,15 +916,46 @@ var __hasProp = {}.hasOwnProperty,
     __extends(Cube, _super);
 
     function Cube(w, h, p, sx, sy, sz, materials) {
-      var i, triangle, _i;
+      var face1, face2, face3, face4, face5, face6;
+      if (sx == null) {
+        sx = 1;
+      }
+      if (sy == null) {
+        sy = 1;
+      }
+      if (sz == null) {
+        sz = 1;
+      }
       Cube.__super__.constructor.apply(this, arguments);
       w *= 0.5;
       h *= 0.5;
       p *= 0.5;
-      for (i = _i = 0; _i < 12; i = ++_i) {
-        triangle = new Triangle([-w, h, p, w, h, p, -w, -h, p], new Texture(materials[0].uv_data, [0, 0, 0.5, 0, 0, 0.5]));
-        this.add(triangle);
-      }
+      face1 = new Face(-w, h, w, -h, materials[0], materials[1]);
+      face2 = new Face(-w, h, w, -h, materials[2], materials[3]);
+      face2.rotation.y = 90;
+      face2.position.x = -w;
+      face2.position.z = -w;
+      face3 = new Face(-w, h, w, -h, materials[2], materials[3]);
+      face3.rotation.y = -90;
+      face3.position.x = w;
+      face3.position.z = -w;
+      face4 = new Face(-w, h, w, -h, materials[2], materials[3]);
+      face4.rotation.y = 180;
+      face4.position.z = -w * 2;
+      face5 = new Face(-w, h, w, -h, materials[2], materials[3]);
+      face5.rotation.x = 90;
+      face5.position.y = h;
+      face5.position.z = -h;
+      face6 = new Face(-w, h, w, -h, materials[2], materials[3]);
+      face6.rotation.x = -90;
+      face6.position.y = -h;
+      face6.position.z = -h;
+      this.add(face6);
+      this.add(face5);
+      this.add(face4);
+      this.add(face3);
+      this.add(face2);
+      this.add(face1);
     }
 
     return Cube;
@@ -1066,13 +1095,11 @@ var __hasProp = {}.hasOwnProperty,
 
 
     Renderer.prototype.transformAndDraw = function(mat, materials) {
-      var c, g, m, out_list, r, results, uv_image, uv_list, vertex_list, w, weight, x, y, _i, _j, _k, _l, _len, _len1, _len2, _len3, _ref, _ref1, _results;
+      var c, g, m, r, results, t, uv_image, uv_list, vertex_list, w, weight, x, y, _i, _j, _k, _l, _len, _len1, _len2, _len3, _len4, _m, _ref, _ref1, _ref2, _results;
       g = this.g;
       results = [];
-      out_list = [];
       for (_i = 0, _len = materials.length; _i < _len; _i++) {
         m = materials[_i];
-        out_list = [];
         m.updateMatrix();
         m.updateMatrixWorld();
         if (m instanceof Triangle) {
@@ -1093,11 +1120,14 @@ var __hasProp = {}.hasOwnProperty,
           _ref1 = m.children;
           for (_k = 0, _len2 = _ref1.length; _k < _len2; _k++) {
             c = _ref1[_k];
-            out_list = [];
-            vertex_list = c.vertex;
-            uv_image = c.texture.uv_data;
-            uv_list = c.texture.uv_list;
-            drawTriangle(g, uv_image, out_list, uv_list);
+            _ref2 = c.children;
+            for (_l = 0, _len3 = _ref2.length; _l < _len3; _l++) {
+              t = _ref2[_l];
+              vertex_list = t.getVerticesByProjectionMatrix(mat);
+              uv_image = t.texture.uv_data;
+              uv_list = t.texture.uv_list;
+              drawTriangle(g, uv_image, vertex_list, uv_list, this.w, this.h);
+            }
           }
         } else if (m instanceof Particle) {
           vertex_list = [m.v.x, m.v.y, m.v.z];
@@ -1124,8 +1154,8 @@ var __hasProp = {}.hasOwnProperty,
         return b.w - a.w;
       });
       _results = [];
-      for (_l = 0, _len3 = results.length; _l < _len3; _l++) {
-        r = results[_l];
+      for (_m = 0, _len4 = results.length; _m < _len4; _m++) {
+        r = results[_m];
         g.save();
         g.fillStyle = "rgba(" + r.r + ", " + r.g + ", " + r.b + ", " + r.weight + ")";
         g.beginPath();

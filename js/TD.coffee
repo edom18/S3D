@@ -793,10 +793,9 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
 # -------------------------------------------------------------------------------
 
     class Face extends Object3D
-        constructor: (x1, y1, x2, y2, img, uvData1, uvData2) ->
+        constructor: (x1, y1, x2, y2, texture1, texture2) ->
             super
 
-            texture1 = new Texture(img, uvData1)
             triangle1 = new Triangle([
                 x1, y1, 0
                 x2, y1, 0
@@ -805,7 +804,6 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
 
             @add triangle1
 
-            texture2 = new Texture(img, uvData2)
             triangle2 = new Triangle([
                 x1, y2, 0
                 x2, y1, 0
@@ -829,9 +827,7 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
             ret = []
             for v in @vertices
                 wm = Matrix4.multiply m, @matrixWorld
-                #tmp = v.clone().applyProjection(m)
                 tmp = v.clone().applyProjection(wm)
-                #@localToWorld tmp
                 ret = ret.concat(tmp.toArray())
 
             return ret
@@ -840,28 +836,45 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
 # -------------------------------------------------------------------------------
 
     class Cube extends Object3D
-        constructor: (w, h, p, sx, sy, sz, materials) ->
+        constructor: (w, h, p, sx = 1, sy = 1, sz = 1, materials) ->
             super
 
             w *= 0.5
             h *= 0.5
             p *= 0.5
 
-            for i in [0...12]
-                triangle = new Triangle([
-                    -w,  h, p
-                     w,  h, p
-                    -w, -h, p
-                ], new Texture(materials[0].uv_data, [
-                    0  , 0  ,
-                    0.5, 0  ,
-                    0  , 0.5
-                ]))
+            face1 = new Face -w, h, w, -h, materials[0], materials[1]
 
-                @add triangle
+            face2 = new Face -w, h, w, -h, materials[2], materials[3]
+            face2.rotation.y = 90
+            face2.position.x = -w
+            face2.position.z = -w
 
-                #texture = new Texture(groundImage, ground_1_uv)
-                #triangle = new Triangle(ground_1, texture)
+            face3 = new Face -w, h, w, -h, materials[2], materials[3]
+            face3.rotation.y = -90
+            face3.position.x = w
+            face3.position.z = -w
+
+            face4 = new Face -w, h, w, -h, materials[2], materials[3]
+            face4.rotation.y = 180
+            face4.position.z = -w * 2
+
+            face5 = new Face -w, h, w, -h, materials[2], materials[3]
+            face5.rotation.x = 90
+            face5.position.y = h
+            face5.position.z = -h
+
+            face6 = new Face -w, h, w, -h, materials[2], materials[3]
+            face6.rotation.x = -90
+            face6.position.y = -h
+            face6.position.z = -h
+
+            @add face6
+            @add face5
+            @add face4
+            @add face3
+            @add face2
+            @add face1
 
 # -------------------------------------------------------------------------------
 
@@ -955,10 +968,8 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
 
             g = @g
             results = []
-            out_list = []
 
             for m in materials
-                out_list = []
                 m.updateMatrix()
                 m.updateMatrixWorld()
 
@@ -967,7 +978,6 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
                     uv_image    = m.texture.uv_data
                     uv_list     = m.texture.uv_list
 
-                    #drawTriangle(g, uv_image, out_list, uv_list, @w, @h)
                     drawTriangle(g, uv_image, vertex_list, uv_list, @w, @h)
 
                 else if m instanceof Face
@@ -976,17 +986,16 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
                         uv_image    = c.texture.uv_data
                         uv_list     = c.texture.uv_list
 
-                        #drawTriangle(g, uv_image, out_list, uv_list)
                         drawTriangle(g, uv_image, vertex_list, uv_list, @w, @h)
 
                 else if m instanceof Cube
                     for c in m.children
-                        out_list = []
-                        vertex_list = c.vertex
-                        uv_image    = c.texture.uv_data
-                        uv_list     = c.texture.uv_list
+                        for t in c.children
+                            vertex_list = t.getVerticesByProjectionMatrix(mat)
+                            uv_image    = t.texture.uv_data
+                            uv_list     = t.texture.uv_list
 
-                        drawTriangle(g, uv_image, out_list, uv_list)
+                            drawTriangle(g, uv_image, vertex_list, uv_list, @w, @h)
 
                 else if m instanceof Particle
                     vertex_list = [m.v.x, m.v.y, m.v.z]

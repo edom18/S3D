@@ -214,77 +214,90 @@ do (win = window, doc = window.document, exports = window) ->
         camera = new Camera 60, aspect, 5, 2000
         camera.position.x = 10
         camera.position.y = 10
-        camera.position.z = 30
+        camera.position.z = 80
         #camera.up = new Vector3 1, 0, 0
         camera.lookAt new Vector3 0, 0, 0
         scene = new Scene
         renderer = new Renderer cv
 
         create = ->
+
+            #texture = new Texture(groundImage, ground_1_uv)
+            #triangle = new Triangle(ground_1, texture)
+            #scene.add triangle
+            #
+            #texture = new Texture(groundImage, ground_2_uv)
+            #triangle = new Triangle(ground_2, texture)
+            #scene.add triangle
+            #
+            #texture = new Texture(textureImage, roof_1_uv)
+            #triangle = new Triangle(roof_1, texture)
+            #scene.add triangle
+            #
+            #texture = new Texture(textureImage, roof_2_uv)
+            #triangle = new Triangle(roof_2, texture)
+            #scene.add triangle
+            #
+            #texture = new Texture(textureImage, wall_1_uv)
+            #triangle = new Triangle(wall_1, texture)
+            #scene.add triangle
+            #
+            #texture = new Texture(textureImage, wall_2_uv)
+            #triangle = new Triangle(wall_2, texture)
+            #scene.add triangle
+            #
+            #texture = new Texture(textureImage, wall_3_uv)
+            #triangle = new Triangle(wall_3, texture)
+            #scene.add triangle
+            #
+            #texture = new Texture(textureImage, wall_4_uv)
+            #triangle = new Triangle(wall_4, texture)
+            #scene.add triangle
+            #
+            #texture = new Texture(textureImage, wall_5_uv)
+            #triangle = new Triangle(wall_5, texture)
+            #scene.add triangle
+            #
+            #texture = new Texture(textureImage, wall_6_uv)
+            #triangle = new Triangle(wall_6, texture)
+            #scene.add triangle
+            #
+            #texture = new Texture(textureImage, wall_7_uv)
+            #triangle = new Triangle(wall_7, texture)
+            #scene.add triangle
+            #
+            #texture = new Texture(textureImage, wall_8_uv)
+            #triangle = new Triangle(wall_8, texture)
+            #scene.add triangle
+            #
+            #t1 = new Texture(textureImage, roof_1_uv)
+            #t2 = new Texture(textureImage, roof_2_uv)
+            #
+            #face = new Face -10, 10, 10, -10,  t1, t2
+            #face.position.y = 10
+            #face.position.z = 10
+            #face.rotation.x = 30
+            #face.rotation.y = 30
+            #face.rotation.z = 30
+            #scene.add face
+
             materials = [
-                new Texture(textureImage) #left
-                new Texture(textureImage) #right
-                new Texture(textureImage) #top
-                new Texture(textureImage) #bottom
+                new Texture textureImage, roof_1_uv #top1
+                new Texture textureImage, roof_2_uv #top2
+                new Texture textureImage, wall_1_uv #bottom1
+                new Texture textureImage, wall_2_uv #bottom2
+                new Texture textureImage, wall_3_uv #wall1
+                new Texture textureImage, wall_4_uv #wall2
+                new Texture textureImage, wall_5_uv #wall3
+                new Texture textureImage, wall_6_uv #wall4
+                new Texture textureImage, wall_7_uv #wall5
+                new Texture textureImage, wall_8_uv #wall6
             ]
 
-            #cube = new Cube 20, 20, 20, 2, 2, 2, materials
-
-            texture = new Texture(groundImage, ground_1_uv)
-            triangle = new Triangle(ground_1, texture)
-            scene.add triangle
-
-            texture = new Texture(groundImage, ground_2_uv)
-            triangle = new Triangle(ground_2, texture)
-            scene.add triangle
-
-            texture = new Texture(textureImage, roof_1_uv)
-            triangle = new Triangle(roof_1, texture)
-            scene.add triangle
-
-            texture = new Texture(textureImage, roof_2_uv)
-            triangle = new Triangle(roof_2, texture)
-            scene.add triangle
-
-            texture = new Texture(textureImage, wall_1_uv)
-            triangle = new Triangle(wall_1, texture)
-            scene.add triangle
-
-            texture = new Texture(textureImage, wall_2_uv)
-            triangle = new Triangle(wall_2, texture)
-            scene.add triangle
-
-            texture = new Texture(textureImage, wall_3_uv)
-            triangle = new Triangle(wall_3, texture)
-            scene.add triangle
-
-            texture = new Texture(textureImage, wall_4_uv)
-            triangle = new Triangle(wall_4, texture)
-            scene.add triangle
-
-            texture = new Texture(textureImage, wall_5_uv)
-            triangle = new Triangle(wall_5, texture)
-            scene.add triangle
-
-            texture = new Texture(textureImage, wall_6_uv)
-            triangle = new Triangle(wall_6, texture)
-            scene.add triangle
-
-            texture = new Texture(textureImage, wall_7_uv)
-            triangle = new Triangle(wall_7, texture)
-            scene.add triangle
-
-            texture = new Texture(textureImage, wall_8_uv)
-            triangle = new Triangle(wall_8, texture)
-            scene.add triangle
-
-            face = new Face -10, 10, 10, -10,  textureImage, roof_1_uv, roof_2_uv
-            face.position.y = 10
-            face.position.z = 10
-            face.rotation.x = 30
-            face.rotation.y = 30
-            face.rotation.z = 30
-            scene.add face
+            cube = new Cube 20, 20, 20, 1, 1, 1, materials
+            cube.position.z = -50
+            cube.rotation.z = 30
+            scene.add cube
 
             renderer.render scene, camera
 
