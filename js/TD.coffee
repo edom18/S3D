@@ -6,6 +6,76 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
     DEG_TO_RAD = PI / 180
     ANGLE = PI * 2
 
+    drawTriangles = (g, vertecies, vw, vh) ->
+
+        for v, i in vertecies
+
+            img = v.uvData
+            uvList = v.uvList
+            vertexList = v.vertecies
+            width  = img.width
+            height = img.height
+
+            hvw = vw * 0.5
+            hvh = vh * 0.5
+
+            x1 = vertexList[0] *  hvw + hvw
+            y1 = vertexList[1] * -hvh + hvh
+            z1 = vertexList[2]
+            x2 = vertexList[3] *  hvw + hvw
+            y2 = vertexList[4] * -hvh + hvh
+            z2 = vertexList[5]
+            x3 = vertexList[6] *  hvw + hvw
+            y3 = vertexList[7] * -hvh + hvh
+            z3 = vertexList[8]
+
+            # 変換後のベクトル成分を計算
+            _Ax = x2 - x1
+            _Ay = y2 - y1
+            _Bx = x3 - x1
+            _By = y3 - y1
+
+            # 裏面カリング
+            # 頂点を結ぶ順が反時計回りの場合は「裏面」になり、その場合は描画をスキップ
+            # 裏面かどうかの判定は外積を利用する
+            # 判定は、3点の内、1-2点目と2-3点目との外積を計算し、結果がマイナスの場合は反時計回り。（外積の結果はZ軸に対しての数値）
+            continue if(((_Ax * (y3 - y2)) - (_Ay * (x3 - x2))) < 0)
+
+            # 変換前のベクトル成分を計算
+            Ax = (uvList[2] - uvList[0]) * width
+            Ay = (uvList[3] - uvList[1]) * height
+            Bx = (uvList[4] - uvList[0]) * width
+            By = (uvList[5] - uvList[1]) * height
+
+            m = new Matrix2(Ax, Ay, Bx, By)
+            me = m.elements
+
+            # 逆行列を取得
+            mi = m.getInvert()
+            mie = mi.elements
+
+            # 逆行列が存在しない場合はスキップ
+            return if not mi
+
+            a = mie[0] * _Ax + mie[2] * _Bx
+            c = mie[1] * _Ax + mie[3] * _Bx
+            b = mie[0] * _Ay + mie[2] * _By
+            d = mie[1] * _Ay + mie[3] * _By
+
+            # 各頂点座標を元に三角形を作り、それでクリッピング
+            g.save()
+            g.beginPath()
+            g.moveTo(x1, y1)
+            g.lineTo(x2, y2)
+            g.lineTo(x3, y3)
+            g.clip()
+
+            g.transform(a, b, c, d,
+                x1 - (a * uvList[0] * width + c * uvList[1] * height),
+                y1 - (b * uvList[0] * width + d * uvList[1] * height))
+            g.drawImage(img, 0, 0)
+            g.restore()
+
     drawTriangle = (g, img, vertex_list, uv_list, vw, vh) ->
 
         width  = img.width
@@ -13,10 +83,6 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
 
         hvw = vw * 0.5
         hvh = vh * 0.5
-
-        #x1 = vertex_list[0]; x2 = vertex_list[3]; x3 = vertex_list[6];
-        #y1 = vertex_list[1]; y2 = vertex_list[4]; y3 = vertex_list[7];
-        #z1 = vertex_list[2]; z2 = vertex_list[5]; z3 = vertex_list[8];
 
         x1 = vertex_list[0] *  hvw + hvw
         y1 = vertex_list[1] * -hvh + hvh
@@ -105,6 +171,21 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
             y1 - (b * uv_list[0] * width + d * uv_list[1] * height))
         g.drawImage(img, 0, 0)
         g.restore()
+
+# -------------------------------------------------------------------------------
+
+    class Vertex
+        constructor: (@vertecies, @uvData, @uvList) ->
+
+        getZPosition: ->
+            ret = 0
+            cnt = 0
+            for v, i in @vertecies by 3
+                cnt++
+                ret += @vertecies[i + 2]
+
+            return ret / cnt
+
 
 # -------------------------------------------------------------------------------
 
@@ -835,6 +916,17 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
 
 # -------------------------------------------------------------------------------
 
+    ###*
+        Cube class
+        @constructor
+        @param {number} w width.
+        @param {number} h height.
+        @param {number} p profound.
+        @param {number} sx divide as x axis.
+        @param {number} sy divide as y axis.
+        @param {number} sz divide as z axis.
+        @param {<Array.<Texture>} materials texture materials.
+    ###
     class Cube extends Object3D
         constructor: (w, h, p, sx = 1, sy = 1, sz = 1, materials) ->
             super
@@ -843,38 +935,44 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
             h *= 0.5
             p *= 0.5
 
-            face1 = new Face -w, h, w, -h, materials[0], materials[1]
+            #TOP
+            topFace = new Face -w, h, w, -h, materials[0], materials[1]
 
-            face2 = new Face -w, h, w, -h, materials[2], materials[3]
-            face2.rotation.y = 90
-            face2.position.x = -w
-            face2.position.z = -w
+            #BOTTOM
+            bottomFace = new Face -w, h, w, -h, materials[2], materials[3]
+            bottomFace.rotation.x = -90
+            bottomFace.position.y = -h
+            bottomFace.position.z = -h
 
-            face3 = new Face -w, h, w, -h, materials[2], materials[3]
-            face3.rotation.y = -90
-            face3.position.x = w
-            face3.position.z = -w
+            #FRONT
+            frontFace = new Face -w, h, w, -h, materials[4], materials[5]
+            frontFace.rotation.y = 180
+            frontFace.position.z = -w * 2
 
-            face4 = new Face -w, h, w, -h, materials[2], materials[3]
-            face4.rotation.y = 180
-            face4.position.z = -w * 2
+            #BACK
+            backFace = new Face -w, h, w, -h, materials[6], materials[7]
+            backFace.rotation.x = 90
+            backFace.position.y = h
+            backFace.position.z = -h
 
-            face5 = new Face -w, h, w, -h, materials[2], materials[3]
-            face5.rotation.x = 90
-            face5.position.y = h
-            face5.position.z = -h
+            #LEFT
+            leftFace = new Face -w, h, w, -h, materials[8], materials[9]
+            leftFace.rotation.y = -90
+            leftFace.position.x = w
+            leftFace.position.z = -w
 
-            face6 = new Face -w, h, w, -h, materials[2], materials[3]
-            face6.rotation.x = -90
-            face6.position.y = -h
-            face6.position.z = -h
+            #RIGHT
+            rightFace = new Face -w, h, w, -h, materials[10], materials[11]
+            rightFace.rotation.y = 90
+            rightFace.position.x = -w
+            rightFace.position.z = -w
 
-            @add face6
-            @add face5
-            @add face4
-            @add face3
-            @add face2
-            @add face1
+            @add rightFace
+            @add leftFace
+            @add backFace
+            @add frontFace
+            @add bottomFace
+            @add topFace
 
 # -------------------------------------------------------------------------------
 
@@ -938,8 +1036,11 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
         sort: (func) ->
             @materials.sort(func) if func
 
-        each: (func) ->
-            @materials.forEach(func) if func
+        update: ->
+
+            for m in @materials
+                m.updateMatrix()
+                m.updateMatrixWorld()
 
 # -------------------------------------------------------------------------------
 
@@ -957,77 +1058,41 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
             @g.fillStyle = @clearColor
             @g.fillRect 0, 0, @w, @h
 
-            @transformAndDraw matProj, scene.materials
+            scene.update()
+            vertecies = @getTransformedPoint matProj, scene.materials
 
-        ###*
-            Transform and draw.
-            @param {Matrix4} mat matrix.
-            @param {Array} materials.
-        ###
-        transformAndDraw: (mat, materials) ->
+            drawTriangles @g, vertecies, @w, @h
 
-            g = @g
+        getTransformedPoint: (mat, materials) ->
+
             results = []
 
             for m in materials
-                m.updateMatrix()
-                m.updateMatrixWorld()
-
                 if m instanceof Triangle
-                    vertex_list = m.getVerticesByProjectionMatrix(mat)
-                    uv_image    = m.texture.uv_data
-                    uv_list     = m.texture.uv_list
+                    vertecies = m.getVerticesByProjectionMatrix(mat)
+                    uvData    = m.texture.uv_data
+                    uvList    = m.texture.uv_list
 
-                    drawTriangle(g, uv_image, vertex_list, uv_list, @w, @h)
+                    vertex = new Vertex vertecies, uvData, uvList
+
+                    continue if vertex.getZPosition() < 0
+
+                    results.push vertex
 
                 else if m instanceof Face
                     for c in m.children
-                        vertex_list = c.getVerticesByProjectionMatrix(mat)
-                        uv_image    = c.texture.uv_data
-                        uv_list     = c.texture.uv_list
-
-                        drawTriangle(g, uv_image, vertex_list, uv_list, @w, @h)
+                        tmp = @getTransformedPoint mat, c.children
+                        results = results.concat tmp
 
                 else if m instanceof Cube
                     for c in m.children
-                        for t in c.children
-                            vertex_list = t.getVerticesByProjectionMatrix(mat)
-                            uv_image    = t.texture.uv_data
-                            uv_list     = t.texture.uv_list
-
-                            drawTriangle(g, uv_image, vertex_list, uv_list, @w, @h)
-
-                else if m instanceof Particle
-                    vertex_list = [m.v.x, m.v.y, m.v.z]
-
-                    x = out_list[0]
-                    y = out_list[1]
-                    w = out_list[2]
-                    weight = m.size / w
-
-                    continue if weight < 0
-
-                    results.push
-                        material: m
-                        x: x
-                        y: y
-                        w: w
-                        r: m.r
-                        g: m.g
-                        b: m.b
-                        weight: weight
+                        tmp = @getTransformedPoint mat, c.children
+                        results = results.concat tmp
 
             results.sort (a, b) ->
-                b.w - a.w
+                 b.getZPosition() - a.getZPosition()
 
-            for r in results
-                g.save()
-                g.fillStyle = "rgba(#{r.r}, #{r.g}, #{r.b}, #{r.weight})"
-                g.beginPath()
-                g.arc(r.x, r.y, r.weight, 0, ANGLE, true)
-                g.closePath()
-                g.fill()
-                g.restore()
+            return results
 
 # ---------------------------------------------------------------------
 

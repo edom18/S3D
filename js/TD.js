@@ -4,10 +4,63 @@ var __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
 (function(win, doc, exports) {
-  var ANGLE, AmbientLight, Camera, Color, Cube, DEG_TO_RAD, DirectionalLight, Face, Light, Matrix2, Matrix4, Object3D, PI, Particle, Quaternion, Renderer, Scene, Texture, Triangle, Vector3, cos, drawTriangle, makeRotatialQuaternion, sin, sqrt, tan;
+  var ANGLE, AmbientLight, Camera, Color, Cube, DEG_TO_RAD, DirectionalLight, Face, Light, Matrix2, Matrix4, Object3D, PI, Particle, Quaternion, Renderer, Scene, Texture, Triangle, Vector3, Vertex, cos, drawTriangle, drawTriangles, makeRotatialQuaternion, sin, sqrt, tan;
   sqrt = Math.sqrt, tan = Math.tan, cos = Math.cos, sin = Math.sin, PI = Math.PI;
   DEG_TO_RAD = PI / 180;
   ANGLE = PI * 2;
+  drawTriangles = function(g, vertecies, vw, vh) {
+    var Ax, Ay, Bx, By, a, b, c, d, height, hvh, hvw, i, img, m, me, mi, mie, uvList, v, vertexList, width, x1, x2, x3, y1, y2, y3, z1, z2, z3, _Ax, _Ay, _Bx, _By, _i, _len;
+    for (i = _i = 0, _len = vertecies.length; _i < _len; i = ++_i) {
+      v = vertecies[i];
+      img = v.uvData;
+      uvList = v.uvList;
+      vertexList = v.vertecies;
+      width = img.width;
+      height = img.height;
+      hvw = vw * 0.5;
+      hvh = vh * 0.5;
+      x1 = vertexList[0] * hvw + hvw;
+      y1 = vertexList[1] * -hvh + hvh;
+      z1 = vertexList[2];
+      x2 = vertexList[3] * hvw + hvw;
+      y2 = vertexList[4] * -hvh + hvh;
+      z2 = vertexList[5];
+      x3 = vertexList[6] * hvw + hvw;
+      y3 = vertexList[7] * -hvh + hvh;
+      z3 = vertexList[8];
+      _Ax = x2 - x1;
+      _Ay = y2 - y1;
+      _Bx = x3 - x1;
+      _By = y3 - y1;
+      if (((_Ax * (y3 - y2)) - (_Ay * (x3 - x2))) < 0) {
+        continue;
+      }
+      Ax = (uvList[2] - uvList[0]) * width;
+      Ay = (uvList[3] - uvList[1]) * height;
+      Bx = (uvList[4] - uvList[0]) * width;
+      By = (uvList[5] - uvList[1]) * height;
+      m = new Matrix2(Ax, Ay, Bx, By);
+      me = m.elements;
+      mi = m.getInvert();
+      mie = mi.elements;
+      if (!mi) {
+        return;
+      }
+      a = mie[0] * _Ax + mie[2] * _Bx;
+      c = mie[1] * _Ax + mie[3] * _Bx;
+      b = mie[0] * _Ay + mie[2] * _By;
+      d = mie[1] * _Ay + mie[3] * _By;
+      g.save();
+      g.beginPath();
+      g.moveTo(x1, y1);
+      g.lineTo(x2, y2);
+      g.lineTo(x3, y3);
+      g.clip();
+      g.transform(a, b, c, d, x1 - (a * uvList[0] * width + c * uvList[1] * height), y1 - (b * uvList[0] * width + d * uvList[1] * height));
+      g.drawImage(img, 0, 0);
+      g.restore();
+    }
+  };
   drawTriangle = function(g, img, vertex_list, uv_list, vw, vh) {
     var Ax, Ay, Bx, By, a, b, c, d, height, hvh, hvw, m, me, mi, mie, width, x1, x2, x3, y1, y2, y3, z1, z2, z3, _Ax, _Ay, _Bx, _By;
     width = img.width;
@@ -55,6 +108,30 @@ var __hasProp = {}.hasOwnProperty,
     g.drawImage(img, 0, 0);
     return g.restore();
   };
+  Vertex = (function() {
+
+    function Vertex(vertecies, uvData, uvList) {
+      this.vertecies = vertecies;
+      this.uvData = uvData;
+      this.uvList = uvList;
+    }
+
+    Vertex.prototype.getZPosition = function() {
+      var cnt, i, ret, v, _i, _len, _ref;
+      ret = 0;
+      cnt = 0;
+      _ref = this.vertecies;
+      for (i = _i = 0, _len = _ref.length; _i < _len; i = _i += 3) {
+        v = _ref[i];
+        cnt++;
+        ret += this.vertecies[i + 2];
+      }
+      return ret / cnt;
+    };
+
+    return Vertex;
+
+  })();
   /**
       Vector3 class
       @constructor
@@ -911,12 +988,24 @@ var __hasProp = {}.hasOwnProperty,
     return Triangle;
 
   })(Object3D);
+  /**
+      Cube class
+      @constructor
+      @param {number} w width.
+      @param {number} h height.
+      @param {number} p profound.
+      @param {number} sx divide as x axis.
+      @param {number} sy divide as y axis.
+      @param {number} sz divide as z axis.
+      @param {<Array.<Texture>} materials texture materials.
+  */
+
   Cube = (function(_super) {
 
     __extends(Cube, _super);
 
     function Cube(w, h, p, sx, sy, sz, materials) {
-      var face1, face2, face3, face4, face5, face6;
+      var backFace, bottomFace, frontFace, leftFace, rightFace, topFace;
       if (sx == null) {
         sx = 1;
       }
@@ -930,32 +1019,32 @@ var __hasProp = {}.hasOwnProperty,
       w *= 0.5;
       h *= 0.5;
       p *= 0.5;
-      face1 = new Face(-w, h, w, -h, materials[0], materials[1]);
-      face2 = new Face(-w, h, w, -h, materials[2], materials[3]);
-      face2.rotation.y = 90;
-      face2.position.x = -w;
-      face2.position.z = -w;
-      face3 = new Face(-w, h, w, -h, materials[2], materials[3]);
-      face3.rotation.y = -90;
-      face3.position.x = w;
-      face3.position.z = -w;
-      face4 = new Face(-w, h, w, -h, materials[2], materials[3]);
-      face4.rotation.y = 180;
-      face4.position.z = -w * 2;
-      face5 = new Face(-w, h, w, -h, materials[2], materials[3]);
-      face5.rotation.x = 90;
-      face5.position.y = h;
-      face5.position.z = -h;
-      face6 = new Face(-w, h, w, -h, materials[2], materials[3]);
-      face6.rotation.x = -90;
-      face6.position.y = -h;
-      face6.position.z = -h;
-      this.add(face6);
-      this.add(face5);
-      this.add(face4);
-      this.add(face3);
-      this.add(face2);
-      this.add(face1);
+      topFace = new Face(-w, h, w, -h, materials[0], materials[1]);
+      bottomFace = new Face(-w, h, w, -h, materials[2], materials[3]);
+      bottomFace.rotation.x = -90;
+      bottomFace.position.y = -h;
+      bottomFace.position.z = -h;
+      frontFace = new Face(-w, h, w, -h, materials[4], materials[5]);
+      frontFace.rotation.y = 180;
+      frontFace.position.z = -w * 2;
+      backFace = new Face(-w, h, w, -h, materials[6], materials[7]);
+      backFace.rotation.x = 90;
+      backFace.position.y = h;
+      backFace.position.z = -h;
+      leftFace = new Face(-w, h, w, -h, materials[8], materials[9]);
+      leftFace.rotation.y = -90;
+      leftFace.position.x = w;
+      leftFace.position.z = -w;
+      rightFace = new Face(-w, h, w, -h, materials[10], materials[11]);
+      rightFace.rotation.y = 90;
+      rightFace.position.x = -w;
+      rightFace.position.z = -w;
+      this.add(rightFace);
+      this.add(leftFace);
+      this.add(backFace);
+      this.add(frontFace);
+      this.add(bottomFace);
+      this.add(topFace);
     }
 
     return Cube;
@@ -1058,10 +1147,16 @@ var __hasProp = {}.hasOwnProperty,
       }
     };
 
-    Scene.prototype.each = function(func) {
-      if (func) {
-        return this.materials.forEach(func);
+    Scene.prototype.update = function() {
+      var m, _i, _len, _ref, _results;
+      _ref = this.materials;
+      _results = [];
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        m = _ref[_i];
+        m.updateMatrix();
+        _results.push(m.updateMatrixWorld());
       }
+      return _results;
     };
 
     return Scene;
@@ -1078,93 +1173,51 @@ var __hasProp = {}.hasOwnProperty,
     }
 
     Renderer.prototype.render = function(scene, camera) {
-      var matProj;
+      var matProj, vertecies;
       camera.updateProjectionMatrix();
       matProj = camera.getProjectionMatrix();
       this.g.beginPath();
       this.g.fillStyle = this.clearColor;
       this.g.fillRect(0, 0, this.w, this.h);
-      return this.transformAndDraw(matProj, scene.materials);
+      scene.update();
+      vertecies = this.getTransformedPoint(matProj, scene.materials);
+      return drawTriangles(this.g, vertecies, this.w, this.h);
     };
 
-    /**
-        Transform and draw.
-        @param {Matrix4} mat matrix.
-        @param {Array} materials.
-    */
-
-
-    Renderer.prototype.transformAndDraw = function(mat, materials) {
-      var c, g, m, r, results, t, uv_image, uv_list, vertex_list, w, weight, x, y, _i, _j, _k, _l, _len, _len1, _len2, _len3, _len4, _m, _ref, _ref1, _ref2, _results;
-      g = this.g;
+    Renderer.prototype.getTransformedPoint = function(mat, materials) {
+      var c, m, results, tmp, uvData, uvList, vertecies, vertex, _i, _j, _k, _len, _len1, _len2, _ref, _ref1;
       results = [];
       for (_i = 0, _len = materials.length; _i < _len; _i++) {
         m = materials[_i];
-        m.updateMatrix();
-        m.updateMatrixWorld();
         if (m instanceof Triangle) {
-          vertex_list = m.getVerticesByProjectionMatrix(mat);
-          uv_image = m.texture.uv_data;
-          uv_list = m.texture.uv_list;
-          drawTriangle(g, uv_image, vertex_list, uv_list, this.w, this.h);
+          vertecies = m.getVerticesByProjectionMatrix(mat);
+          uvData = m.texture.uv_data;
+          uvList = m.texture.uv_list;
+          vertex = new Vertex(vertecies, uvData, uvList);
+          if (vertex.getZPosition() < 0) {
+            continue;
+          }
+          results.push(vertex);
         } else if (m instanceof Face) {
           _ref = m.children;
           for (_j = 0, _len1 = _ref.length; _j < _len1; _j++) {
             c = _ref[_j];
-            vertex_list = c.getVerticesByProjectionMatrix(mat);
-            uv_image = c.texture.uv_data;
-            uv_list = c.texture.uv_list;
-            drawTriangle(g, uv_image, vertex_list, uv_list, this.w, this.h);
+            tmp = this.getTransformedPoint(mat, c.children);
+            results = results.concat(tmp);
           }
         } else if (m instanceof Cube) {
           _ref1 = m.children;
           for (_k = 0, _len2 = _ref1.length; _k < _len2; _k++) {
             c = _ref1[_k];
-            _ref2 = c.children;
-            for (_l = 0, _len3 = _ref2.length; _l < _len3; _l++) {
-              t = _ref2[_l];
-              vertex_list = t.getVerticesByProjectionMatrix(mat);
-              uv_image = t.texture.uv_data;
-              uv_list = t.texture.uv_list;
-              drawTriangle(g, uv_image, vertex_list, uv_list, this.w, this.h);
-            }
+            tmp = this.getTransformedPoint(mat, c.children);
+            results = results.concat(tmp);
           }
-        } else if (m instanceof Particle) {
-          vertex_list = [m.v.x, m.v.y, m.v.z];
-          x = out_list[0];
-          y = out_list[1];
-          w = out_list[2];
-          weight = m.size / w;
-          if (weight < 0) {
-            continue;
-          }
-          results.push({
-            material: m,
-            x: x,
-            y: y,
-            w: w,
-            r: m.r,
-            g: m.g,
-            b: m.b,
-            weight: weight
-          });
         }
       }
       results.sort(function(a, b) {
-        return b.w - a.w;
+        return b.getZPosition() - a.getZPosition();
       });
-      _results = [];
-      for (_m = 0, _len4 = results.length; _m < _len4; _m++) {
-        r = results[_m];
-        g.save();
-        g.fillStyle = "rgba(" + r.r + ", " + r.g + ", " + r.b + ", " + r.weight + ")";
-        g.beginPath();
-        g.arc(r.x, r.y, r.weight, 0, ANGLE, true);
-        g.closePath();
-        g.fill();
-        _results.push(g.restore());
-      }
-      return _results;
+      return results;
     };
 
     return Renderer;
