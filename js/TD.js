@@ -171,6 +171,45 @@ var __hasProp = {}.hasOwnProperty,
       return this;
     };
 
+    /**
+        射影投影座標変換
+    
+        計算された座標変換行列をスクリーンの座標系に変換するために計算する
+        基本はスケーリング（&Y軸反転）と平行移動。
+        行列で表すと
+        w = width  / 2
+        h = height / 2
+        とすると
+                    |w  0  0  0|
+        M(screen) = |0 -h  0  0|
+                    |0  0  1  0|
+                    |w  h  0  1|
+        以下の計算式で言うと、
+    
+        transformed_temp[0] *=  viewWidth
+        transformed_temp[1] *= -viewHeight
+        transformed_temp[0] +=  viewWidth  / 2
+        transformed_temp[1] +=  viewHeight / 2
+    
+        となる。
+    
+        4x4の変換行列を対象の1x4行列[x, y, z, 1]に適用する
+        1x4行列と4x4行列の掛け算を行う
+    
+                    |@_11 @_12 @_13 @_14|
+        |x y z 1| x |@_21 @_22 @_23 @_24|
+                    |@_31 @_32 @_33 @_34|
+                    |@_41 @_42 @_43 @_44|
+    
+        @_4nは1x4行列の最後が1のため、ただ足すだけになる
+    
+        @param {Array.<number>} out
+        @param {number} x
+        @param {number} y
+        @param {number} z
+    */
+
+
     Vector3.prototype.applyProjection = function(m) {
       var e, w, x, y, z;
       x = this.x;
@@ -392,33 +431,6 @@ var __hasProp = {}.hasOwnProperty,
       return this;
     };
 
-    /**
-        4x4の変換行列を対象の1x4行列[x, y, z, 1]に適用する
-        1x4行列と4x4行列の掛け算を行う
-    
-                    |@_11 @_12 @_13 @_14|
-        |x y z 1| x |@_21 @_22 @_23 @_24|
-                    |@_31 @_32 @_33 @_34|
-                    |@_41 @_42 @_43 @_44|
-    
-        @_4nは1x4行列の最後が1のため、ただ足すだけになる
-    
-        @param {Array.<number>} out
-        @param {number} x
-        @param {number} y
-        @param {number} z
-    */
-
-
-    Matrix4.prototype.transVec3 = function(out, x, y, z) {
-      var te;
-      te = this.elements;
-      out[0] = te[0] * x + te[4] * y + te[8] * z + te[12];
-      out[1] = te[1] * x + te[5] * y + te[9] * z + te[13];
-      out[2] = te[2] * x + te[6] * y + te[10] * z + te[14];
-      return out[3] = te[3] * x + te[7] * y + te[11] * z + te[15];
-    };
-
     Matrix4.prototype.makeFrustum = function(left, right, bottom, top, near, far) {
       var te, vh, vw, w, x, y, z;
       te = this.elements;
@@ -603,7 +615,7 @@ var __hasProp = {}.hasOwnProperty,
     */
 
 
-    Matrix4.prototype.rotX = function(r) {
+    Matrix4.prototype.rotationX = function(r) {
       var c, s, te;
       te = this.elements;
       c = cos(r);
@@ -632,7 +644,7 @@ var __hasProp = {}.hasOwnProperty,
     */
 
 
-    Matrix4.prototype.rotY = function(r) {
+    Matrix4.prototype.rotationY = function(r) {
       var c, s, te;
       te = this.elements;
       c = cos(r);
@@ -661,7 +673,7 @@ var __hasProp = {}.hasOwnProperty,
     */
 
 
-    Matrix4.prototype.rotZ = function(r) {
+    Matrix4.prototype.rotationZ = function(r) {
       var c, s, te;
       te = this.elements;
       c = cos(r);
@@ -685,6 +697,13 @@ var __hasProp = {}.hasOwnProperty,
       return this;
     };
 
+    Matrix4.prototype.clone = function() {
+      var tmp;
+      tmp = new Matrix4;
+      tmp.copy(this);
+      return tmp;
+    };
+
     return Matrix4;
 
   })();
@@ -699,10 +718,42 @@ var __hasProp = {}.hasOwnProperty,
       this.up = new Vector3(0, 1, 0);
       this.matrix = new Matrix4;
       this.matrixWorld = new Matrix4;
+      this.updateMatrix();
     }
 
+    Object3D.prototype.updateTranslate = (function() {
+      var tm;
+      tm = new Matrix4;
+      return function() {
+        return tm.clone().translate(this.position);
+      };
+    })();
+
+    Object3D.prototype.updateRotation = (function() {
+      var rmx, rmy, rmz;
+      rmx = new Matrix4;
+      rmy = new Matrix4;
+      rmz = new Matrix4;
+      return function() {
+        var tmp, x, y, z;
+        x = this.rotation.x * DEG_TO_RAD;
+        y = this.rotation.y * DEG_TO_RAD;
+        z = this.rotation.z * DEG_TO_RAD;
+        tmp = new Matrix4;
+        rmx.rotationX(x);
+        rmy.rotationX(y);
+        rmz.rotationX(z);
+        tmp.multiplyMatrices(rmx, rmy);
+        tmp.multiply(rmz);
+        return tmp;
+      };
+    })();
+
     Object3D.prototype.updateMatrix = function() {
-      var c, _i, _len, _ref, _results;
+      var c, tmp, _i, _len, _ref, _results;
+      tmp = this.updateRotation();
+      tmp.multiply(this.updateTranslate());
+      this.matrix.copy(tmp);
       _ref = this.children;
       _results = [];
       for (_i = 0, _len = _ref.length; _i < _len; _i++) {
@@ -782,7 +833,6 @@ var __hasProp = {}.hasOwnProperty,
       Camera.__super__.constructor.apply(this, arguments);
       this.viewMatrix = new Matrix4;
       this.projectionMatrix = new Matrix4;
-      this.updateProjectionMatrix();
     }
 
     Camera.prototype.setWorld = function(m) {
@@ -848,12 +898,14 @@ var __hasProp = {}.hasOwnProperty,
     }
 
     Triangle.prototype.getVerticesByProjectionMatrix = function(m) {
-      var ret, v, _i, _len, _ref;
+      var ret, tmp, v, wm, _i, _len, _ref;
       ret = [];
       _ref = this.vertices;
       for (_i = 0, _len = _ref.length; _i < _len; _i++) {
         v = _ref[_i];
-        ret = ret.concat(v.clone().applyProjection(m).toArray());
+        wm = Matrix4.multiply(m, this.matrixWorld);
+        tmp = v.clone().applyProjection(wm);
+        ret = ret.concat(tmp.toArray());
       }
       return ret;
     };
@@ -1014,32 +1066,41 @@ var __hasProp = {}.hasOwnProperty,
 
 
     Renderer.prototype.transformAndDraw = function(mat, materials) {
-      var c, g, m, out_list, r, results, uv_image, uv_list, vertex_list, w, weight, x, y, _i, _j, _k, _len, _len1, _len2, _ref, _results;
+      var c, g, m, out_list, r, results, uv_image, uv_list, vertex_list, w, weight, x, y, _i, _j, _k, _l, _len, _len1, _len2, _len3, _ref, _ref1, _results;
       g = this.g;
       results = [];
       out_list = [];
       for (_i = 0, _len = materials.length; _i < _len; _i++) {
         m = materials[_i];
         out_list = [];
+        m.updateMatrix();
+        m.updateMatrixWorld();
         if (m instanceof Triangle) {
           vertex_list = m.getVerticesByProjectionMatrix(mat);
           uv_image = m.texture.uv_data;
           uv_list = m.texture.uv_list;
           drawTriangle(g, uv_image, vertex_list, uv_list, this.w, this.h);
-        } else if (m instanceof Cube) {
+        } else if (m instanceof Face) {
           _ref = m.children;
           for (_j = 0, _len1 = _ref.length; _j < _len1; _j++) {
             c = _ref[_j];
+            vertex_list = c.getVerticesByProjectionMatrix(mat);
+            uv_image = c.texture.uv_data;
+            uv_list = c.texture.uv_list;
+            drawTriangle(g, uv_image, vertex_list, uv_list, this.w, this.h);
+          }
+        } else if (m instanceof Cube) {
+          _ref1 = m.children;
+          for (_k = 0, _len2 = _ref1.length; _k < _len2; _k++) {
+            c = _ref1[_k];
             out_list = [];
             vertex_list = c.vertex;
             uv_image = c.texture.uv_data;
             uv_list = c.texture.uv_list;
-            this.transformPoints(out_list, vertex_list, mat, this.w, this.h);
             drawTriangle(g, uv_image, out_list, uv_list);
           }
         } else if (m instanceof Particle) {
           vertex_list = [m.v.x, m.v.y, m.v.z];
-          this.transformPoints(out_list, vertex_list, mat, this.w, this.h);
           x = out_list[0];
           y = out_list[1];
           w = out_list[2];
@@ -1063,8 +1124,8 @@ var __hasProp = {}.hasOwnProperty,
         return b.w - a.w;
       });
       _results = [];
-      for (_k = 0, _len2 = results.length; _k < _len2; _k++) {
-        r = results[_k];
+      for (_l = 0, _len3 = results.length; _l < _len3; _l++) {
+        r = results[_l];
         g.save();
         g.fillStyle = "rgba(" + r.r + ", " + r.g + ", " + r.b + ", " + r.weight + ")";
         g.beginPath();
@@ -1072,61 +1133,6 @@ var __hasProp = {}.hasOwnProperty,
         g.closePath();
         g.fill();
         _results.push(g.restore());
-      }
-      return _results;
-    };
-
-    /**
-        スクリーン座標変換
-        Transform points
-        @param {Array} out
-        @param {Array} pts
-        @param {Matrix4} mat matrix
-        @param {number} viewWidth
-        @param {number} viewHeight
-    
-        計算された座標変換行列をスクリーンの座標系に変換するために計算する
-        基本はスケーリング（&Y軸反転）と平行移動。
-        行列で表すと
-        w = width  / 2
-        h = height / 2
-        とすると
-                    |w  0  0  0|
-        M(screen) = |0 -h  0  0|
-                    |0  0  1  0|
-                    |w  h  0  1|
-        以下の計算式で言うと、
-    
-        transformed_temp[0] *=  viewWidth
-        transformed_temp[1] *= -viewHeight
-        transformed_temp[0] +=  viewWidth  / 2
-        transformed_temp[1] +=  viewHeight / 2
-    
-        となる。
-    */
-
-
-    Renderer.prototype.transformPoints = function(out, pts, mat, viewWidth, viewHeight) {
-      var W, i, len, oi, transformed_temp, _h, _i, _results, _w;
-      len = pts.length;
-      transformed_temp = [0, 0, 0, 0];
-      oi = 0;
-      _w = viewWidth / 2;
-      _h = viewHeight / 2;
-      _results = [];
-      for (i = _i = 0; _i < len; i = _i += 3) {
-        mat.transVec3(transformed_temp, pts[i + 0], pts[i + 1], pts[i + 2]);
-        W = transformed_temp[3];
-        transformed_temp[0] /= W;
-        transformed_temp[1] /= W;
-        transformed_temp[2] /= W;
-        transformed_temp[0] *= _w;
-        transformed_temp[1] *= -_h;
-        transformed_temp[0] += _w;
-        transformed_temp[1] += _h;
-        out[oi++] = transformed_temp[0];
-        out[oi++] = transformed_temp[1];
-        _results.push(out[oi++] = W);
       }
       return _results;
     };
@@ -1199,6 +1205,7 @@ var __hasProp = {}.hasOwnProperty,
     ret.set(t, axis);
     return ret;
   };
+  exports.Object3D = Object3D;
   exports.Matrix2 = Matrix2;
   exports.Matrix4 = Matrix4;
   exports.Camera = Camera;

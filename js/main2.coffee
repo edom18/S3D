@@ -279,7 +279,8 @@ do (win = window, doc = window.document, exports = window) ->
             scene.add triangle
 
             face = new Face -10, 10, 10, -10,  textureImage, roof_1_uv, roof_2_uv
-            face.position.z = 10
+            face.position.y = 10
+            face.position.z = -10
             scene.add face
 
             renderer.render scene, camera
@@ -314,7 +315,7 @@ do (win = window, doc = window.document, exports = window) ->
         rotY += (prevX - pageX) / 100
         rotX += (prevY - pageY) / 100
 
-        camera.setWorld(Matrix4.multiply((new Matrix4()).rotY(rotY), (new Matrix4()).rotX(rotX)))
+        camera.setWorld(Matrix4.multiply((new Matrix4()).rotationY(rotY), (new Matrix4()).rotationX(rotX)))
 
         prevX = pageX
         prevY = pageY

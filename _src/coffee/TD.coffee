@@ -212,6 +212,43 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
 
             return @
 
+        ###*
+            射影投影座標変換
+
+            計算された座標変換行列をスクリーンの座標系に変換するために計算する
+            基本はスケーリング（&Y軸反転）と平行移動。
+            行列で表すと
+            w = width  / 2
+            h = height / 2
+            とすると
+                        |w  0  0  0|
+            M(screen) = |0 -h  0  0|
+                        |0  0  1  0|
+                        |w  h  0  1|
+            以下の計算式で言うと、
+
+            transformed_temp[0] *=  viewWidth
+            transformed_temp[1] *= -viewHeight
+            transformed_temp[0] +=  viewWidth  / 2
+            transformed_temp[1] +=  viewHeight / 2
+
+            となる。
+
+            4x4の変換行列を対象の1x4行列[x, y, z, 1]に適用する
+            1x4行列と4x4行列の掛け算を行う
+
+                        |@_11 @_12 @_13 @_14|
+            |x y z 1| x |@_21 @_22 @_23 @_24|
+                        |@_31 @_32 @_33 @_34|
+                        |@_41 @_42 @_43 @_44|
+
+            @_4nは1x4行列の最後が1のため、ただ足すだけになる
+
+            @param {Array.<number>} out
+            @param {number} x
+            @param {number} y
+            @param {number} z
+        ###
         applyProjection: (m) ->
 
             x = @x
@@ -413,45 +450,6 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
 
             return @
 
-        ###*
-            4x4の変換行列を対象の1x4行列[x, y, z, 1]に適用する
-            1x4行列と4x4行列の掛け算を行う
-
-                        |@_11 @_12 @_13 @_14|
-            |x y z 1| x |@_21 @_22 @_23 @_24|
-                        |@_31 @_32 @_33 @_34|
-                        |@_41 @_42 @_43 @_44|
-
-            @_4nは1x4行列の最後が1のため、ただ足すだけになる
-
-            @param {Array.<number>} out
-            @param {number} x
-            @param {number} y
-            @param {number} z
-        ###
-        transVec3: (out, x, y, z) ->
-            te = @elements
-
-            #   |m11 m12 m13 m14|   |x|
-            #   |m21 m22 m23 m24| x |y|
-            #   |m31 m32 m33 m34|   |z|
-            #   |m41 m42 m43 m44|   |1|
-            #
-            #   |m11 * x + m12 * y + m13 * z + m14|
-            # = |m21 * x + m22 * y + m23 * z + m24|
-            #   |m31 * x + m32 * y + m33 * z + m34|
-            #   |m41 * x + m42 * y + m43 * z + m44|
-            #
-
-            # X
-            out[0] = te[0] * x + te[4] * y + te[8]  * z + te[12]
-            # Y
-            out[1] = te[1] * x + te[5] * y + te[9]  * z + te[13]
-            # Z
-            out[2] = te[2] * x + te[6] * y + te[10] * z + te[14]
-            # W
-            out[3] = te[3] * x + te[7] * y + te[11] * z + te[15]
-
         makeFrustum: (left, right, bottom, top, near, far) ->
 
             te = @elements
@@ -495,41 +493,6 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
             xmax = ymax * aspect
 
             return tmp.makeFrustum xmin, xmax, ymin, ymax, near, far
-
-            #vw = xmax - xmin
-            #vh = ymax - ymin
-            #
-            #zoomX = 2 * near / vw
-            #zoomY = 2 * near / vh
-            #
-            ## X軸方向のzoom値
-            #te[0]  = zoomX;
-            #te[4]  = 0
-            #te[8]  = 0
-            #te[12] = 0
-            #
-            ## Y軸方向のzoom値
-            #te[1]  = 0
-            #te[5]  = zoomY
-            #te[9]  = 0
-            #te[13] = 0
-            #
-            ## W値用の値を算出
-            ##
-            ## Z座標は、ニアクリップ面では z/w = -1、
-            ## ファークリップ面では z/w = 1 になるように
-            ## バイアスされ、スケーリングされる。
-            #te[2]  = 0
-            #te[6]  = 0
-            #te[10] = - (far + near) / (far - near)
-            #te[14] = -(2 * near * far) / (far - near)
-            #
-            #te[3]  = 0
-            #te[7]  = 0
-            #te[11] = -1
-            #te[15] = 0
-            #
-            #return tmp
 
         multiply: (A) ->
             tmp = Matrix4.multiply(@, A)
@@ -642,7 +605,7 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
         ###*
             @param {number} r Rotate X
         ###
-        rotX: (r) ->
+        rotationX: (r) ->
 
             # OpenGLのX軸による回転行列
             # |1       0      0  0|
@@ -664,7 +627,7 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
         ###*
             @param {number} r Rotate Y
         ###
-        rotY: (r) ->
+        rotationY: (r) ->
 
             # OpenGLのY軸による回転行列
             # | cos(r)  0  sin(r)  0|
@@ -686,7 +649,7 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
         ###*
             @param {number} r Rotate Z
         ###
-        rotZ: (r) ->
+        rotationZ: (r) ->
 
             # OpenGLのZ軸による回転行列
             # | cos(r) -sin(r)  0  0|
@@ -705,6 +668,11 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
 
             return @
 
+        clone: ->
+            tmp = new Matrix4
+            tmp.copy @
+            return tmp
+
 # -------------------------------------------------------------------------------
 
     class Object3D
@@ -719,7 +687,40 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
             @matrix = new Matrix4
             @matrixWorld = new Matrix4
 
+            @updateMatrix()
+
+        updateTranslate: do ->
+            tm = new Matrix4
+
+            return ->
+                return tm.clone().translate(@position)
+
+        updateRotation: do ->
+            rmx = new Matrix4
+            rmy = new Matrix4
+            rmz = new Matrix4
+
+            return ->
+                x = @rotation.x * DEG_TO_RAD
+                y = @rotation.y * DEG_TO_RAD
+                z = @rotation.z * DEG_TO_RAD
+
+                tmp = new Matrix4
+                rmx.rotationX x
+                rmy.rotationX y
+                rmz.rotationX z
+
+                tmp.multiplyMatrices rmx, rmy
+                tmp.multiply rmz
+
+                return tmp
+
+
         updateMatrix: ->
+            tmp = @updateRotation()
+            tmp.multiply @updateTranslate()
+            @matrix.copy tmp
+
             c.updateMatrix() for c in @children
 
         updateMatrixWorld: ->
@@ -767,7 +768,7 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
 
             @viewMatrix = new Matrix4
             @projectionMatrix = new Matrix4
-            @updateProjectionMatrix()
+            #@updateProjectionMatrix()
 
         setWorld: (m) ->
             @matrixWorld = m
@@ -827,7 +828,11 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
         getVerticesByProjectionMatrix: (m) ->
             ret = []
             for v in @vertices
-                ret = ret.concat(v.clone().applyProjection(m).toArray())
+                wm = Matrix4.multiply m, @matrixWorld
+                #tmp = v.clone().applyProjection(m)
+                tmp = v.clone().applyProjection(wm)
+                #@localToWorld tmp
+                ret = ret.concat(tmp.toArray())
 
             return ret
 
@@ -954,26 +959,25 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
 
             for m in materials
                 out_list = []
-                #m.updateMatrix()
-                #m.updateMatrixWorld()
+                m.updateMatrix()
+                m.updateMatrixWorld()
 
                 if m instanceof Triangle
                     vertex_list = m.getVerticesByProjectionMatrix(mat)
                     uv_image    = m.texture.uv_data
                     uv_list     = m.texture.uv_list
 
-                    #@transformPoints(out_list, vertex_list, mat, @w, @h)
                     #drawTriangle(g, uv_image, out_list, uv_list, @w, @h)
                     drawTriangle(g, uv_image, vertex_list, uv_list, @w, @h)
 
-                #else if m instanceof Face
-                #    for c in m.children
-                #        vertex_list = c.vertex
-                #        uv_image    = c.texture.uv_data
-                #        uv_list     = c.texture.uv_list
+                else if m instanceof Face
+                    for c in m.children
+                        vertex_list = c.getVerticesByProjectionMatrix(mat)
+                        uv_image    = c.texture.uv_data
+                        uv_list     = c.texture.uv_list
 
-                #        @transformPoints(out_list, vertex_list, mat, @w, @h)
-                #        drawTriangle(g, uv_image, out_list, uv_list)
+                        #drawTriangle(g, uv_image, out_list, uv_list)
+                        drawTriangle(g, uv_image, vertex_list, uv_list, @w, @h)
 
                 else if m instanceof Cube
                     for c in m.children
@@ -982,12 +986,10 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
                         uv_image    = c.texture.uv_data
                         uv_list     = c.texture.uv_list
 
-                        @transformPoints(out_list, vertex_list, mat, @w, @h)
                         drawTriangle(g, uv_image, out_list, uv_list)
 
                 else if m instanceof Particle
                     vertex_list = [m.v.x, m.v.y, m.v.z]
-                    @transformPoints(out_list, vertex_list, mat, @w, @h)
 
                     x = out_list[0]
                     y = out_list[1]
@@ -1017,62 +1019,6 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
                 g.closePath()
                 g.fill()
                 g.restore()
-
-
-        ###*
-            スクリーン座標変換
-            Transform points
-            @param {Array} out
-            @param {Array} pts
-            @param {Matrix4} mat matrix
-            @param {number} viewWidth
-            @param {number} viewHeight
-
-            計算された座標変換行列をスクリーンの座標系に変換するために計算する
-            基本はスケーリング（&Y軸反転）と平行移動。
-            行列で表すと
-            w = width  / 2
-            h = height / 2
-            とすると
-                        |w  0  0  0|
-            M(screen) = |0 -h  0  0|
-                        |0  0  1  0|
-                        |w  h  0  1|
-            以下の計算式で言うと、
-
-            transformed_temp[0] *=  viewWidth
-            transformed_temp[1] *= -viewHeight
-            transformed_temp[0] +=  viewWidth  / 2
-            transformed_temp[1] +=  viewHeight / 2
-
-            となる。
-        ###
-        transformPoints: (out, pts, mat, viewWidth, viewHeight) ->
-
-            len = pts.length
-            transformed_temp = [0, 0, 0, 0]
-            oi = 0
-
-            _w = viewWidth  / 2
-            _h = viewHeight / 2
-
-            for i in [0...len] by 3
-                mat.transVec3(transformed_temp, pts[i + 0], pts[i + 1], pts[i + 2])
-
-                W = transformed_temp[3]
-                transformed_temp[0] /= W
-                transformed_temp[1] /= W
-                transformed_temp[2] /= W
-
-                transformed_temp[0] *=  _w
-                transformed_temp[1] *= -_h
-
-                transformed_temp[0] +=  _w
-                transformed_temp[1] +=  _h
-
-                out[oi++] = transformed_temp[0]
-                out[oi++] = transformed_temp[1]
-                out[oi++] = W
 
 # ---------------------------------------------------------------------
 
@@ -1150,6 +1096,7 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
         return ret
 
 
+    exports.Object3D = Object3D
     exports.Matrix2 = Matrix2
     exports.Matrix4 = Matrix4
     exports.Camera = Camera
