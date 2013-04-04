@@ -940,12 +940,12 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
             backFace.position.z = -p
 
             #LEFT
-            leftFace = new Face -w, h, w, -h, materials[8], materials[9]
+            leftFace = new Face -p, h, p, -h, materials[8], materials[9]
             leftFace.rotation.y = -90
             leftFace.position.x = -w
 
             #RIGHT
-            rightFace = new Face -w, h, w, -h, materials[10], materials[11]
+            rightFace = new Face -p, h, p, -h, materials[10], materials[11]
             rightFace.rotation.y = 90
             rightFace.position.x = w
 
