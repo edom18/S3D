@@ -109,7 +109,7 @@ do (win = window, doc = window.document, exports = window) ->
         img.src = 'img/aXjiA.png'
         #img.src = 'http://jsrun.it/assets/k/M/J/J/kMJJS.png'
 
-        camera = new Camera 40, aspect, 5, 2000
+        camera = new Camera 40, aspect, 1, 5000
         camera.position.x = 10
         camera.position.y = 150
         camera.position.z = 200

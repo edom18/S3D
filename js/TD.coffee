@@ -153,6 +153,12 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
             @z += v.z
             return @
 
+        addVectors: (a, b) ->
+            @x = a.x + b.x
+            @y = a.y + b.y
+            @z = a.z + b.z
+            return @
+
         copy: (v) ->
             @x = v.x
             @y = v.y
@@ -198,7 +204,7 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
 
         cross: (v, w) ->
 
-            return @crossVector(v, w) if w
+            return @crossVectors(v, w) if w
 
             @x = (@y * v.z) - (@z * v.y)
             @y = (@z * v.x) - (@x * v.z)
@@ -207,7 +213,7 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
             return @
 
         #cross product
-        crossVector: (v, w) ->
+        crossVectors: (v, w) ->
             @x = (w.y * v.z) - (w.z * v.y)
             @y = (w.z * v.x) - (w.x * v.z)
             @z = (w.x * v.y) - (w.y * v.x)
@@ -466,20 +472,20 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
             x = 2 * near / vw
             y = 2 * near / vh
 
-            z = - (far + near) / (far - near)
-            w = - (2 * near * far) / (far - near)
+            a = (right + left) / (right - left)
+            b = (top + bottom) / (top - bottom)
+            c = - (far + near) / (far - near)
+            d = - (2 * near * far) / (far - near)
 
-            #a = (right + left) / (right - left)
-            #b = (top + bottom) / (top - bottom)
 
             # W値用の値を算出
             #
             # Z座標は、ニアクリップ面では z/w = -1、
             # ファークリップ面では z/w = 1 になるように
             # バイアスされ、スケーリングされる。
-            te[0]  = x; te[4] = 0; te[8]  =  0; te[12] = 0;
-            te[1]  = 0; te[5] = y; te[9]  =  0; te[13] = 0;
-            te[2]  = 0; te[6] = 0; te[10] =  z; te[14] = w;
+            te[0]  = x; te[4] = 0; te[8]  =  a; te[12] = 0;
+            te[1]  = 0; te[5] = y; te[9]  =  b; te[13] = 0;
+            te[2]  = 0; te[6] = 0; te[10] =  c; te[14] = d;
             te[3]  = 0; te[7] = 0; te[11] = -1; te[15] = 0;
 
             return @
@@ -600,12 +606,19 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
                 te = @elements
 
                 z.subVectors(eye, target).normalize()
-                x.crossVector(up, z).normalize()
-                y.crossVector(z, x).normalize()
+                #x.crossVectors(up, z).normalize()
+                #y.crossVectors(z, x).normalize()
+                x.crossVectors(z, up).normalize()
+                y.crossVectors(x, z).normalize()
 
                 tx = eye.dot x
                 ty = eye.dot y
                 tz = eye.dot z
+
+                #te[0] = x.x; te[4] = y.x; te[8]  = z.x; te[12] = 0;
+                #te[1] = x.y; te[5] = y.y; te[9]  = z.y; te[13] = 0;
+                #te[2] = x.z; te[6] = y.z; te[10] = z.z; te[14] = 0;
+                #te[3] = -tx; te[7] = -ty; te[11] = -tz; te[15] = 1;
 
                 te[0] = x.x; te[4] = x.y; te[8]  = x.z; te[12] = -tx;
                 te[1] = y.x; te[5] = y.y; te[9]  = y.z; te[13] = -ty;

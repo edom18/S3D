@@ -126,6 +126,13 @@ var __hasProp = {}.hasOwnProperty,
       return this;
     };
 
+    Vector3.prototype.addVectors = function(a, b) {
+      this.x = a.x + b.x;
+      this.y = a.y + b.y;
+      this.z = a.z + b.z;
+      return this;
+    };
+
     Vector3.prototype.copy = function(v) {
       this.x = v.x;
       this.y = v.y;
@@ -174,7 +181,7 @@ var __hasProp = {}.hasOwnProperty,
 
     Vector3.prototype.cross = function(v, w) {
       if (w) {
-        return this.crossVector(v, w);
+        return this.crossVectors(v, w);
       }
       this.x = (this.y * v.z) - (this.z * v.y);
       this.y = (this.z * v.x) - (this.x * v.z);
@@ -182,7 +189,7 @@ var __hasProp = {}.hasOwnProperty,
       return this;
     };
 
-    Vector3.prototype.crossVector = function(v, w) {
+    Vector3.prototype.crossVectors = function(v, w) {
       this.x = (w.y * v.z) - (w.z * v.y);
       this.y = (w.z * v.x) - (w.x * v.z);
       this.z = (w.x * v.y) - (w.y * v.x);
@@ -454,26 +461,28 @@ var __hasProp = {}.hasOwnProperty,
     };
 
     Matrix4.prototype.makeFrustum = function(left, right, bottom, top, near, far) {
-      var te, vh, vw, w, x, y, z;
+      var a, b, c, d, te, vh, vw, x, y;
       te = this.elements;
       vw = right - left;
       vh = top - bottom;
       x = 2 * near / vw;
       y = 2 * near / vh;
-      z = -(far + near) / (far - near);
-      w = -(2 * near * far) / (far - near);
+      a = (right + left) / (right - left);
+      b = (top + bottom) / (top - bottom);
+      c = -(far + near) / (far - near);
+      d = -(2 * near * far) / (far - near);
       te[0] = x;
       te[4] = 0;
-      te[8] = 0;
+      te[8] = a;
       te[12] = 0;
       te[1] = 0;
       te[5] = y;
-      te[9] = 0;
+      te[9] = b;
       te[13] = 0;
       te[2] = 0;
       te[6] = 0;
-      te[10] = z;
-      te[14] = w;
+      te[10] = c;
+      te[14] = d;
       te[3] = 0;
       te[7] = 0;
       te[11] = -1;
@@ -623,8 +632,8 @@ var __hasProp = {}.hasOwnProperty,
         var te, tx, ty, tz;
         te = this.elements;
         z.subVectors(eye, target).normalize();
-        x.crossVector(up, z).normalize();
-        y.crossVector(z, x).normalize();
+        x.crossVectors(z, up).normalize();
+        y.crossVectors(x, z).normalize();
         tx = eye.dot(x);
         ty = eye.dot(y);
         tz = eye.dot(z);

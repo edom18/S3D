@@ -42,7 +42,7 @@
       return create();
     };
     img.src = 'img/aXjiA.png';
-    camera = new Camera(40, aspect, 5, 2000);
+    camera = new Camera(40, aspect, 1, 5000);
     camera.position.x = 10;
     camera.position.y = 150;
     camera.position.z = 200;
