@@ -136,7 +136,7 @@ do (win = window, doc = window.document, exports = window) ->
                 new Texture textureImage, wall_8_uv #wall6
             ]
 
-            cube1 = new Cube 20, 20, 20, 1, 1, 1, materials
+            cube1 = new Cube 50, 20, 20, 1, 1, 1, materials
             cube1.position.z = -50
             cube1.rotation.z = 30
 

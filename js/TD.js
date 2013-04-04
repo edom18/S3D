@@ -905,6 +905,18 @@ var __hasProp = {}.hasOwnProperty,
     return Camera;
 
   })(Object3D);
+  /**
+      Face class
+          Face -> Object3D
+      @constructor
+      @param {number} x1
+      @param {number} y1
+      @param {number} x2
+      @param {number} y2
+      @param {Texture} texture1
+      @param {Texture} texture2
+  */
+
   Face = (function(_super) {
 
     __extends(Face, _super);
@@ -921,6 +933,16 @@ var __hasProp = {}.hasOwnProperty,
     return Face;
 
   })(Object3D);
+  /**
+      Plate class
+          Plate -> Object3D
+      @constructor
+      @param {number} width
+      @param {number} height
+      @param {Texture} texture1
+      @param {Texture} texture2
+  */
+
   Plate = (function(_super) {
 
     __extends(Plate, _super);
@@ -940,6 +962,14 @@ var __hasProp = {}.hasOwnProperty,
     return Plate;
 
   })(Object3D);
+  /**
+      Triangle class
+          Triangle -> Object3D
+      @constructor
+      @param {Array} vertecies
+      @param {Texture} texture
+  */
+
   Triangle = (function(_super) {
 
     __extends(Triangle, _super);
@@ -1014,10 +1044,10 @@ var __hasProp = {}.hasOwnProperty,
       backFace = new Face(-w, h, w, -h, materials[6], materials[7]);
       backFace.rotation.y = 180;
       backFace.position.z = -p;
-      leftFace = new Face(-w, h, w, -h, materials[8], materials[9]);
+      leftFace = new Face(-p, h, p, -h, materials[8], materials[9]);
       leftFace.rotation.y = -90;
       leftFace.position.x = -w;
-      rightFace = new Face(-w, h, w, -h, materials[10], materials[11]);
+      rightFace = new Face(-p, h, p, -h, materials[10], materials[11]);
       rightFace.rotation.y = 90;
       rightFace.position.x = w;
       this.add(rightFace);

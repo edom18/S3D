@@ -815,6 +815,17 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
 
 # -------------------------------------------------------------------------------
 
+    ###*
+        Face class
+            Face -> Object3D
+        @constructor
+        @param {number} x1
+        @param {number} y1
+        @param {number} x2
+        @param {number} y2
+        @param {Texture} texture1
+        @param {Texture} texture2
+    ###
     class Face extends Object3D
         constructor: (x1, y1, x2, y2, texture1, texture2) ->
             super
@@ -837,6 +848,15 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
 
 # -------------------------------------------------------------------------------
 
+    ###*
+        Plate class
+            Plate -> Object3D
+        @constructor
+        @param {number} width
+        @param {number} height
+        @param {Texture} texture1
+        @param {Texture} texture2
+    ###
     class Plate extends Object3D
         constructor: (width, height, texture1, texture2) ->
             super
@@ -853,6 +873,13 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
 
 # -------------------------------------------------------------------------------
 
+    ###*
+        Triangle class
+            Triangle -> Object3D
+        @constructor
+        @param {Array} vertecies
+        @param {Texture} texture
+    ###
     class Triangle extends Object3D
         constructor: (vertices, @texture) ->
             super
@@ -913,12 +940,12 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
             backFace.position.z = -p
 
             #LEFT
-            leftFace = new Face -w, h, w, -h, materials[8], materials[9]
+            leftFace = new Face -p, h, p, -h, materials[8], materials[9]
             leftFace.rotation.y = -90
             leftFace.position.x = -w
 
             #RIGHT
-            rightFace = new Face -w, h, w, -h, materials[10], materials[11]
+            rightFace = new Face -p, h, p, -h, materials[10], materials[11]
             rightFace.rotation.y = 90
             rightFace.position.x = w
 
