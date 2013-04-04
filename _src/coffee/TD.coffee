@@ -895,35 +895,32 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
 
             #TOP
             topFace = new Face -w, h, w, -h, materials[0], materials[1]
-            topFace.rotation.x = 90
+            topFace.rotation.x = -90
             topFace.position.y = h
-            topFace.position.z = -h
 
             #BOTTOM
             bottomFace = new Face -w, h, w, -h, materials[2], materials[3]
-            bottomFace.rotation.x = -90
+            bottomFace.rotation.x = 90
             bottomFace.position.y = -h
-            bottomFace.position.z = -h
 
             #FRONT
             frontFace = new Face -w, h, w, -h, materials[4], materials[5]
-            frontFace.position.z = -p * 2
+            frontFace.position.z = p
 
             #BACK
             backFace = new Face -w, h, w, -h, materials[6], materials[7]
             backFace.rotation.y = 180
+            backFace.position.z = -p
 
             #LEFT
             leftFace = new Face -w, h, w, -h, materials[8], materials[9]
             leftFace.rotation.y = -90
-            leftFace.position.x = w
-            leftFace.position.z = -w
+            leftFace.position.x = -w
 
             #RIGHT
             rightFace = new Face -w, h, w, -h, materials[10], materials[11]
             rightFace.rotation.y = 90
-            rightFace.position.x = -w
-            rightFace.position.z = -w
+            rightFace.position.x = w
 
             @add rightFace
             @add leftFace
