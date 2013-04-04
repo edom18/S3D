@@ -815,6 +815,17 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
 
 # -------------------------------------------------------------------------------
 
+    ###*
+        Face class
+            Face -> Object3D
+        @constructor
+        @param {number} x1
+        @param {number} y1
+        @param {number} x2
+        @param {number} y2
+        @param {Texture} texture1
+        @param {Texture} texture2
+    ###
     class Face extends Object3D
         constructor: (x1, y1, x2, y2, texture1, texture2) ->
             super
