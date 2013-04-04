@@ -48,7 +48,7 @@
     camera.position.z = 200;
     camera.lookAt(new Vector3(0, 0, 0));
     scene = new Scene;
-    renderer = new Renderer(cv, '#eee');
+    renderer = new Renderer(cv, '#111', true);
     return create = function() {
       var angle, cube1, cube2, cube3, materials, plate1, plate2, _loop;
       materials = [new Texture(textureImage, roof_1_uv), new Texture(textureImage, roof_2_uv), new Texture(textureImage, wall_1_uv), new Texture(textureImage, wall_2_uv), new Texture(textureImage, wall_3_uv), new Texture(textureImage, wall_4_uv), new Texture(textureImage, wall_5_uv), new Texture(textureImage, wall_6_uv), new Texture(textureImage, wall_3_uv), new Texture(textureImage, wall_4_uv), new Texture(textureImage, wall_5_uv), new Texture(textureImage, wall_6_uv), new Texture(textureImage, wall_7_uv), new Texture(textureImage, wall_8_uv)];

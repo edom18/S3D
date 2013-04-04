@@ -107,6 +107,8 @@ do (win = window, doc = window.document, exports = window) ->
             create()
 
         img.src = 'img/aXjiA.png'
+        #img.src = 'img/HTML5_Logo_512.png'
+        #img.src = 'img/sample.png'
         #img.src = 'http://jsrun.it/assets/k/M/J/J/kMJJS.png'
 
         camera = new Camera 40, aspect, 1, 5000
@@ -116,7 +118,7 @@ do (win = window, doc = window.document, exports = window) ->
         #camera.up = new Vector3 1, 0, 0
         camera.lookAt new Vector3 0, 0, 0
         scene    = new Scene
-        renderer = new Renderer cv, '#eee'
+        renderer = new Renderer cv, '#111', true
 
         create = ->
             materials = [

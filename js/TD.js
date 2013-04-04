@@ -4,63 +4,10 @@ var __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
 (function(win, doc, exports) {
-  var ANGLE, AmbientLight, Camera, Color, Cube, DEG_TO_RAD, DirectionalLight, Face, Light, Matrix2, Matrix4, Object3D, PI, Particle, Plate, Quaternion, Renderer, Scene, Texture, Triangle, Vector3, Vertex, cos, drawTriangles, makeRotatialQuaternion, sin, sqrt, tan;
+  var ANGLE, AmbientLight, Camera, Color, Cube, DEG_TO_RAD, DirectionalLight, Face, Light, Matrix2, Matrix4, Object3D, PI, Particle, Plate, Quaternion, Renderer, Scene, Texture, Triangle, Vector3, Vertex, cos, makeRotatialQuaternion, sin, sqrt, tan;
   sqrt = Math.sqrt, tan = Math.tan, cos = Math.cos, sin = Math.sin, PI = Math.PI;
   DEG_TO_RAD = PI / 180;
   ANGLE = PI * 2;
-  drawTriangles = function(g, vertecies, vw, vh) {
-    var Ax, Ay, Bx, By, a, b, c, d, height, hvh, hvw, i, img, m, me, mi, mie, uvList, v, vertexList, width, x1, x2, x3, y1, y2, y3, z1, z2, z3, _Ax, _Ay, _Bx, _By, _i, _len;
-    for (i = _i = 0, _len = vertecies.length; _i < _len; i = ++_i) {
-      v = vertecies[i];
-      img = v.uvData;
-      uvList = v.uvList;
-      vertexList = v.vertecies;
-      width = img.width;
-      height = img.height;
-      hvw = vw * 0.5;
-      hvh = vh * 0.5;
-      x1 = (vertexList[0] * hvw) + hvw;
-      y1 = (vertexList[1] * -hvh) + hvh;
-      z1 = vertexList[2];
-      x2 = (vertexList[3] * hvw) + hvw;
-      y2 = (vertexList[4] * -hvh) + hvh;
-      z2 = vertexList[5];
-      x3 = (vertexList[6] * hvw) + hvw;
-      y3 = (vertexList[7] * -hvh) + hvh;
-      z3 = vertexList[8];
-      _Ax = x2 - x1;
-      _Ay = y2 - y1;
-      _Bx = x3 - x1;
-      _By = y3 - y1;
-      if (((_Ax * (y3 - y2)) - (_Ay * (x3 - x2))) < 0) {
-        continue;
-      }
-      Ax = (uvList[2] - uvList[0]) * width;
-      Ay = (uvList[3] - uvList[1]) * height;
-      Bx = (uvList[4] - uvList[0]) * width;
-      By = (uvList[5] - uvList[1]) * height;
-      m = new Matrix2(Ax, Ay, Bx, By);
-      me = m.elements;
-      mi = m.getInvert();
-      mie = mi.elements;
-      if (!mi) {
-        return;
-      }
-      a = mie[0] * _Ax + mie[2] * _Bx;
-      c = mie[1] * _Ax + mie[3] * _Bx;
-      b = mie[0] * _Ay + mie[2] * _By;
-      d = mie[1] * _Ay + mie[3] * _By;
-      g.save();
-      g.beginPath();
-      g.moveTo(x1, y1);
-      g.lineTo(x2, y2);
-      g.lineTo(x3, y3);
-      g.clip();
-      g.transform(a, b, c, d, x1 - (a * uvList[0] * width + c * uvList[1] * height), y1 - (b * uvList[0] * width + d * uvList[1] * height));
-      g.drawImage(img, 0, 0);
-      g.restore();
-    }
-  };
   Vertex = (function() {
 
     function Vertex(vertecies, uvData, uvList) {
@@ -1175,9 +1122,10 @@ var __hasProp = {}.hasOwnProperty,
   })();
   Renderer = (function() {
 
-    function Renderer(cv, clearColor) {
+    function Renderer(cv, clearColor, wireframe) {
       this.cv = cv;
       this.clearColor = clearColor != null ? clearColor : '#fff';
+      this.wireframe = wireframe != null ? wireframe : false;
       this.g = cv.getContext('2d');
       this.w = cv.width;
       this.h = cv.height;
@@ -1192,7 +1140,65 @@ var __hasProp = {}.hasOwnProperty,
       this.g.fillRect(0, 0, this.w, this.h);
       scene.update();
       vertecies = this.getTransformedPoint(matProj, scene.materials);
-      return drawTriangles(this.g, vertecies, this.w, this.h);
+      return this.drawTriangles(this.g, vertecies, this.w, this.h);
+    };
+
+    Renderer.prototype.drawTriangles = function(g, vertecies, vw, vh) {
+      var Ax, Ay, Bx, By, a, b, c, d, height, hvh, hvw, i, img, m, me, mi, mie, uvList, v, vertexList, width, x1, x2, x3, y1, y2, y3, z1, z2, z3, _Ax, _Ay, _Bx, _By, _i, _len;
+      for (i = _i = 0, _len = vertecies.length; _i < _len; i = ++_i) {
+        v = vertecies[i];
+        img = v.uvData;
+        uvList = v.uvList;
+        vertexList = v.vertecies;
+        width = img.width;
+        height = img.height;
+        hvw = vw * 0.5;
+        hvh = vh * 0.5;
+        x1 = (vertexList[0] * hvw) + hvw;
+        y1 = (vertexList[1] * -hvh) + hvh;
+        z1 = vertexList[2];
+        x2 = (vertexList[3] * hvw) + hvw;
+        y2 = (vertexList[4] * -hvh) + hvh;
+        z2 = vertexList[5];
+        x3 = (vertexList[6] * hvw) + hvw;
+        y3 = (vertexList[7] * -hvh) + hvh;
+        z3 = vertexList[8];
+        _Ax = x2 - x1;
+        _Ay = y2 - y1;
+        _Bx = x3 - x1;
+        _By = y3 - y1;
+        if (((_Ax * (y3 - y2)) - (_Ay * (x3 - x2))) < 0) {
+          continue;
+        }
+        Ax = (uvList[2] - uvList[0]) * width;
+        Ay = (uvList[3] - uvList[1]) * height;
+        Bx = (uvList[4] - uvList[0]) * width;
+        By = (uvList[5] - uvList[1]) * height;
+        m = new Matrix2(Ax, Ay, Bx, By);
+        me = m.elements;
+        mi = m.getInvert();
+        mie = mi.elements;
+        if (!mi) {
+          return;
+        }
+        a = mie[0] * _Ax + mie[2] * _Bx;
+        c = mie[1] * _Ax + mie[3] * _Bx;
+        b = mie[0] * _Ay + mie[2] * _By;
+        d = mie[1] * _Ay + mie[3] * _By;
+        g.save();
+        g.beginPath();
+        g.moveTo(x1, y1);
+        g.lineTo(x2, y2);
+        g.lineTo(x3, y3);
+        if (this.wireframe) {
+          g.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+          g.stroke();
+        }
+        g.clip();
+        g.transform(a, b, c, d, x1 - (a * uvList[0] * width + c * uvList[1] * height), y1 - (b * uvList[0] * width + d * uvList[1] * height));
+        g.drawImage(img, 0, 0);
+        g.restore();
+      }
     };
 
     Renderer.prototype.getTransformedPoint = function(mat, materials) {
