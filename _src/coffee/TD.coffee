@@ -837,6 +837,15 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
 
 # -------------------------------------------------------------------------------
 
+    ###*
+        Plate class
+            Plate -> Object3D
+        @constructor
+        @param {number} width
+        @param {number} height
+        @param {Texture} texture1
+        @param {Texture} texture2
+    ###
     class Plate extends Object3D
         constructor: (width, height, texture1, texture2) ->
             super
@@ -853,6 +862,13 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
 
 # -------------------------------------------------------------------------------
 
+    ###*
+        Triangle class
+            Triangle -> Object3D
+        @constructor
+        @param {Array} vertecies
+        @param {Texture} texture
+    ###
     class Triangle extends Object3D
         constructor: (vertices, @texture) ->
             super
