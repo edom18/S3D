@@ -11,6 +11,21 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
 
     class Vertex
         constructor: (@vertecies, @uvData, @uvList) ->
+            x1 = vertecies[0]
+            y1 = vertecies[1]
+            z1 = vertecies[2]
+            x2 = vertecies[3]
+            y2 = vertecies[4]
+            z2 = vertecies[5]
+            x3 = vertecies[6]
+            y3 = vertecies[7]
+            z3 = vertecies[8]
+
+            v1 = new Vector3(x3 - x1, y3 - y1, z3 - z1)
+            v2 = new Vector3(x2 - x1, y2 - y1, z2 - z1)
+
+            @normal = (v1.cross(v2)).normalize()
+
 
         getZPosition: ->
             ret = 0
