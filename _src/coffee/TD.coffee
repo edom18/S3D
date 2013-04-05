@@ -1,7 +1,7 @@
 do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {})) ->
 
     #Import
-    {sqrt, tan, cos, sin, PI} = Math
+    {max, min, sqrt, tan, cos, sin, PI} = Math
 
     DEG_TO_RAD = PI / 180
     ANGLE = PI * 2
@@ -11,21 +11,6 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
 
     class Vertex
         constructor: (@vertecies, @uvData, @uvList) ->
-            x1 = vertecies[0]
-            y1 = vertecies[1]
-            z1 = vertecies[2]
-            x2 = vertecies[3]
-            y2 = vertecies[4]
-            z2 = vertecies[5]
-            x3 = vertecies[6]
-            y3 = vertecies[7]
-            z3 = vertecies[8]
-
-            v1 = new Vector3(x3 - x1, y3 - y1, z3 - z1)
-            v2 = new Vector3(x2 - x1, y2 - y1, z2 - z1)
-
-            @normal = (v1.cross(v2)).normalize()
-
 
         getZPosition: ->
             ret = 0
@@ -84,9 +69,10 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
             sqrt(@x * @x + @y * @y + @z * @z)
 
         normalize: ->
-            nrm = 1 / @norm()
+            nrm = @norm()
 
             if nrm isnt 0
+                nrm = 1 / nrm
                 @x *= nrm
                 @y *= nrm
                 @z *= nrm
@@ -806,6 +792,7 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
 
         getVerticesByProjectionMatrix: (m) ->
             ret = []
+
             for v in @vertices
                 wm = Matrix4.multiply m, @matrixWorld
                 tmp = v.clone().applyProjection(wm)
@@ -813,6 +800,15 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
 
             return ret
 
+        getNormal: ->
+            a = (new Vector3).subVectors(@vertices[1], @vertices[0])
+            b = (new Vector3).subVectors(@vertices[2], @vertices[0])
+
+            debugger
+            a.applyMatrix4 @matrixWorld
+            b.applyMatrix4 @matrixWorld
+
+            return a.cross(b).normalize()
 
 # -------------------------------------------------------------------------------
 
@@ -904,6 +900,47 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
     class Color
         constructor: (@r, @g, @b, @a) ->
 
+        copy: (c) ->
+            @r = c.r
+            @g = c.g
+            @b = c.b
+            @a = c.a
+            return @
+
+        add: (c) ->
+            @r = min((@r + c.r), 1)
+            @g = min((@g + c.g), 1)
+            @b = min((@b + c.b), 1)
+            @a = min((@a + c.a), 1)
+            return @
+
+        sub: (c) ->
+            @r = max((@r - c.r), 0)
+            @g = max((@g - c.g), 0)
+            @b = max((@b - c.b), 0)
+            @a = max((@a - c.a), 0)
+            return @
+
+        multiplyScalar: (s) ->
+            @r *= s
+            @g *= s
+            @b *= s
+            @a *= s
+            return @
+
+        clone: ->
+            tmp = new Color
+            tmp.copy @
+            return tmp
+
+        toString: ->
+            r = ~~min(@r * 255, 255)
+            g = ~~min(@g * 255, 255)
+            b = ~~min(@b * 255, 255)
+            a = min(@a, 1)
+
+            return "rgba(#{r}, #{g}, #{b}, #{a})"
+
 # -------------------------------------------------------------------------------
 
     class Light extends Object3D
@@ -925,7 +962,7 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
 # -------------------------------------------------------------------------------
 
     class DirectionalLight extends Light
-        constructor: (@color, @vector) ->
+        constructor: (@color, @direction) ->
             super
 
 # -------------------------------------------------------------------------------
@@ -963,17 +1000,19 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
             @g.fillRect 0, 0, @w, @h
 
             scene.update()
+            lights    = @getLights(scene.materials)
             vertecies = @getTransformedPoint matProj, scene.materials
 
-            @drawTriangles @g, vertecies, @w, @h
+            @drawTriangles @g, vertecies, lights, @w, @h
 
-        drawTriangles: (g, vertecies, vw, vh) ->
+        drawTriangles: (g, vertecies, lights, vw, vh) ->
 
             for v, i in vertecies
 
                 img = v.uvData
                 uvList = v.uvList
                 vertexList = v.vertecies
+                normal = v.normal
                 width  = img.width
                 height = img.height
 
@@ -1071,6 +1110,21 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
                     x1 - (a * uvList[0] * width + c * uvList[1] * height),
                     y1 - (b * uvList[0] * width + d * uvList[1] * height))
                 g.drawImage(img, 0, 0)
+
+                color = new Color 0, 0, 0, 0
+
+                for l in lights
+                    if l instanceof AmbientLight
+                        color.add(l.color)
+
+                    else if l instanceof DirectionalLight
+                        factor = l.direction.dot(normal)
+                        color.add(l.color.clone().multiplyScalar(factor))
+
+                g.globalCompositeOperation = 'lighter'
+                g.fillStyle = color.toString()
+                g.fill()
+
                 g.restore()
  
 
@@ -1086,13 +1140,14 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
                     uvList    = m.texture.uv_list
 
                     vertex = new Vertex vertecies, uvData, uvList
+                    vertex.normal = m.getNormal()
 
                     continue if vertex.getZPosition() < 0
 
                     results.push vertex
 
                 else if m instanceof Light
-                    lightList.push m
+                    continue
 
                 else
                     for c in m.children
@@ -1101,6 +1156,12 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
 
             results.sort (a, b) ->
                  b.getZPosition() - a.getZPosition()
+
+            return results
+
+        getLights: (materials) ->
+            results = []
+            results.push m for m in materials when m instanceof Light
 
             return results
 
