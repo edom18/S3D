@@ -906,8 +906,9 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
 
 # -------------------------------------------------------------------------------
 
-    class Light
+    class Light extends Object3D
         constructor: (@color) ->
+            super
 
 # -------------------------------------------------------------------------------
 
@@ -917,8 +918,14 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
 
 # -------------------------------------------------------------------------------
 
+    class DiffuseLight extends Light
+        constructor: (@color, @vector, @factor) ->
+            super
+
+# -------------------------------------------------------------------------------
+
     class DirectionalLight extends Light
-        constructor: (@color) ->
+        constructor: (@color, @vector) ->
             super
 
 # -------------------------------------------------------------------------------
@@ -1070,6 +1077,7 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
         getTransformedPoint: (mat, materials) ->
 
             results = []
+            lightList = []
 
             for m in materials
                 if m instanceof Triangle
@@ -1082,6 +1090,9 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
                     continue if vertex.getZPosition() < 0
 
                     results.push vertex
+
+                else if m instanceof Light
+                    lightList.push m
 
                 else
                     for c in m.children
@@ -1183,4 +1194,7 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
     exports.Particle = Particle
     exports.Texture  = Texture
     exports.Vector3  = Vector3
+    exports.Color    = Color
     exports.Quaternion = Quaternion
+    exports.AmbientLight = AmbientLight
+    exports.DirectionalLight = DirectionalLight
