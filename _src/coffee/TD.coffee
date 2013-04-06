@@ -947,6 +947,12 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
             tmp.copy @
             return tmp
 
+        revers: ->
+            tmp = new Color 255, 255, 255, 1
+            tmp.sub @
+            tmp.a = @a
+            return tmp
+
         toString: ->
             r = ~~min(@r * 255, 255)
             g = ~~min(@g * 255, 255)
@@ -958,25 +964,25 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
 # -------------------------------------------------------------------------------
 
     class Light extends Object3D
-        constructor: (@color) ->
+        constructor: (@strength) ->
             super
 
 # -------------------------------------------------------------------------------
 
     class AmbientLight extends Light
-        constructor: (@color) ->
+        constructor: (strength) ->
             super
 
 # -------------------------------------------------------------------------------
 
     class DiffuseLight extends Light
-        constructor: (@color, @vector, @factor) ->
+        constructor: (strength, vector) ->
             super
 
 # -------------------------------------------------------------------------------
 
     class DirectionalLight extends Light
-        constructor: (@color, @direction) ->
+        constructor: (strength, @direction) ->
             super
 
 # -------------------------------------------------------------------------------
@@ -1006,9 +1012,12 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
 
     class Renderer
         constructor: (@cv, @clearColor = '#fff') ->
+            @_dummyCv = doc.createElement 'canvas'
+            @_dummyG  = @_dummyCv.getContext '2d'
             @g = cv.getContext '2d'
-            @w = cv.width
-            @h = cv.height
+            @w = @_dummyCv.width  = cv.width
+            @h = @_dummyCv.height = cv.height
+
 
             @fogColor = @clearColor
             @fogStart = 200
@@ -1034,6 +1043,9 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
             fogStart = @fogStart
             fogEnd   = @fogEnd
             fog = @fog
+
+            dcv = @_dummyCv
+            dg  = @_dummyG
 
             for v, i in vertecies
 
@@ -1147,6 +1159,40 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
 
                 # 各頂点座標を元に三角形を作り、それでクリッピング
                 g.save()
+                dg.save()
+
+                dg.drawImage(img, 0, 0)
+
+                strength = 0
+                color = new Color 0, 0, 0, 1
+
+                for l in lights
+                    if l instanceof AmbientLight
+                        strength += l.strength
+
+                    else if l instanceof DirectionalLight
+                        L = l.direction
+                        N = normal.clone().add(L)
+                        factor = N.dot(L)
+                        strength += l.strength * factor
+                        #color.add l.color.clone().multiplyScalar factor
+                        #dg.fillStyle = l.color.clone().multiplyScalar(factor).toString()
+                        #dg.fillRect 0, 0, width, height
+                        
+                color.a -= strength
+
+                if color.a > 0
+                    dg.fillStyle = color.toString()
+                    dg.fillRect 0, 0, width, height
+
+                if fog
+                    fogStrength = 1 - ((fogEnd - z) / (fogEnd - fogStart))
+                    fogStrength = 0 if fogStrength < 0
+                    dg.globalAlpha = fogStrength
+                    dg.globalCompositeOperation = 'source-over'
+                    dg.fillStyle   = fogColor
+                    dg.fillRect 0, 0, width, height
+
                 g.beginPath()
                 g.moveTo(x1, y1)
                 g.lineTo(x2, y2)
@@ -1162,33 +1208,10 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
                 g.transform(a, b, c, d,
                     x1 - (a * uvList[0] * width + c * uvList[1] * height),
                     y1 - (b * uvList[0] * width + d * uvList[1] * height))
-                g.drawImage(img, 0, 0)
+                g.drawImage(dcv, 0, 0)
 
-                color = new Color 0, 0, 0, 0
-
-                for l in lights
-                    if l instanceof AmbientLight
-                        color.add(l.color)
-
-                    else if l instanceof DirectionalLight
-                        L = l.direction
-                        N = normal.clone().add(L)
-                        factor = N.dot(L)
-                        color.add(l.color.clone().multiplyScalar(factor)) if factor > 0
-
-                g.save()
-                g.globalCompositeOperation = 'lighter'
-                g.fillStyle = color.toString()
-                g.fill()
-                g.restore()
-
-                if fog
-                    fogStrength = 1 - ((fogEnd - z) / (fogEnd - fogStart))
-                    fogStrength = 0 if fogStrength < 0
-                    g.globalAlpha = fogStrength
-                    g.fillStyle   = fogColor
-                    g.fill()
-
+                dg.clearRect 0, 0, width, height
+                dg.restore()
                 g.restore()
  
 
