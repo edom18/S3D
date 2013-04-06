@@ -15,9 +15,20 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
         getZPosition: ->
             ret = 0
             cnt = 0
-            for v, i in @vertecies by 3
+            for v, i in @vertecies by 4
                 cnt++
-                ret += @vertecies[i + 2]
+                ret += @vertecies[i + 2] * @vertecies[i + 3]
+                #ret += @vertecies[i + 2]
+
+            return ret / cnt
+
+        getW: ->
+            ret = 0
+            cnt = 0
+
+            for v, i in @vertecies by 4
+                cnt++
+                ret += @vertecies[i + 2] * @vertecies[i + 3]
 
             return ret / cnt
 
@@ -163,7 +174,7 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
             @param {number} y
             @param {number} z
         ###
-        applyProjection: (m) ->
+        applyProjection: (m, out) ->
 
             x = @x
             y = @y
@@ -177,6 +188,9 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
             @x = (e[0] * x + e[4] * y + e[8]  * z + e[12]) * w
             @y = (e[1] * x + e[5] * y + e[9]  * z + e[13]) * w
             @z = (e[2] * x + e[6] * y + e[10] * z + e[14]) * w
+
+            out[0] = @
+            out[1] = (e[3] * x + e[7] * y + e[11] * z + e[15])
 
             return @
 
@@ -795,16 +809,16 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
 
             for v in @vertices
                 wm = Matrix4.multiply m, @matrixWorld
-                tmp = v.clone().applyProjection(wm)
-                ret = ret.concat(tmp.toArray())
+                tmp = []
+                v.clone().applyProjection(wm, tmp)
+                ret = ret.concat(tmp[0].toArray().concat(tmp[1]))
 
             return ret
 
         getNormal: ->
-            a = (new Vector3).subVectors(@vertices[1], @vertices[0])
-            b = (new Vector3).subVectors(@vertices[2], @vertices[0])
+            a = (new Vector3).subVectors(@vertices[2], @vertices[1])
+            b = (new Vector3).subVectors(@vertices[1], @vertices[0])
 
-            debugger
             a.applyMatrix4 @matrixWorld
             b.applyMatrix4 @matrixWorld
 
@@ -978,7 +992,6 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
             @materials.sort(func) if func
 
         update: ->
-
             for m in @materials
                 m.updateMatrix()
                 m.updateMatrixWorld()
@@ -986,10 +999,14 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
 # -------------------------------------------------------------------------------
 
     class Renderer
-        constructor: (@cv, @clearColor = '#fff', @wireframe = false) ->
+        constructor: (@cv, @clearColor = '#fff') ->
             @g = cv.getContext '2d'
             @w = cv.width
             @h = cv.height
+
+            @fogColor = @clearColor
+            @fogStart = 200
+            @fogEnd   = 1000
 
         render: (scene, camera) ->
             camera.updateProjectionMatrix()
@@ -1007,11 +1024,18 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
 
         drawTriangles: (g, vertecies, lights, vw, vh) ->
 
+            fogColor = @fogColor
+            fogStart = @fogStart
+            fogEnd   = @fogEnd
+            fog = @fog
+
             for v, i in vertecies
 
                 img = v.uvData
                 uvList = v.uvList
                 vertexList = v.vertecies
+                z = v.getZPosition()
+                fogStrength = 0
                 normal = v.normal
                 width  = img.width
                 height = img.height
@@ -1022,12 +1046,15 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
                 x1 = (vertexList[0] *  hvw) + hvw
                 y1 = (vertexList[1] * -hvh) + hvh
                 z1 = vertexList[2]
-                x2 = (vertexList[3] *  hvw) + hvw
-                y2 = (vertexList[4] * -hvh) + hvh
-                z2 = vertexList[5]
-                x3 = (vertexList[6] *  hvw) + hvw
-                y3 = (vertexList[7] * -hvh) + hvh
-                z3 = vertexList[8]
+                w1 = vertexList[3]
+                x2 = (vertexList[4] *  hvw) + hvw
+                y2 = (vertexList[5] * -hvh) + hvh
+                z2 = vertexList[6]
+                w2 = vertexList[7]
+                x3 = (vertexList[8] *  hvw) + hvw
+                y3 = (vertexList[9] * -hvh) + hvh
+                z3 = vertexList[10]
+                w3 = vertexList[11]
 
                 # 変換後のベクトル成分を計算
                 _Ax = x2 - x1
@@ -1118,12 +1145,25 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
                         color.add(l.color)
 
                     else if l instanceof DirectionalLight
-                        factor = l.direction.dot(normal)
-                        color.add(l.color.clone().multiplyScalar(factor))
+                        L = l.direction
+                        N = normal.clone().add(L)
+                        factor = N.dot(L)
+                        color.add(l.color.clone().multiplyScalar(factor)) if factor > 0
 
+                g.save()
                 g.globalCompositeOperation = 'lighter'
                 g.fillStyle = color.toString()
                 g.fill()
+                g.restore()
+
+                if fog
+                    fogStrength = 1 - ((fogEnd - z) / (fogEnd - fogStart))
+
+                    fogStart = 0 if fogStrength < 0
+                    g.globalAlpha = fogStrength
+                    g.fillStyle = fogColor
+                    #g.fillStyle = "rgba(0, 0, 0, #{fogStrength})"
+                    g.fill()
 
                 g.restore()
  
@@ -1140,10 +1180,10 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
                     uvList    = m.texture.uv_list
 
                     vertex = new Vertex vertecies, uvData, uvList
-                    vertex.normal = m.getNormal()
 
                     continue if vertex.getZPosition() < 0
 
+                    vertex.normal = m.getNormal()
                     results.push vertex
 
                 else if m instanceof Light
