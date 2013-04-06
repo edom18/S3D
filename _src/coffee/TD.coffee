@@ -752,8 +752,8 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
                 @vertices.push vec3
 
         getNormal: ->
-            a = (new Vector3).subVectors(@vertices[2], @vertices[1])
-            b = (new Vector3).subVectors(@vertices[1], @vertices[0])
+            a = (new Vector3).subVectors(@vertices[1], @vertices[0])
+            b = (new Vector3).subVectors(@vertices[2], @vertices[0])
 
             a.applyMatrix4 @matrixWorld
             b.applyMatrix4 @matrixWorld
@@ -778,16 +778,16 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
 
             triangle1 = new Triangle([
                 x1, y1, 0
-                x2, y1, 0
                 x1, y2, 0
+                x2, y1, 0
             ], texture1)
 
             @add triangle1
 
             triangle2 = new Triangle([
                 x1, y2, 0
-                x2, y1, 0
                 x2, y2, 0
+                x2, y1, 0
             ], texture2)
 
             @add triangle2
@@ -1045,28 +1045,30 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
 
                 x1 = (vertexList[0] *  hvw) + hvw
                 y1 = (vertexList[1] * -hvh) + hvh
-                z1 = vertexList[2]
-                w1 = vertexList[3]
+                z1 =  vertexList[2]
+                w1 =  vertexList[3]
                 x2 = (vertexList[4] *  hvw) + hvw
                 y2 = (vertexList[5] * -hvh) + hvh
-                z2 = vertexList[6]
-                w2 = vertexList[7]
+                z2 =  vertexList[6]
+                w2 =  vertexList[7]
                 x3 = (vertexList[8] *  hvw) + hvw
                 y3 = (vertexList[9] * -hvh) + hvh
-                z3 = vertexList[10]
-                w3 = vertexList[11]
+                z3 =  vertexList[10]
+                w3 =  vertexList[11]
 
                 # 変換後のベクトル成分を計算
                 _Ax = x2 - x1
                 _Ay = y2 - y1
+                _Az = z2 - z1
                 _Bx = x3 - x1
                 _By = y3 - y1
+                _Bz = z3 - z1
 
                 # 裏面カリング
                 # 頂点を結ぶ順が反時計回りの場合は「裏面」になり、その場合は描画をスキップ
                 # 裏面かどうかの判定は外積を利用する
-                # 判定は、3点の内、1-2点目と2-3点目との外積を計算し、結果がマイナスの場合は反時計回り。（外積の結果はZ軸に対しての数値）
-                continue if(((_Ax * (y3 - y2)) - (_Ay * (x3 - x2))) < 0)
+                # 判定は、p1, p2, p3の3点から、p1->p2, p1->p3のベクトルとの外積を利用する。
+                continue if (_Ax * _By) - (_Ay * _Bx) > 0
 
                 # 変換前のベクトル成分を計算
                 Ax = (uvList[2] - uvList[0]) * width
@@ -1126,6 +1128,7 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
                 g.moveTo(x1, y1)
                 g.lineTo(x2, y2)
                 g.lineTo(x3, y3)
+                g.closePath()
 
                 if @wireframe
                     g.strokeStyle = 'rgba(255, 255, 255, 0.5)'
