@@ -617,6 +617,8 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
             #@scale = new Vector3 1, 1, 1
             @up    = new Vector3 0, 1, 0
 
+            @matrixTranslate = new Matrix4
+            @matrixRotation = new Matrix4
             @matrix = new Matrix4
             @matrixWorld = new Matrix4
 
@@ -624,16 +626,26 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
 
         updateTranslate: do ->
             tm = new Matrix4
+            previous = null
 
             return ->
-                return tm.clone().translate(@position)
+                return false if previous and @position.equal previous
+
+                previous = @position.clone()
+                @matrixTranslate = tm.clone().translate(@position)
+
+                return true
 
         updateRotation: do ->
             rmx = new Matrix4
             rmy = new Matrix4
             rmz = new Matrix4
+            previous = null
 
             return ->
+
+                return false if previous and @rotation.equal previous
+
                 x = @rotation.x * DEG_TO_RAD
                 y = @rotation.y * DEG_TO_RAD
                 z = @rotation.z * DEG_TO_RAD
@@ -646,16 +658,22 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
                 tmp.multiplyMatrices rmx, rmy
                 tmp.multiply rmz
 
-                return tmp
+                previous = @rotation.clone()
+                @matrixRotation = tmp
+
+                return true
 
         updateMatrix: ->
-            tmp = new Matrix4
-            tmp.multiplyMatrices @updateTranslate(), @updateRotation()
-            @matrix.copy tmp
+
+            updatedRotation = @updateRotation()
+            updatedTranslate = @updateTranslate()
+
+            if updatedRotation or updatedTranslate
+                @matrix.multiplyMatrices @matrixTranslate, @matrixRotation
 
             c.updateMatrix() for c in @children
 
-        updateMatrixWorld: ->
+        updateMatrixWorld: (force) ->
             if not @parent
                 @matrixWorld.copy @matrix
             else
@@ -721,7 +739,6 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
             @projectionMatrix.perspectiveLH(@fov, @aspect, @near, @far)
 
         lookAt: do ->
-
             m1 = new Matrix4
 
             return (vector) ->
@@ -763,11 +780,15 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
                 vec3 = new Vector3 vertices[i + 0], vertices[i + 1], vertices[i + 2]
                 @vertices.push vec3
 
-        getNormal: ->
-            a = (new Vector3).subVectors(@vertices[1], @vertices[0])
-            b = (new Vector3).subVectors(@vertices[2], @vertices[0])
+        getNormal: do ->
+            a = new Vector3
+            b = new Vector3
 
-            return a.cross(b).applyMatrix4(@matrixWorld).normalize()
+            return ->
+                a.subVectors(@vertices[1], @vertices[0])
+                b.subVectors(@vertices[2], @vertices[0])
+
+                return a.clone().cross(b).applyMatrix4(@matrixWorld).normalize()
         
 # -------------------------------------------------------------------------------
 
@@ -955,12 +976,6 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
             tmp.copy @
             return tmp
 
-        revers: ->
-            tmp = new Color 255, 255, 255, 1
-            tmp.sub @
-            tmp.a = @a
-            return tmp
-
         toString: ->
             r = ~~min(@r * 255, 255)
             g = ~~min(@g * 255, 255)
@@ -1008,9 +1023,6 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
             else if material instanceof Object3D
                 @materials.push material
 
-        sort: (func) ->
-            @materials.sort(func) if func
-
         update: ->
             for m in @materials
                 m.updateMatrix()
@@ -1026,7 +1038,8 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
             @w = @_dummyCv.width  = cv.width
             @h = @_dummyCv.height = cv.height
 
-
+            @fog      = true
+            @lighting = true
             @fogColor = @clearColor
             @fogStart = 200
             @fogEnd   = 1000
@@ -1040,7 +1053,7 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
             @g.fillRect 0, 0, @w, @h
 
             scene.update()
-            lights    = @getLights(scene)
+            lights    = scene.lights
             vertecies = @getTransformedPoint matProj, scene.materials
 
             @drawTriangles @g, vertecies, lights, @w, @h
@@ -1050,21 +1063,20 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
             fogColor = @fogColor
             fogStart = @fogStart
             fogEnd   = @fogEnd
-            fog = @fog
+            fog      = @fog
+            lighting = @lighting
 
             dcv = @_dummyCv
             dg  = @_dummyG
 
             for v, i in vertecies
 
-                img = v.uvData
+                img    = v.uvData
                 uvList = v.uvList
                 vertexList = v.vertecies
                 z = v.getZPosition()
                 fogStrength = 0
                 normal = v.normal
-                width  = img?.width
-                height = img?.height
 
                 hvw = vw * 0.5
                 hvh = vh * 0.5
@@ -1098,6 +1110,9 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
                     g.stroke()
                     g.restore()
                     continue
+
+                width  = img.width
+                height = img.height
 
                 # 変換後のベクトル成分を計算
                 _Ax = x2 - x1
@@ -1154,7 +1169,7 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
                 # |Ax Ay|^-1
                 # |Bx By|
                 # を生成
-                mi = m.getInvert()
+                mi  = m.getInvert()
                 mie = mi.elements
 
                 # 逆行列が存在しない場合はスキップ
@@ -1171,24 +1186,25 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
 
                 dg.drawImage(img, 0, 0)
 
-                strength = 0
-                color = new Color 0, 0, 0, 1
+                if lighting
+                    strength = 0
+                    color = new Color 0, 0, 0, 1
 
-                for l in lights
-                    if l instanceof AmbientLight
-                        strength += l.strength
+                    for l in lights
+                        if l instanceof AmbientLight
+                            strength += l.strength
 
-                    else if l instanceof DirectionalLight
-                        L = l.direction
-                        N = normal.clone().add(L)
-                        factor = N.dot(L)
-                        strength += l.strength * factor
-                        
-                color.a -= strength
+                        else if l instanceof DirectionalLight
+                            L = l.direction
+                            N = normal.clone().add(L)
+                            factor = N.dot(L)
+                            strength += l.strength * factor
+                            
+                    color.a -= strength
 
-                if color.a > 0
-                    dg.fillStyle = color.toString()
-                    dg.fillRect 0, 0, width, height
+                    if color.a > 0
+                        dg.fillStyle = color.toString()
+                        dg.fillRect 0, 0, width, height
 
                 if fog
                     fogStrength = 1 - ((fogEnd - z) / (fogEnd - fogStart))
@@ -1256,9 +1272,6 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
                  b.getZPosition() - a.getZPosition()
 
             return results
-
-        getLights: (scene) ->
-            return scene.lights
 
 # ---------------------------------------------------------------------
 
