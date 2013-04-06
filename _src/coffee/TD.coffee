@@ -727,11 +727,11 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
         @param {Vector3} vec2
     ###
     class Line extends Object3D
-        constructor: (vec1, vec2, @color = new Color(255, 255, 255, 1)) ->
+        constructor: (x1, y1, z1, x2, y2, z2, @color = new Color(255, 255, 255, 1)) ->
             super
 
-            @vertices.push vec1
-            @vertices.push vec2
+            @vertices.push new Vector3 x1, y1, z1
+            @vertices.push new Vector3 x2, y2, z2
 
 # -------------------------------------------------------------------------------
 
@@ -1062,6 +1062,12 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
 
                 if not img
                     g.save()
+
+                    if fog
+                        fogStrength = ((fogEnd - z) / (fogEnd - fogStart))
+                        fogStrength = 0 if fogStrength < 0
+                        g.globalAlpha = fogStrength
+
                     g.beginPath()
                     g.moveTo x1, y1
                     g.lineTo x2, y2
@@ -1176,13 +1182,10 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
 
                 if fog
                     fogStrength = 1 - ((fogEnd - z) / (fogEnd - fogStart))
-
-                    fogStart = 0 if fogStrength < 0
+                    fogStrength = 0 if fogStrength < 0
                     g.globalAlpha = fogStrength
                     g.fillStyle   = fogColor
-                    #g.strokeStyle = fogColor
                     g.fill()
-                    #g.stroke()
 
                 g.restore()
  
@@ -1216,9 +1219,11 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
                     results.push vertex
 
                 else
-                    for c in m.children
-                        tmp = @getTransformedPoint mat, c.children
-                        results = results.concat tmp
+                    tmp = @getTransformedPoint mat, m.children
+                    results = results.concat tmp
+                    #for c in m.children
+                    #    tmp = @getTransformedPoint mat, c.children
+                    #    results = results.concat tmp
 
             results.sort (a, b) ->
                  b.getZPosition() - a.getZPosition()
