@@ -2,7 +2,7 @@ do (win = window, doc = window.document, exports = window) ->
 
     #Import
     {tan, cos, sin, PI} = Math
-    {Line, Color, AmbientLight, DirectionalLight, Plate, Face, Cube, Texture, Triangle, Matrix4, Camera, Renderer, Scene, Vector3, Particle} = window.S3D
+    {Object3D, Line, Color, AmbientLight, DirectionalLight, Plate, Face, Cube, Texture, Triangle, Matrix4, Camera, Renderer, Scene, Vector3, Particle} = window.S3D
 
     DEG_TO_RAD = PI / 180
 
@@ -10,80 +10,6 @@ do (win = window, doc = window.document, exports = window) ->
     MOUSE_DOWN = if isTouch then 'touchstart' else 'mousedown'
     MOUSE_MOVE = if isTouch then 'touchmove' else 'mousemove'
     MOUSE_UP   = if isTouch then 'touchend' else 'mouseup'
-
-    # 各素材のUV Dataを定義
-    ground_1_uv = [
-        0  , 0  ,
-        0.5, 0  ,
-        0  , 0.5
-    ]
-
-    ground_2_uv = [
-        0  , 0.5,
-        0.5, 0  ,
-        0.5, 0.5
-    ]
-
-    roof_1_uv = [
-        0  , 0  ,
-        0.5, 0  ,
-        0  , 0.5
-    ]
-
-    roof_2_uv = [
-        0  , 0.5,
-        0.5, 0  ,
-        0.5, 0.5
-    ]
-
-    wall_1_uv = [
-        0.0, 0.5
-        0.0, 1.0
-        0.5, 0.5
-    ]
-
-    wall_2_uv = [
-        0.0, 1.0
-        0.5, 1.0
-        0.5, 0.5
-    ]
-
-    wall_3_uv = [
-        0.5, 0,
-        1  , 0,
-        0.5, 0.5
-    ]
-
-    wall_4_uv = [
-        0.5, 0.5,
-        1  , 0,
-        1  , 0.5
-    ]
-
-    wall_5_uv = [
-        0.5, 0,
-        1  , 0,
-        0.5, 0.5
-    ]
-
-    wall_6_uv = [
-        0.5, 0.5,
-        1  , 0,
-        1  , 0.5
-    ]
-
-    wall_7_uv = [
-        0  , 0.5,
-        0.5, 0.5,
-        0  , 1
-    ]
-
-    wall_8_uv = [
-        0  , 1,
-        0.5, 0.5,
-        0.5, 1
-    ]
-
 
     textureImage = null
     logoImage    = null
@@ -132,11 +58,11 @@ do (win = window, doc = window.document, exports = window) ->
         camera.position.y = 50
         camera.position.z = 200
         #camera.up = new Vector3 1, 0, 0
-        camera.lookAt new Vector3 50, 0, 0
+        camera.lookAt new Vector3 0, 0, 0
         scene    = new Scene
         renderer = new Renderer cv, '#111'
         renderer.fog = true
-        renderer.wireframe = true
+        #renderer.wireframe = true
 
         create = ->
 
@@ -168,7 +94,7 @@ do (win = window, doc = window.document, exports = window) ->
             cube3.position.x = 50
             cube3.position.y = 80
 
-            plate1 = new Plate 50, 50, new Texture(textureImage, wall_1_uv), new Texture(textureImage, wall_2_uv)
+            plate1 = new Plate 50, 50, new Texture(textureImage, [0.0, 0.5, 0.0, 1.0, 0.5, 0.5]), new Texture(textureImage, [0.0, 1.0, 0.5, 1.0, 0.5, 0.5])
             plate1.position.x = -50
             plate1.position.z = -300
 
@@ -176,10 +102,24 @@ do (win = window, doc = window.document, exports = window) ->
             plate2.position.y = -100
             plate2.position.z = -500
 
-            line1 = new Line(new Vector3(0, 0, -100), new Vector3(0, 0, 100))
-            line2 = new Line(new Vector3(-100, 0, 0), new Vector3(100, 0, 0))
-            line3 = new Line(new Vector3(0, 100, 0), new Vector3(0, -100, 0))
-            line4 = new Line(new Vector3(50, 50, 50), new Vector3(-50, -50, -50))
+            line1 = new Line(0, 0, -200, 0, 0, 200, new Color(255, 0, 0, 0.3))
+            line2 = new Line(-200, 0, 0, 200, 0, 0, new Color(0, 255, 0, 0.3))
+            line3 = new Line(0, 200, 0, 0, -200, 0, new Color(0, 0, 255, 0.3))
+
+            size = 300
+            container = new Object3D
+            container.position.x = -(size * 0.5)
+            container.position.z = -(size * 0.5)
+
+            for i in [0..(size / 10)]
+                z = i * 10
+                line = new Line(0, 0, z, size, 0, z, new Color(255, 255, 255, 0.3))
+                container.add line
+
+            for i in [0..(size / 10)]
+                x = i * 10
+                line = new Line(x, 0, 0, x, 0, size, new Color(255, 255, 255, 0.3))
+                container.add line
 
             ambLight = new AmbientLight(new Color(255, 0, 0, 0.2))
             dirLight = new DirectionalLight(new Color(0, 0, 70, 0.3), (new Vector3(1, 0, -1)).normalize())
@@ -187,15 +127,16 @@ do (win = window, doc = window.document, exports = window) ->
             #scene.add ambLight
             #scene.add dirLight
 
+            scene.add container
             scene.add plate1
             scene.add plate2
             scene.add cube1
             scene.add cube2
             scene.add cube3
+
             scene.add line1
             scene.add line2
             scene.add line3
-            scene.add line4
 
             angle = 0
             do _loop = ->

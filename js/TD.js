@@ -4,16 +4,14 @@ var __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
 (function(win, doc, exports) {
-  var ANGLE, AmbientLight, Camera, Color, Cube, DEG_TO_RAD, DiffuseLight, DirectionalLight, Face, Light, Line, Matrix2, Matrix4, Object3D, PI, Particle, Plate, Quaternion, Renderer, Scene, Texture, Triangle, Vector3, Vertex, cos, makeRotatialQuaternion, max, min, sin, sqrt, tan;
+  var ANGLE, AmbientLight, Camera, Color, Cube, DEG_TO_RAD, DiffuseLight, DirectionalLight, Face, Light, Line, Matrix2, Matrix4, Object3D, PI, Plate, Quaternion, Renderer, Scene, Texture, Triangle, Vector3, Vertex, cos, makeRotatialQuaternion, max, min, sin, sqrt, tan;
   max = Math.max, min = Math.min, sqrt = Math.sqrt, tan = Math.tan, cos = Math.cos, sin = Math.sin, PI = Math.PI;
   DEG_TO_RAD = PI / 180;
   ANGLE = PI * 2;
   Vertex = (function() {
 
-    function Vertex(vertecies, uvData, uvList) {
+    function Vertex(vertecies) {
       this.vertecies = vertecies;
-      this.uvData = uvData;
-      this.uvList = uvList;
     }
 
     Vertex.prototype.getZPosition = function() {
@@ -882,11 +880,11 @@ var __hasProp = {}.hasOwnProperty,
 
     __extends(Line, _super);
 
-    function Line(vec1, vec2, color) {
+    function Line(x1, y1, z1, x2, y2, z2, color) {
       this.color = color != null ? color : new Color(255, 255, 255, 1);
       Line.__super__.constructor.apply(this, arguments);
-      this.vertices.push(vec1);
-      this.vertices.push(vec2);
+      this.vertices.push(new Vector3(x1, y1, z1));
+      this.vertices.push(new Vector3(x2, y2, z2));
     }
 
     return Line;
@@ -1052,32 +1050,6 @@ var __hasProp = {}.hasOwnProperty,
     }
 
     return Texture;
-
-  })();
-  Particle = (function() {
-
-    function Particle(v, sp, size, r, g, b) {
-      this.v = v;
-      this.sp = sp != null ? sp : 1;
-      this.size = size != null ? size : 1000;
-      this.r = r != null ? r : 255;
-      this.g = g != null ? g : 255;
-      this.b = b != null ? b : 255;
-      this.vec = new Vector3(1, 0, 1);
-    }
-
-    Particle.prototype.update = function() {
-      var p, q, r, rad;
-      p = new Quaternion(0, this.v);
-      rad = this.sp * DEG_TO_RAD;
-      q = makeRotatialQuaternion(rad, this.vec);
-      r = makeRotatialQuaternion(-rad, this.vec);
-      p = r.multiply(p);
-      p = p.multiply(q);
-      return this.v = p.v;
-    };
-
-    return Particle;
 
   })();
   Color = (function() {
@@ -1296,11 +1268,18 @@ var __hasProp = {}.hasOwnProperty,
         w3 = vertexList[11];
         if (!img) {
           g.save();
+          if (fog) {
+            fogStrength = (fogEnd - z) / (fogEnd - fogStart);
+            if (fogStrength < 0) {
+              fogStrength = 0;
+            }
+            g.globalAlpha = fogStrength;
+          }
           g.beginPath();
           g.moveTo(x1, y1);
           g.lineTo(x2, y2);
           g.closePath();
-          g.strokeStyle = '#eee';
+          g.strokeStyle = v.color.toString();
           g.stroke();
           g.restore();
           continue;
@@ -1364,7 +1343,7 @@ var __hasProp = {}.hasOwnProperty,
         if (fog) {
           fogStrength = 1 - ((fogEnd - z) / (fogEnd - fogStart));
           if (fogStrength < 0) {
-            fogStart = 0;
+            fogStrength = 0;
           }
           g.globalAlpha = fogStrength;
           g.fillStyle = fogColor;
@@ -1375,7 +1354,7 @@ var __hasProp = {}.hasOwnProperty,
     };
 
     Renderer.prototype.getTransformedPoint = function(mat, materials) {
-      var c, m, results, tmp, uvData, uvList, vertecies, vertex, _i, _j, _len, _len1, _ref;
+      var m, results, tmp, uvData, uvList, vertecies, vertex, _i, _len;
       results = [];
       for (_i = 0, _len = materials.length; _i < _len; _i++) {
         m = materials[_i];
@@ -1383,7 +1362,9 @@ var __hasProp = {}.hasOwnProperty,
           vertecies = m.getVerticesByProjectionMatrix(mat);
           uvData = m.texture.uv_data;
           uvList = m.texture.uv_list;
-          vertex = new Vertex(vertecies, uvData, uvList);
+          vertex = new Vertex(vertecies);
+          vertex.uvData = uvData;
+          vertex.uvList = uvList;
           if (vertex.getZPosition() < 0) {
             continue;
           }
@@ -1391,18 +1372,15 @@ var __hasProp = {}.hasOwnProperty,
           results.push(vertex);
         } else if (m instanceof Line) {
           vertecies = m.getVerticesByProjectionMatrix(mat);
-          vertex = new Vertex(vertecies, uvData, uvList);
+          vertex = new Vertex(vertecies);
+          vertex.color = m.color;
           if (vertex.getZPosition() < 0) {
             continue;
           }
           results.push(vertex);
         } else {
-          _ref = m.children;
-          for (_j = 0, _len1 = _ref.length; _j < _len1; _j++) {
-            c = _ref[_j];
-            tmp = this.getTransformedPoint(mat, c.children);
-            results = results.concat(tmp);
-          }
+          tmp = this.getTransformedPoint(mat, m.children);
+          results = results.concat(tmp);
         }
       }
       results.sort(function(a, b) {
@@ -1495,7 +1473,6 @@ var __hasProp = {}.hasOwnProperty,
   exports.Plate = Plate;
   exports.Cube = Cube;
   exports.Face = Face;
-  exports.Particle = Particle;
   exports.Texture = Texture;
   exports.Vector3 = Vector3;
   exports.Color = Color;

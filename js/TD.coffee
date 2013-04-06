@@ -10,7 +10,7 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
 # -------------------------------------------------------------------------------
 
     class Vertex
-        constructor: (@vertecies, @uvData, @uvList) ->
+        constructor: (@vertecies) ->
 
         getZPosition: ->
             ret = 0
@@ -727,11 +727,11 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
         @param {Vector3} vec2
     ###
     class Line extends Object3D
-        constructor: (vec1, vec2, @color = new Color(255, 255, 255, 1)) ->
+        constructor: (x1, y1, z1, x2, y2, z2, @color = new Color(255, 255, 255, 1)) ->
             super
 
-            @vertices.push vec1
-            @vertices.push vec2
+            @vertices.push new Vector3 x1, y1, z1
+            @vertices.push new Vector3 x2, y2, z2
 
 # -------------------------------------------------------------------------------
 
@@ -882,26 +882,26 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
 
 # -------------------------------------------------------------------------------
 
-    class Particle
-        constructor: (@v, @sp = 1, @size = 1000, @r = 255, @g = 255, @b = 255) ->
-            @vec = new Vector3 1, 0, 1
+    #class Particle
+    #    constructor: (@v, @sp = 1, @size = 1000, @r = 255, @g = 255, @b = 255) ->
+    #        @vec = new Vector3 1, 0, 1
 
-        update: ->
-            p = new Quaternion 0, @v
+    #    update: ->
+    #        p = new Quaternion 0, @v
 
-            rad = @sp * DEG_TO_RAD
+    #        rad = @sp * DEG_TO_RAD
 
-            # rad角の回転クォータニオンとその共役を生成
-            q = makeRotatialQuaternion(rad, @vec)
-            r = makeRotatialQuaternion(-rad, @vec)
+    #        # rad角の回転クォータニオンとその共役を生成
+    #        q = makeRotatialQuaternion(rad, @vec)
+    #        r = makeRotatialQuaternion(-rad, @vec)
 
-            # Quaternionを以下のように計算
-            # RPQ (RはQの共役）
-            
-            p = r.multiply p
-            p = p.multiply q
+    #        # Quaternionを以下のように計算
+    #        # RPQ (RはQの共役）
+    #        
+    #        p = r.multiply p
+    #        p = p.multiply q
 
-            @v = p.v
+    #        @v = p.v
 
 # -------------------------------------------------------------------------------
 
@@ -1062,11 +1062,17 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
 
                 if not img
                     g.save()
+
+                    if fog
+                        fogStrength = ((fogEnd - z) / (fogEnd - fogStart))
+                        fogStrength = 0 if fogStrength < 0
+                        g.globalAlpha = fogStrength
+
                     g.beginPath()
                     g.moveTo x1, y1
                     g.lineTo x2, y2
                     g.closePath()
-                    g.strokeStyle = '#eee'
+                    g.strokeStyle = v.color.toString()
                     g.stroke()
                     g.restore()
                     continue
@@ -1176,13 +1182,10 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
 
                 if fog
                     fogStrength = 1 - ((fogEnd - z) / (fogEnd - fogStart))
-
-                    fogStart = 0 if fogStrength < 0
+                    fogStrength = 0 if fogStrength < 0
                     g.globalAlpha = fogStrength
                     g.fillStyle   = fogColor
-                    #g.strokeStyle = fogColor
                     g.fill()
-                    #g.stroke()
 
                 g.restore()
  
@@ -1197,7 +1200,9 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
                     uvData    = m.texture.uv_data
                     uvList    = m.texture.uv_list
 
-                    vertex = new Vertex vertecies, uvData, uvList
+                    vertex = new Vertex vertecies
+                    vertex.uvData = uvData
+                    vertex.uvList = uvList
 
                     continue if vertex.getZPosition() < 0
 
@@ -1206,16 +1211,19 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
 
                 else if m instanceof Line
                     vertecies = m.getVerticesByProjectionMatrix(mat)
-                    vertex = new Vertex vertecies, uvData, uvList
+                    vertex = new Vertex vertecies
+                    vertex.color = m.color
 
                     continue if vertex.getZPosition() < 0
 
                     results.push vertex
 
                 else
-                    for c in m.children
-                        tmp = @getTransformedPoint mat, c.children
-                        results = results.concat tmp
+                    tmp = @getTransformedPoint mat, m.children
+                    results = results.concat tmp
+                    #for c in m.children
+                    #    tmp = @getTransformedPoint mat, c.children
+                    #    results = results.concat tmp
 
             results.sort (a, b) ->
                  b.getZPosition() - a.getZPosition()
@@ -1313,7 +1321,7 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
     exports.Plate = Plate
     exports.Cube  = Cube
     exports.Face  = Face
-    exports.Particle = Particle
+    #exports.Particle = Particle
     exports.Texture  = Texture
     exports.Vector3  = Vector3
     exports.Color    = Color
