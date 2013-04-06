@@ -2,7 +2,7 @@ do (win = window, doc = window.document, exports = window) ->
 
     #Import
     {tan, cos, sin, PI} = Math
-    {Plate, Face, Cube, Texture, Triangle, Matrix4, Camera, Renderer, Scene, Vector3, Particle} = window.S3D
+    {Color, AmbientLight, DirectionalLight, Plate, Face, Cube, Texture, Triangle, Matrix4, Camera, Renderer, Scene, Vector3, Particle} = window.S3D
 
     DEG_TO_RAD = PI / 180
 
@@ -86,6 +86,8 @@ do (win = window, doc = window.document, exports = window) ->
 
 
     textureImage = null
+    logoImage    = null
+    photoImage   = null
     rotX = 0
     rotY = 0
 
@@ -100,15 +102,29 @@ do (win = window, doc = window.document, exports = window) ->
         h = cv.height = win.innerHeight
         fov = 60
         aspect = w / h
+
+        cnt = 3
         img = new Image()
+        logo = new Image()
+        photo = new Image()
 
         img.onload = ->
             textureImage = img
-            create()
+            --cnt or create()
+
+        logo.onload = ->
+            logoImage = logo
+            --cnt or create()
+
+        photo.onload = ->
+            photoImage = photo
+            --cnt or create()
 
         img.src = 'img/aXjiA.png'
-        #img.src = 'img/HTML5_Logo_512.png'
-        #img.src = 'img/sample.png'
+        logo.src = 'img/HTML5_Logo_512.png'
+        photo.src = 'img/photo.jpg'
+        #photo.src = 'http://jsrun.it/assets/y/r/A/V/yrAVl.jpg'
+        #logo.src = 'http://jsrun.it/assets/z/1/2/9/z129U.png'
         #img.src = 'http://jsrun.it/assets/k/M/J/J/kMJJS.png'
 
         camera = new Camera 40, aspect, 1, 5000
@@ -118,24 +134,43 @@ do (win = window, doc = window.document, exports = window) ->
         #camera.up = new Vector3 1, 0, 0
         camera.lookAt new Vector3 0, 0, 0
         scene    = new Scene
-        renderer = new Renderer cv, '#111', true
+        renderer = new Renderer cv, '#111'
+        renderer.fog = true
+        renderer.wireframe = true
 
         create = ->
+            #materials = [
+            #    new Texture textureImage, roof_1_uv #top1
+            #    new Texture textureImage, roof_2_uv #top2
+            #    new Texture textureImage, wall_1_uv #bottom1
+            #    new Texture textureImage, wall_2_uv #bottom2
+            #    new Texture textureImage, wall_3_uv #front1
+            #    new Texture textureImage, wall_4_uv #front2
+            #    new Texture textureImage, wall_5_uv #back1
+            #    new Texture textureImage, wall_6_uv #back2
+            #    new Texture textureImage, wall_3_uv #wall1
+            #    new Texture textureImage, wall_4_uv #wall2
+            #    new Texture textureImage, wall_5_uv #wall3
+            #    new Texture textureImage, wall_6_uv #wall4
+            #    new Texture textureImage, wall_7_uv #wall5
+            #    new Texture textureImage, wall_8_uv #wall6
+            #]
+
             materials = [
-                new Texture textureImage, roof_1_uv #top1
-                new Texture textureImage, roof_2_uv #top2
-                new Texture textureImage, wall_1_uv #bottom1
-                new Texture textureImage, wall_2_uv #bottom2
-                new Texture textureImage, wall_3_uv #front1
-                new Texture textureImage, wall_4_uv #front2
-                new Texture textureImage, wall_5_uv #back1
-                new Texture textureImage, wall_6_uv #back2
-                new Texture textureImage, wall_3_uv #wall1
-                new Texture textureImage, wall_4_uv #wall2
-                new Texture textureImage, wall_5_uv #wall3
-                new Texture textureImage, wall_6_uv #wall4
-                new Texture textureImage, wall_7_uv #wall5
-                new Texture textureImage, wall_8_uv #wall6
+                new Texture(photoImage, [0, 0, 1, 0, 0, 1])
+                new Texture(photoImage, [0, 1, 1, 0, 1, 1])
+                new Texture(photoImage, [0, 0, 1, 0, 0, 1])
+                new Texture(photoImage, [0, 1, 1, 0, 1, 1])
+                new Texture(photoImage, [0, 0, 1, 0, 0, 1])
+                new Texture(photoImage, [0, 1, 1, 0, 1, 1])
+                new Texture(photoImage, [0, 0, 1, 0, 0, 1])
+                new Texture(photoImage, [0, 1, 1, 0, 1, 1])
+                new Texture(photoImage, [0, 0, 1, 0, 0, 1])
+                new Texture(photoImage, [0, 1, 1, 0, 1, 1])
+                new Texture(photoImage, [0, 0, 1, 0, 0, 1])
+                new Texture(photoImage, [0, 1, 1, 0, 1, 1])
+                new Texture(photoImage, [0, 0, 1, 0, 0, 1])
+                new Texture(photoImage, [0, 1, 1, 0, 1, 1])
             ]
 
             cube1 = new Cube 50, 20, 20, 1, 1, 1, materials
@@ -155,9 +190,15 @@ do (win = window, doc = window.document, exports = window) ->
             plate1.position.x = -50
             plate1.position.z = -300
 
-            plate2 = new Plate 50, 50, new Texture(textureImage, wall_1_uv), new Texture(textureImage, wall_2_uv)
+            plate2 = new Plate 50, 50, new Texture(logoImage, [0, 0, 1, 0, 0, 1]), new Texture(logoImage, [0, 1, 1, 0, 1, 1])
             plate2.position.y = -100
             plate2.position.z = -500
+
+            ambLight = new AmbientLight(new Color(1, 0, 0, 0.2))
+            dirLight = new DirectionalLight(new Color(0.0, 0.0, 0.3, 0.3), (new Vector3(1, 0, -1)).normalize())
+           
+            #scene.add ambLight
+            #scene.add dirLight
 
             scene.add plate1
             scene.add plate2
@@ -169,13 +210,14 @@ do (win = window, doc = window.document, exports = window) ->
             do _loop = ->
                 angle += 1
                 plate1.rotation.z = angle
+                plate2.rotation.x = angle * 3
                 cube1.rotation.z = angle
                 cube2.rotation.x = angle * 2
                 cube3.rotation.x = angle * 3
                 cube3.rotation.y = angle * 3
                 cube3.rotation.z = angle * 3
                 renderer.render scene, camera
-                setTimeout _loop, 32
+                #setTimeout _loop, 32
 
     dragging = false
     prevX = 0

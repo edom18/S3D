@@ -4,8 +4,8 @@ var __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
 (function(win, doc, exports) {
-  var ANGLE, AmbientLight, Camera, Color, Cube, DEG_TO_RAD, DirectionalLight, Face, Light, Matrix2, Matrix4, Object3D, PI, Particle, Plate, Quaternion, Renderer, Scene, Texture, Triangle, Vector3, Vertex, cos, makeRotatialQuaternion, sin, sqrt, tan;
-  sqrt = Math.sqrt, tan = Math.tan, cos = Math.cos, sin = Math.sin, PI = Math.PI;
+  var ANGLE, AmbientLight, Camera, Color, Cube, DEG_TO_RAD, DiffuseLight, DirectionalLight, Face, Light, Matrix2, Matrix4, Object3D, PI, Particle, Plate, Quaternion, Renderer, Scene, Texture, Triangle, Vector3, Vertex, cos, makeRotatialQuaternion, max, min, sin, sqrt, tan;
+  max = Math.max, min = Math.min, sqrt = Math.sqrt, tan = Math.tan, cos = Math.cos, sin = Math.sin, PI = Math.PI;
   DEG_TO_RAD = PI / 180;
   ANGLE = PI * 2;
   Vertex = (function() {
@@ -21,10 +21,23 @@ var __hasProp = {}.hasOwnProperty,
       ret = 0;
       cnt = 0;
       _ref = this.vertecies;
-      for (i = _i = 0, _len = _ref.length; _i < _len; i = _i += 3) {
+      for (i = _i = 0, _len = _ref.length; _i < _len; i = _i += 4) {
         v = _ref[i];
         cnt++;
-        ret += this.vertecies[i + 2];
+        ret += this.vertecies[i + 2] * this.vertecies[i + 3];
+      }
+      return ret / cnt;
+    };
+
+    Vertex.prototype.getW = function() {
+      var cnt, i, ret, v, _i, _len, _ref;
+      ret = 0;
+      cnt = 0;
+      _ref = this.vertecies;
+      for (i = _i = 0, _len = _ref.length; _i < _len; i = _i += 4) {
+        v = _ref[i];
+        cnt++;
+        ret += this.vertecies[i + 2] * this.vertecies[i + 3];
       }
       return ret / cnt;
     };
@@ -93,8 +106,9 @@ var __hasProp = {}.hasOwnProperty,
 
     Vector3.prototype.normalize = function() {
       var nrm;
-      nrm = 1 / this.norm();
+      nrm = this.norm();
       if (nrm !== 0) {
+        nrm = 1 / nrm;
         this.x *= nrm;
         this.y *= nrm;
         this.z *= nrm;
@@ -186,7 +200,7 @@ var __hasProp = {}.hasOwnProperty,
     */
 
 
-    Vector3.prototype.applyProjection = function(m) {
+    Vector3.prototype.applyProjection = function(m, out) {
       var e, w, x, y, z;
       x = this.x;
       y = this.y;
@@ -196,6 +210,8 @@ var __hasProp = {}.hasOwnProperty,
       this.x = (e[0] * x + e[4] * y + e[8] * z + e[12]) * w;
       this.y = (e[1] * x + e[5] * y + e[9] * z + e[13]) * w;
       this.z = (e[2] * x + e[6] * y + e[10] * z + e[14]) * w;
+      out[0] = this;
+      out[1] = e[3] * x + e[7] * y + e[11] * z + e[15];
       return this;
     };
 
@@ -940,10 +956,20 @@ var __hasProp = {}.hasOwnProperty,
       for (_i = 0, _len = _ref.length; _i < _len; _i++) {
         v = _ref[_i];
         wm = Matrix4.multiply(m, this.matrixWorld);
-        tmp = v.clone().applyProjection(wm);
-        ret = ret.concat(tmp.toArray());
+        tmp = [];
+        v.clone().applyProjection(wm, tmp);
+        ret = ret.concat(tmp[0].toArray().concat(tmp[1]));
       }
       return ret;
+    };
+
+    Triangle.prototype.getNormal = function() {
+      var a, b;
+      a = (new Vector3).subVectors(this.vertices[2], this.vertices[1]);
+      b = (new Vector3).subVectors(this.vertices[1], this.vertices[0]);
+      a.applyMatrix4(this.matrixWorld);
+      b.applyMatrix4(this.matrixWorld);
+      return a.cross(b).normalize();
     };
 
     return Triangle;
@@ -1053,18 +1079,69 @@ var __hasProp = {}.hasOwnProperty,
       this.a = a;
     }
 
+    Color.prototype.copy = function(c) {
+      this.r = c.r;
+      this.g = c.g;
+      this.b = c.b;
+      this.a = c.a;
+      return this;
+    };
+
+    Color.prototype.add = function(c) {
+      this.r = min(this.r + c.r, 1);
+      this.g = min(this.g + c.g, 1);
+      this.b = min(this.b + c.b, 1);
+      this.a = min(this.a + c.a, 1);
+      return this;
+    };
+
+    Color.prototype.sub = function(c) {
+      this.r = max(this.r - c.r, 0);
+      this.g = max(this.g - c.g, 0);
+      this.b = max(this.b - c.b, 0);
+      this.a = max(this.a - c.a, 0);
+      return this;
+    };
+
+    Color.prototype.multiplyScalar = function(s) {
+      this.r *= s;
+      this.g *= s;
+      this.b *= s;
+      this.a *= s;
+      return this;
+    };
+
+    Color.prototype.clone = function() {
+      var tmp;
+      tmp = new Color;
+      tmp.copy(this);
+      return tmp;
+    };
+
+    Color.prototype.toString = function() {
+      var a, b, g, r;
+      r = ~~min(this.r * 255, 255);
+      g = ~~min(this.g * 255, 255);
+      b = ~~min(this.b * 255, 255);
+      a = min(this.a, 1);
+      return "rgba(" + r + ", " + g + ", " + b + ", " + a + ")";
+    };
+
     return Color;
 
   })();
-  Light = (function() {
+  Light = (function(_super) {
+
+    __extends(Light, _super);
 
     function Light(color) {
       this.color = color;
+      Light.__super__.constructor.apply(this, arguments);
     }
 
     return Light;
 
-  })();
+  })(Object3D);
   AmbientLight = (function(_super) {
 
     __extends(AmbientLight, _super);
@@ -1077,12 +1154,27 @@ var __hasProp = {}.hasOwnProperty,
     return AmbientLight;
 
   })(Light);
+  DiffuseLight = (function(_super) {
+
+    __extends(DiffuseLight, _super);
+
+    function DiffuseLight(color, vector, factor) {
+      this.color = color;
+      this.vector = vector;
+      this.factor = factor;
+      DiffuseLight.__super__.constructor.apply(this, arguments);
+    }
+
+    return DiffuseLight;
+
+  })(Light);
   DirectionalLight = (function(_super) {
 
     __extends(DirectionalLight, _super);
 
-    function DirectionalLight(color) {
+    function DirectionalLight(color, direction) {
       this.color = color;
+      this.direction = direction;
       DirectionalLight.__super__.constructor.apply(this, arguments);
     }
 
@@ -1122,34 +1214,44 @@ var __hasProp = {}.hasOwnProperty,
   })();
   Renderer = (function() {
 
-    function Renderer(cv, clearColor, wireframe) {
+    function Renderer(cv, clearColor) {
       this.cv = cv;
       this.clearColor = clearColor != null ? clearColor : '#fff';
-      this.wireframe = wireframe != null ? wireframe : false;
       this.g = cv.getContext('2d');
       this.w = cv.width;
       this.h = cv.height;
+      this.fogColor = this.clearColor;
+      this.fogStart = 200;
+      this.fogEnd = 1000;
     }
 
     Renderer.prototype.render = function(scene, camera) {
-      var matProj, vertecies;
+      var lights, matProj, vertecies;
       camera.updateProjectionMatrix();
       matProj = camera.getProjectionMatrix();
       this.g.beginPath();
       this.g.fillStyle = this.clearColor;
       this.g.fillRect(0, 0, this.w, this.h);
       scene.update();
+      lights = this.getLights(scene.materials);
       vertecies = this.getTransformedPoint(matProj, scene.materials);
-      return this.drawTriangles(this.g, vertecies, this.w, this.h);
+      return this.drawTriangles(this.g, vertecies, lights, this.w, this.h);
     };
 
-    Renderer.prototype.drawTriangles = function(g, vertecies, vw, vh) {
-      var Ax, Ay, Bx, By, a, b, c, d, height, hvh, hvw, i, img, m, me, mi, mie, uvList, v, vertexList, width, x1, x2, x3, y1, y2, y3, z1, z2, z3, _Ax, _Ay, _Bx, _By, _i, _len;
+    Renderer.prototype.drawTriangles = function(g, vertecies, lights, vw, vh) {
+      var Ax, Ay, Bx, By, L, N, a, b, c, color, d, factor, fog, fogColor, fogEnd, fogStart, fogStrength, height, hvh, hvw, i, img, l, m, me, mi, mie, normal, uvList, v, vertexList, w1, w2, w3, width, x1, x2, x3, y1, y2, y3, z, z1, z2, z3, _Ax, _Ay, _Bx, _By, _i, _j, _len, _len1;
+      fogColor = this.fogColor;
+      fogStart = this.fogStart;
+      fogEnd = this.fogEnd;
+      fog = this.fog;
       for (i = _i = 0, _len = vertecies.length; _i < _len; i = ++_i) {
         v = vertecies[i];
         img = v.uvData;
         uvList = v.uvList;
         vertexList = v.vertecies;
+        z = v.getZPosition();
+        fogStrength = 0;
+        normal = v.normal;
         width = img.width;
         height = img.height;
         hvw = vw * 0.5;
@@ -1157,12 +1259,15 @@ var __hasProp = {}.hasOwnProperty,
         x1 = (vertexList[0] * hvw) + hvw;
         y1 = (vertexList[1] * -hvh) + hvh;
         z1 = vertexList[2];
-        x2 = (vertexList[3] * hvw) + hvw;
-        y2 = (vertexList[4] * -hvh) + hvh;
-        z2 = vertexList[5];
-        x3 = (vertexList[6] * hvw) + hvw;
-        y3 = (vertexList[7] * -hvh) + hvh;
-        z3 = vertexList[8];
+        w1 = vertexList[3];
+        x2 = (vertexList[4] * hvw) + hvw;
+        y2 = (vertexList[5] * -hvh) + hvh;
+        z2 = vertexList[6];
+        w2 = vertexList[7];
+        x3 = (vertexList[8] * hvw) + hvw;
+        y3 = (vertexList[9] * -hvh) + hvh;
+        z3 = vertexList[10];
+        w3 = vertexList[11];
         _Ax = x2 - x1;
         _Ay = y2 - y1;
         _Bx = x3 - x1;
@@ -1197,13 +1302,42 @@ var __hasProp = {}.hasOwnProperty,
         g.clip();
         g.transform(a, b, c, d, x1 - (a * uvList[0] * width + c * uvList[1] * height), y1 - (b * uvList[0] * width + d * uvList[1] * height));
         g.drawImage(img, 0, 0);
+        color = new Color(0, 0, 0, 0);
+        for (_j = 0, _len1 = lights.length; _j < _len1; _j++) {
+          l = lights[_j];
+          if (l instanceof AmbientLight) {
+            color.add(l.color);
+          } else if (l instanceof DirectionalLight) {
+            L = l.direction;
+            N = normal.clone().add(L);
+            factor = N.dot(L);
+            if (factor > 0) {
+              color.add(l.color.clone().multiplyScalar(factor));
+            }
+          }
+        }
+        g.save();
+        g.globalCompositeOperation = 'lighter';
+        g.fillStyle = color.toString();
+        g.fill();
+        g.restore();
+        if (fog) {
+          fogStrength = 1 - ((fogEnd - z) / (fogEnd - fogStart));
+          if (fogStrength < 0) {
+            fogStart = 0;
+          }
+          g.globalAlpha = fogStrength;
+          g.fillStyle = fogColor;
+          g.fill();
+        }
         g.restore();
       }
     };
 
     Renderer.prototype.getTransformedPoint = function(mat, materials) {
-      var c, m, results, tmp, uvData, uvList, vertecies, vertex, _i, _j, _len, _len1, _ref;
+      var c, lightList, m, results, tmp, uvData, uvList, vertecies, vertex, _i, _j, _len, _len1, _ref;
       results = [];
+      lightList = [];
       for (_i = 0, _len = materials.length; _i < _len; _i++) {
         m = materials[_i];
         if (m instanceof Triangle) {
@@ -1214,7 +1348,10 @@ var __hasProp = {}.hasOwnProperty,
           if (vertex.getZPosition() < 0) {
             continue;
           }
+          vertex.normal = m.getNormal();
           results.push(vertex);
+        } else if (m instanceof Light) {
+          continue;
         } else {
           _ref = m.children;
           for (_j = 0, _len1 = _ref.length; _j < _len1; _j++) {
@@ -1227,6 +1364,18 @@ var __hasProp = {}.hasOwnProperty,
       results.sort(function(a, b) {
         return b.getZPosition() - a.getZPosition();
       });
+      return results;
+    };
+
+    Renderer.prototype.getLights = function(materials) {
+      var m, results, _i, _len;
+      results = [];
+      for (_i = 0, _len = materials.length; _i < _len; _i++) {
+        m = materials[_i];
+        if (m instanceof Light) {
+          results.push(m);
+        }
+      }
       return results;
     };
 
@@ -1312,5 +1461,8 @@ var __hasProp = {}.hasOwnProperty,
   exports.Particle = Particle;
   exports.Texture = Texture;
   exports.Vector3 = Vector3;
-  return exports.Quaternion = Quaternion;
+  exports.Color = Color;
+  exports.Quaternion = Quaternion;
+  exports.AmbientLight = AmbientLight;
+  return exports.DirectionalLight = DirectionalLight;
 })(window, window.document, window.S3D || (window.S3D = {}));
