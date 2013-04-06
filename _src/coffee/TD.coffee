@@ -6,7 +6,6 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
     DEG_TO_RAD = PI / 180
     ANGLE = PI * 2
 
-
 # -------------------------------------------------------------------------------
 
     class Vertex
@@ -34,6 +33,9 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
         constructor: (@x = 0, @y = 0, @z = 0) ->
         zero: ->
             @x = @y = @z = 0;
+
+        equal: (v) ->
+            return (@x is v.x) and (@y is v.y) and (@z is v.z)
 
         sub: (v) ->
             @x -= v.x
@@ -289,6 +291,16 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
 
             return @
 
+        equal: (m) ->
+            te = @elements
+            me = m.elements
+
+            return (
+                (te[0] is me[0]) and (te[4] is me[4]) and (te[8]  is me[8] ) and (te[12] is me[12]) and
+                (te[1] is me[1]) and (te[5] is me[5]) and (te[9]  is me[9] ) and (te[13] is me[13]) and
+                (te[2] is me[2]) and (te[6] is me[6]) and (te[10] is me[10]) and (te[14] is me[14]) and
+                (te[3] is me[3]) and (te[7] is me[7]) and (te[11] is me[11]) and (te[15] is me[15])
+            )
 
         getInvert: ->
             out = new Matrix4
@@ -636,7 +648,6 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
 
                 return tmp
 
-
         updateMatrix: ->
             tmp = new Matrix4
             tmp.multiplyMatrices @updateTranslate(), @updateRotation()
@@ -651,9 +662,6 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
                 @matrixWorld.multiplyMatrices @parent.matrixWorld, @matrix
 
             c.updateMatrixWorld() for c in @children
-
-        localToWorld: (vector) ->
-            return vector.applyMatrix4 @matrixWorld
 
         getVerticesByProjectionMatrix: (m) ->
             ret = []
@@ -706,7 +714,7 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
 
         getProjectionMatrix: ->
             tmp = Matrix4.multiply @projectionMatrix, @viewMatrix
-            tmp.multiply @matrixWorld
+            return tmp.multiply @matrixWorld
 
         updateProjectionMatrix: ->
             @lookAt()
@@ -1175,9 +1183,6 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
                         N = normal.clone().add(L)
                         factor = N.dot(L)
                         strength += l.strength * factor
-                        #color.add l.color.clone().multiplyScalar factor
-                        #dg.fillStyle = l.color.clone().multiplyScalar(factor).toString()
-                        #dg.fillRect 0, 0, width, height
                         
                 color.a -= strength
 
