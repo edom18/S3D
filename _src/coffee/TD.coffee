@@ -595,7 +595,7 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
         constructor: ->
             @parent = null
             @children = []
-            @vertecies = []
+            @vertices = []
             @position = new Vector3
             @rotation = new Vector3
             #@scale = new Vector3 1, 1, 1
@@ -727,11 +727,11 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
         @param {Vector3} vec2
     ###
     class Line extends Object3D
-        constructor: (vec1, vec2) ->
+        constructor: (vec1, vec2, @color = new Color(255, 255, 255, 1)) ->
             super
 
-            @vertecies.push vec1
-            @vertecies.push vec2
+            @vertices.push vec1
+            @vertices.push vec2
 
 # -------------------------------------------------------------------------------
 
@@ -906,7 +906,11 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
 # -------------------------------------------------------------------------------
 
     class Color
-        constructor: (@r, @g, @b, @a) ->
+        constructor: (r = 0, g = 0, b = 0, @a = 1) ->
+            d = 1 / 255
+            @r = r * d
+            @g = g * d
+            @b = b * d
 
         copy: (c) ->
             @r = c.r
@@ -1037,8 +1041,8 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
                 z = v.getZPosition()
                 fogStrength = 0
                 normal = v.normal
-                width  = img.width
-                height = img.height
+                width  = img?.width
+                height = img?.height
 
                 hvw = vw * 0.5
                 hvh = vh * 0.5
@@ -1055,6 +1059,17 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
                 y3 = (vertexList[9] * -hvh) + hvh
                 z3 =  vertexList[10]
                 w3 =  vertexList[11]
+
+                if not img
+                    g.save()
+                    g.beginPath()
+                    g.moveTo x1, y1
+                    g.lineTo x2, y2
+                    g.closePath()
+                    g.strokeStyle = '#eee'
+                    g.stroke()
+                    g.restore()
+                    continue
 
                 # 変換後のベクトル成分を計算
                 _Ax = x2 - x1
@@ -1190,7 +1205,12 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
                     results.push vertex
 
                 else if m instanceof Line
-                    continue
+                    vertecies = m.getVerticesByProjectionMatrix(mat)
+                    vertex = new Vertex vertecies, uvData, uvList
+
+                    continue if vertex.getZPosition() < 0
+
+                    results.push vertex
 
                 else
                     for c in m.children
@@ -1289,6 +1309,7 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
     exports.Texture  = Texture
     exports.Triangle = Triangle
     exports.Scene = Scene
+    exports.Line  = Line
     exports.Plate = Plate
     exports.Cube  = Cube
     exports.Face  = Face
