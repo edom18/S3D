@@ -2,7 +2,7 @@ do (win = window, doc = window.document, exports = window) ->
 
     #Import
     {tan, cos, sin, PI} = Math
-    {Color, AmbientLight, DirectionalLight, Plate, Face, Cube, Texture, Triangle, Matrix4, Camera, Renderer, Scene, Vector3, Particle} = window.S3D
+    {Line, Color, AmbientLight, DirectionalLight, Plate, Face, Cube, Texture, Triangle, Matrix4, Camera, Renderer, Scene, Vector3, Particle} = window.S3D
 
     DEG_TO_RAD = PI / 180
 
@@ -37,15 +37,15 @@ do (win = window, doc = window.document, exports = window) ->
     ]
 
     wall_1_uv = [
-        0  , 0.5,
-        0.5, 0.5,
-        0  , 1
+        0.0, 0.5
+        0.0, 1.0
+        0.5, 0.5
     ]
 
     wall_2_uv = [
-        0  , 1,
-        0.5, 0.5,
-        0.5, 1
+        0.0, 1.0
+        0.5, 1.0
+        0.5, 0.5
     ]
 
     wall_3_uv = [
@@ -129,48 +129,30 @@ do (win = window, doc = window.document, exports = window) ->
 
         camera = new Camera 40, aspect, 1, 5000
         camera.position.x = 10
-        camera.position.y = 150
+        camera.position.y = 50
         camera.position.z = 200
         #camera.up = new Vector3 1, 0, 0
-        camera.lookAt new Vector3 0, 0, 0
+        camera.lookAt new Vector3 50, 0, 0
         scene    = new Scene
         renderer = new Renderer cv, '#111'
         renderer.fog = true
         renderer.wireframe = true
 
         create = ->
-            #materials = [
-            #    new Texture textureImage, roof_1_uv #top1
-            #    new Texture textureImage, roof_2_uv #top2
-            #    new Texture textureImage, wall_1_uv #bottom1
-            #    new Texture textureImage, wall_2_uv #bottom2
-            #    new Texture textureImage, wall_3_uv #front1
-            #    new Texture textureImage, wall_4_uv #front2
-            #    new Texture textureImage, wall_5_uv #back1
-            #    new Texture textureImage, wall_6_uv #back2
-            #    new Texture textureImage, wall_3_uv #wall1
-            #    new Texture textureImage, wall_4_uv #wall2
-            #    new Texture textureImage, wall_5_uv #wall3
-            #    new Texture textureImage, wall_6_uv #wall4
-            #    new Texture textureImage, wall_7_uv #wall5
-            #    new Texture textureImage, wall_8_uv #wall6
-            #]
 
             materials = [
-                new Texture(photoImage, [0, 0, 1, 0, 0, 1])
-                new Texture(photoImage, [0, 1, 1, 0, 1, 1])
-                new Texture(photoImage, [0, 0, 1, 0, 0, 1])
-                new Texture(photoImage, [0, 1, 1, 0, 1, 1])
-                new Texture(photoImage, [0, 0, 1, 0, 0, 1])
-                new Texture(photoImage, [0, 1, 1, 0, 1, 1])
-                new Texture(photoImage, [0, 0, 1, 0, 0, 1])
-                new Texture(photoImage, [0, 1, 1, 0, 1, 1])
-                new Texture(photoImage, [0, 0, 1, 0, 0, 1])
-                new Texture(photoImage, [0, 1, 1, 0, 1, 1])
-                new Texture(photoImage, [0, 0, 1, 0, 0, 1])
-                new Texture(photoImage, [0, 1, 1, 0, 1, 1])
-                new Texture(photoImage, [0, 0, 1, 0, 0, 1])
-                new Texture(photoImage, [0, 1, 1, 0, 1, 1])
+                new Texture(photoImage, [0, 0, 0, 1, 1, 0])
+                new Texture(photoImage, [0, 1, 1, 1, 1, 0])
+                new Texture(photoImage, [0, 0, 0, 1, 1, 0])
+                new Texture(photoImage, [0, 1, 1, 1, 1, 0])
+                new Texture(photoImage, [0, 0, 0, 1, 1, 0])
+                new Texture(photoImage, [0, 1, 1, 1, 1, 0])
+                new Texture(photoImage, [0, 0, 0, 1, 1, 0])
+                new Texture(photoImage, [0, 1, 1, 1, 1, 0])
+                new Texture(photoImage, [0, 0, 0, 1, 1, 0])
+                new Texture(photoImage, [0, 1, 1, 1, 1, 0])
+                new Texture(photoImage, [0, 0, 0, 1, 1, 0])
+                new Texture(photoImage, [0, 1, 1, 1, 1, 0])
             ]
 
             cube1 = new Cube 50, 20, 20, 1, 1, 1, materials
@@ -190,21 +172,30 @@ do (win = window, doc = window.document, exports = window) ->
             plate1.position.x = -50
             plate1.position.z = -300
 
-            plate2 = new Plate 50, 50, new Texture(logoImage, [0, 0, 1, 0, 0, 1]), new Texture(logoImage, [0, 1, 1, 0, 1, 1])
+            plate2 = new Plate 50, 50, new Texture(logoImage, [0, 0, 0, 1, 1, 0]), new Texture(logoImage, [0, 1, 1, 1, 1, 0])
             plate2.position.y = -100
             plate2.position.z = -500
 
-            ambLight = new AmbientLight(new Color(1, 0, 0, 0.2))
-            dirLight = new DirectionalLight(new Color(0.0, 0.0, 0.3, 0.3), (new Vector3(1, 0, -1)).normalize())
+            line1 = new Line(new Vector3(0, 0, -100), new Vector3(0, 0, 100))
+            line2 = new Line(new Vector3(-100, 0, 0), new Vector3(100, 0, 0))
+            line3 = new Line(new Vector3(0, 100, 0), new Vector3(0, -100, 0))
+            line4 = new Line(new Vector3(50, 50, 50), new Vector3(-50, -50, -50))
+
+            ambLight = new AmbientLight(new Color(255, 0, 0, 0.2))
+            dirLight = new DirectionalLight(new Color(0, 0, 70, 0.3), (new Vector3(1, 0, -1)).normalize())
            
             #scene.add ambLight
             #scene.add dirLight
 
             scene.add plate1
             scene.add plate2
-            scene.add cube3
-            scene.add cube2
             scene.add cube1
+            scene.add cube2
+            scene.add cube3
+            scene.add line1
+            scene.add line2
+            scene.add line3
+            scene.add line4
 
             angle = 0
             do _loop = ->

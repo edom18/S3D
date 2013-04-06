@@ -18,17 +18,6 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
             for v, i in @vertecies by 4
                 cnt++
                 ret += @vertecies[i + 2] * @vertecies[i + 3]
-                #ret += @vertecies[i + 2]
-
-            return ret / cnt
-
-        getW: ->
-            ret = 0
-            cnt = 0
-
-            for v, i in @vertecies by 4
-                cnt++
-                ret += @vertecies[i + 2] * @vertecies[i + 3]
 
             return ret / cnt
 
@@ -493,11 +482,6 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
             y = v.y
             z = v.z
 
-            #te[12] = te[0] * x + te[4] * y + te[8]  * z + te[12]
-            #te[13] = te[1] * x + te[5] * y + te[9]  * z + te[13]
-            #te[14] = te[2] * x + te[6] * y + te[10] * z + te[14]
-            #te[15] = te[3] * x + te[7] * y + te[11] * z + te[15]
-
             te[0] = 1; te[4] = 0; te[8]  = 0; te[12] = x;
             te[1] = 0; te[5] = 1; te[9]  = 0; te[13] = y;
             te[2] = 0; te[6] = 0; te[10] = 1; te[14] = z;
@@ -521,19 +505,12 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
                 te = @elements
 
                 z.subVectors(eye, target).normalize()
-                #x.crossVectors(up, z).normalize()
-                #y.crossVectors(z, x).normalize()
                 x.crossVectors(z, up).normalize()
                 y.crossVectors(x, z).normalize()
 
                 tx = eye.dot x
                 ty = eye.dot y
                 tz = eye.dot z
-
-                #te[0] = x.x; te[4] = y.x; te[8]  = z.x; te[12] = 0;
-                #te[1] = x.y; te[5] = y.y; te[9]  = z.y; te[13] = 0;
-                #te[2] = x.z; te[6] = y.z; te[10] = z.z; te[14] = 0;
-                #te[3] = -tx; te[7] = -ty; te[11] = -tz; te[15] = 1;
 
                 te[0] = x.x; te[4] = x.y; te[8]  = x.z; te[12] = -tx;
                 te[1] = y.x; te[5] = y.y; te[9]  = y.z; te[13] = -ty;
@@ -618,6 +595,7 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
         constructor: ->
             @parent = null
             @children = []
+            @vertices = []
             @position = new Vector3
             @rotation = new Vector3
             #@scale = new Vector3 1, 1, 1
@@ -672,6 +650,17 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
 
         localToWorld: (vector) ->
             return vector.applyMatrix4 @matrixWorld
+
+        getVerticesByProjectionMatrix: (m) ->
+            ret = []
+
+            for v in @vertices
+                wm = Matrix4.multiply m, @matrixWorld
+                tmp = []
+                v.clone().applyProjection(wm, tmp)
+                ret = ret.concat(tmp[0].toArray().concat(tmp[1]))
+
+            return ret
 
         add: (object) ->
             return null if @ is object
@@ -731,6 +720,48 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
 # -------------------------------------------------------------------------------
 
     ###*
+        Line class
+            Line -> Object3D
+        @constructor
+        @param {Vector3} vec1
+        @param {Vector3} vec2
+    ###
+    class Line extends Object3D
+        constructor: (vec1, vec2, @color = new Color(255, 255, 255, 1)) ->
+            super
+
+            @vertices.push vec1
+            @vertices.push vec2
+
+# -------------------------------------------------------------------------------
+
+    ###*
+        Triangle class
+            Triangle -> Object3D
+        @constructor
+        @param {Array} vertecies
+        @param {Texture} texture
+    ###
+    class Triangle extends Object3D
+        constructor: (vertices, @texture) ->
+            super
+
+            @vertices = []
+            for v, i in vertices by 3
+                vec3 = new Vector3 vertices[i + 0], vertices[i + 1], vertices[i + 2]
+                @vertices.push vec3
+
+        getNormal: ->
+            a = (new Vector3).subVectors(@vertices[1], @vertices[0])
+            b = (new Vector3).subVectors(@vertices[2], @vertices[0])
+
+            a.applyMatrix4 @matrixWorld
+            b.applyMatrix4 @matrixWorld
+
+            return a.cross(b).normalize()
+# -------------------------------------------------------------------------------
+
+    ###*
         Face class
             Face -> Object3D
         @constructor
@@ -747,16 +778,16 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
 
             triangle1 = new Triangle([
                 x1, y1, 0
-                x2, y1, 0
                 x1, y2, 0
+                x2, y1, 0
             ], texture1)
 
             @add triangle1
 
             triangle2 = new Triangle([
                 x1, y2, 0
-                x2, y1, 0
                 x2, y2, 0
+                x2, y1, 0
             ], texture2)
 
             @add triangle2
@@ -786,43 +817,6 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
             @add face1
             @add face2
 
-# -------------------------------------------------------------------------------
-
-    ###*
-        Triangle class
-            Triangle -> Object3D
-        @constructor
-        @param {Array} vertecies
-        @param {Texture} texture
-    ###
-    class Triangle extends Object3D
-        constructor: (vertices, @texture) ->
-            super
-
-            @vertices = []
-            for v, i in vertices by 3
-                vec3 = new Vector3 vertices[i + 0], vertices[i + 1], vertices[i + 2]
-                @vertices.push vec3
-
-        getVerticesByProjectionMatrix: (m) ->
-            ret = []
-
-            for v in @vertices
-                wm = Matrix4.multiply m, @matrixWorld
-                tmp = []
-                v.clone().applyProjection(wm, tmp)
-                ret = ret.concat(tmp[0].toArray().concat(tmp[1]))
-
-            return ret
-
-        getNormal: ->
-            a = (new Vector3).subVectors(@vertices[2], @vertices[1])
-            b = (new Vector3).subVectors(@vertices[1], @vertices[0])
-
-            a.applyMatrix4 @matrixWorld
-            b.applyMatrix4 @matrixWorld
-
-            return a.cross(b).normalize()
 
 # -------------------------------------------------------------------------------
 
@@ -912,7 +906,11 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
 # -------------------------------------------------------------------------------
 
     class Color
-        constructor: (@r, @g, @b, @a) ->
+        constructor: (r = 0, g = 0, b = 0, @a = 1) ->
+            d = 1 / 255
+            @r = r * d
+            @g = g * d
+            @b = b * d
 
         copy: (c) ->
             @r = c.r
@@ -983,10 +981,16 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
 
     class Scene
         constructor: ->
+            @lights    = []
             @materials = []
 
         add: (material) ->
-            @materials.push material
+
+            if material instanceof Light
+                @lights.push material
+
+            else if material instanceof Object3D
+                @materials.push material
 
         sort: (func) ->
             @materials.sort(func) if func
@@ -1017,7 +1021,7 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
             @g.fillRect 0, 0, @w, @h
 
             scene.update()
-            lights    = @getLights(scene.materials)
+            lights    = @getLights(scene)
             vertecies = @getTransformedPoint matProj, scene.materials
 
             @drawTriangles @g, vertecies, lights, @w, @h
@@ -1037,36 +1041,49 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
                 z = v.getZPosition()
                 fogStrength = 0
                 normal = v.normal
-                width  = img.width
-                height = img.height
+                width  = img?.width
+                height = img?.height
 
                 hvw = vw * 0.5
                 hvh = vh * 0.5
 
                 x1 = (vertexList[0] *  hvw) + hvw
                 y1 = (vertexList[1] * -hvh) + hvh
-                z1 = vertexList[2]
-                w1 = vertexList[3]
+                z1 =  vertexList[2]
+                w1 =  vertexList[3]
                 x2 = (vertexList[4] *  hvw) + hvw
                 y2 = (vertexList[5] * -hvh) + hvh
-                z2 = vertexList[6]
-                w2 = vertexList[7]
+                z2 =  vertexList[6]
+                w2 =  vertexList[7]
                 x3 = (vertexList[8] *  hvw) + hvw
                 y3 = (vertexList[9] * -hvh) + hvh
-                z3 = vertexList[10]
-                w3 = vertexList[11]
+                z3 =  vertexList[10]
+                w3 =  vertexList[11]
+
+                if not img
+                    g.save()
+                    g.beginPath()
+                    g.moveTo x1, y1
+                    g.lineTo x2, y2
+                    g.closePath()
+                    g.strokeStyle = '#eee'
+                    g.stroke()
+                    g.restore()
+                    continue
 
                 # 変換後のベクトル成分を計算
                 _Ax = x2 - x1
                 _Ay = y2 - y1
+                _Az = z2 - z1
                 _Bx = x3 - x1
                 _By = y3 - y1
+                _Bz = z3 - z1
 
                 # 裏面カリング
                 # 頂点を結ぶ順が反時計回りの場合は「裏面」になり、その場合は描画をスキップ
                 # 裏面かどうかの判定は外積を利用する
-                # 判定は、3点の内、1-2点目と2-3点目との外積を計算し、結果がマイナスの場合は反時計回り。（外積の結果はZ軸に対しての数値）
-                continue if(((_Ax * (y3 - y2)) - (_Ay * (x3 - x2))) < 0)
+                # 判定は、p1, p2, p3の3点から、p1->p2, p1->p3のベクトルとの外積を利用する。
+                continue if (_Ax * _By) - (_Ay * _Bx) > 0
 
                 # 変換前のベクトル成分を計算
                 Ax = (uvList[2] - uvList[0]) * width
@@ -1126,6 +1143,7 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
                 g.moveTo(x1, y1)
                 g.lineTo(x2, y2)
                 g.lineTo(x3, y3)
+                g.closePath()
 
                 if @wireframe
                     g.strokeStyle = 'rgba(255, 255, 255, 0.5)'
@@ -1161,9 +1179,10 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
 
                     fogStart = 0 if fogStrength < 0
                     g.globalAlpha = fogStrength
-                    g.fillStyle = fogColor
-                    #g.fillStyle = "rgba(0, 0, 0, #{fogStrength})"
+                    g.fillStyle   = fogColor
+                    #g.strokeStyle = fogColor
                     g.fill()
+                    #g.stroke()
 
                 g.restore()
  
@@ -1171,7 +1190,6 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
         getTransformedPoint: (mat, materials) ->
 
             results = []
-            lightList = []
 
             for m in materials
                 if m instanceof Triangle
@@ -1186,8 +1204,13 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
                     vertex.normal = m.getNormal()
                     results.push vertex
 
-                else if m instanceof Light
-                    continue
+                else if m instanceof Line
+                    vertecies = m.getVerticesByProjectionMatrix(mat)
+                    vertex = new Vertex vertecies, uvData, uvList
+
+                    continue if vertex.getZPosition() < 0
+
+                    results.push vertex
 
                 else
                     for c in m.children
@@ -1199,11 +1222,8 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
 
             return results
 
-        getLights: (materials) ->
-            results = []
-            results.push m for m in materials when m instanceof Light
-
-            return results
+        getLights: (scene) ->
+            return scene.lights
 
 # ---------------------------------------------------------------------
 
@@ -1289,6 +1309,7 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
     exports.Texture  = Texture
     exports.Triangle = Triangle
     exports.Scene = Scene
+    exports.Line  = Line
     exports.Plate = Plate
     exports.Cube  = Cube
     exports.Face  = Face

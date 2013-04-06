@@ -4,7 +4,7 @@ var __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
 (function(win, doc, exports) {
-  var ANGLE, AmbientLight, Camera, Color, Cube, DEG_TO_RAD, DiffuseLight, DirectionalLight, Face, Light, Matrix2, Matrix4, Object3D, PI, Particle, Plate, Quaternion, Renderer, Scene, Texture, Triangle, Vector3, Vertex, cos, makeRotatialQuaternion, max, min, sin, sqrt, tan;
+  var ANGLE, AmbientLight, Camera, Color, Cube, DEG_TO_RAD, DiffuseLight, DirectionalLight, Face, Light, Line, Matrix2, Matrix4, Object3D, PI, Particle, Plate, Quaternion, Renderer, Scene, Texture, Triangle, Vector3, Vertex, cos, makeRotatialQuaternion, max, min, sin, sqrt, tan;
   max = Math.max, min = Math.min, sqrt = Math.sqrt, tan = Math.tan, cos = Math.cos, sin = Math.sin, PI = Math.PI;
   DEG_TO_RAD = PI / 180;
   ANGLE = PI * 2;
@@ -17,19 +17,6 @@ var __hasProp = {}.hasOwnProperty,
     }
 
     Vertex.prototype.getZPosition = function() {
-      var cnt, i, ret, v, _i, _len, _ref;
-      ret = 0;
-      cnt = 0;
-      _ref = this.vertecies;
-      for (i = _i = 0, _len = _ref.length; _i < _len; i = _i += 4) {
-        v = _ref[i];
-        cnt++;
-        ret += this.vertecies[i + 2] * this.vertecies[i + 3];
-      }
-      return ret / cnt;
-    };
-
-    Vertex.prototype.getW = function() {
       var cnt, i, ret, v, _i, _len, _ref;
       ret = 0;
       cnt = 0;
@@ -718,6 +705,7 @@ var __hasProp = {}.hasOwnProperty,
     function Object3D() {
       this.parent = null;
       this.children = [];
+      this.vertices = [];
       this.position = new Vector3;
       this.rotation = new Vector3;
       this.up = new Vector3(0, 1, 0);
@@ -786,6 +774,20 @@ var __hasProp = {}.hasOwnProperty,
 
     Object3D.prototype.localToWorld = function(vector) {
       return vector.applyMatrix4(this.matrixWorld);
+    };
+
+    Object3D.prototype.getVerticesByProjectionMatrix = function(m) {
+      var ret, tmp, v, wm, _i, _len, _ref;
+      ret = [];
+      _ref = this.vertices;
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        v = _ref[_i];
+        wm = Matrix4.multiply(m, this.matrixWorld);
+        tmp = [];
+        v.clone().applyProjection(wm, tmp);
+        ret = ret.concat(tmp[0].toArray().concat(tmp[1]));
+      }
+      return ret;
     };
 
     Object3D.prototype.add = function(object) {
@@ -869,6 +871,64 @@ var __hasProp = {}.hasOwnProperty,
 
   })(Object3D);
   /**
+      Line class
+          Line -> Object3D
+      @constructor
+      @param {Vector3} vec1
+      @param {Vector3} vec2
+  */
+
+  Line = (function(_super) {
+
+    __extends(Line, _super);
+
+    function Line(vec1, vec2, color) {
+      this.color = color != null ? color : new Color(255, 255, 255, 1);
+      Line.__super__.constructor.apply(this, arguments);
+      this.vertices.push(vec1);
+      this.vertices.push(vec2);
+    }
+
+    return Line;
+
+  })(Object3D);
+  /**
+      Triangle class
+          Triangle -> Object3D
+      @constructor
+      @param {Array} vertecies
+      @param {Texture} texture
+  */
+
+  Triangle = (function(_super) {
+
+    __extends(Triangle, _super);
+
+    function Triangle(vertices, texture) {
+      var i, v, vec3, _i, _len;
+      this.texture = texture;
+      Triangle.__super__.constructor.apply(this, arguments);
+      this.vertices = [];
+      for (i = _i = 0, _len = vertices.length; _i < _len; i = _i += 3) {
+        v = vertices[i];
+        vec3 = new Vector3(vertices[i + 0], vertices[i + 1], vertices[i + 2]);
+        this.vertices.push(vec3);
+      }
+    }
+
+    Triangle.prototype.getNormal = function() {
+      var a, b;
+      a = (new Vector3).subVectors(this.vertices[1], this.vertices[0]);
+      b = (new Vector3).subVectors(this.vertices[2], this.vertices[0]);
+      a.applyMatrix4(this.matrixWorld);
+      b.applyMatrix4(this.matrixWorld);
+      return a.cross(b).normalize();
+    };
+
+    return Triangle;
+
+  })(Object3D);
+  /**
       Face class
           Face -> Object3D
       @constructor
@@ -887,9 +947,9 @@ var __hasProp = {}.hasOwnProperty,
     function Face(x1, y1, x2, y2, texture1, texture2) {
       var triangle1, triangle2;
       Face.__super__.constructor.apply(this, arguments);
-      triangle1 = new Triangle([x1, y1, 0, x2, y1, 0, x1, y2, 0], texture1);
+      triangle1 = new Triangle([x1, y1, 0, x1, y2, 0, x2, y1, 0], texture1);
       this.add(triangle1);
-      triangle2 = new Triangle([x1, y2, 0, x2, y1, 0, x2, y2, 0], texture2);
+      triangle2 = new Triangle([x1, y2, 0, x2, y2, 0, x2, y1, 0], texture2);
       this.add(triangle2);
     }
 
@@ -923,56 +983,6 @@ var __hasProp = {}.hasOwnProperty,
     }
 
     return Plate;
-
-  })(Object3D);
-  /**
-      Triangle class
-          Triangle -> Object3D
-      @constructor
-      @param {Array} vertecies
-      @param {Texture} texture
-  */
-
-  Triangle = (function(_super) {
-
-    __extends(Triangle, _super);
-
-    function Triangle(vertices, texture) {
-      var i, v, vec3, _i, _len;
-      this.texture = texture;
-      Triangle.__super__.constructor.apply(this, arguments);
-      this.vertices = [];
-      for (i = _i = 0, _len = vertices.length; _i < _len; i = _i += 3) {
-        v = vertices[i];
-        vec3 = new Vector3(vertices[i + 0], vertices[i + 1], vertices[i + 2]);
-        this.vertices.push(vec3);
-      }
-    }
-
-    Triangle.prototype.getVerticesByProjectionMatrix = function(m) {
-      var ret, tmp, v, wm, _i, _len, _ref;
-      ret = [];
-      _ref = this.vertices;
-      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-        v = _ref[_i];
-        wm = Matrix4.multiply(m, this.matrixWorld);
-        tmp = [];
-        v.clone().applyProjection(wm, tmp);
-        ret = ret.concat(tmp[0].toArray().concat(tmp[1]));
-      }
-      return ret;
-    };
-
-    Triangle.prototype.getNormal = function() {
-      var a, b;
-      a = (new Vector3).subVectors(this.vertices[2], this.vertices[1]);
-      b = (new Vector3).subVectors(this.vertices[1], this.vertices[0]);
-      a.applyMatrix4(this.matrixWorld);
-      b.applyMatrix4(this.matrixWorld);
-      return a.cross(b).normalize();
-    };
-
-    return Triangle;
 
   })(Object3D);
   /**
@@ -1073,10 +1083,21 @@ var __hasProp = {}.hasOwnProperty,
   Color = (function() {
 
     function Color(r, g, b, a) {
-      this.r = r;
-      this.g = g;
-      this.b = b;
-      this.a = a;
+      var d;
+      if (r == null) {
+        r = 0;
+      }
+      if (g == null) {
+        g = 0;
+      }
+      if (b == null) {
+        b = 0;
+      }
+      this.a = a != null ? a : 1;
+      d = 1 / 255;
+      this.r = r * d;
+      this.g = g * d;
+      this.b = b * d;
     }
 
     Color.prototype.copy = function(c) {
@@ -1184,11 +1205,16 @@ var __hasProp = {}.hasOwnProperty,
   Scene = (function() {
 
     function Scene() {
+      this.lights = [];
       this.materials = [];
     }
 
     Scene.prototype.add = function(material) {
-      return this.materials.push(material);
+      if (material instanceof Light) {
+        return this.lights.push(material);
+      } else if (material instanceof Object3D) {
+        return this.materials.push(material);
+      }
     };
 
     Scene.prototype.sort = function(func) {
@@ -1233,13 +1259,13 @@ var __hasProp = {}.hasOwnProperty,
       this.g.fillStyle = this.clearColor;
       this.g.fillRect(0, 0, this.w, this.h);
       scene.update();
-      lights = this.getLights(scene.materials);
+      lights = this.getLights(scene);
       vertecies = this.getTransformedPoint(matProj, scene.materials);
       return this.drawTriangles(this.g, vertecies, lights, this.w, this.h);
     };
 
     Renderer.prototype.drawTriangles = function(g, vertecies, lights, vw, vh) {
-      var Ax, Ay, Bx, By, L, N, a, b, c, color, d, factor, fog, fogColor, fogEnd, fogStart, fogStrength, height, hvh, hvw, i, img, l, m, me, mi, mie, normal, uvList, v, vertexList, w1, w2, w3, width, x1, x2, x3, y1, y2, y3, z, z1, z2, z3, _Ax, _Ay, _Bx, _By, _i, _j, _len, _len1;
+      var Ax, Ay, Bx, By, L, N, a, b, c, color, d, factor, fog, fogColor, fogEnd, fogStart, fogStrength, height, hvh, hvw, i, img, l, m, me, mi, mie, normal, uvList, v, vertexList, w1, w2, w3, width, x1, x2, x3, y1, y2, y3, z, z1, z2, z3, _Ax, _Ay, _Az, _Bx, _By, _Bz, _i, _j, _len, _len1;
       fogColor = this.fogColor;
       fogStart = this.fogStart;
       fogEnd = this.fogEnd;
@@ -1252,8 +1278,8 @@ var __hasProp = {}.hasOwnProperty,
         z = v.getZPosition();
         fogStrength = 0;
         normal = v.normal;
-        width = img.width;
-        height = img.height;
+        width = img != null ? img.width : void 0;
+        height = img != null ? img.height : void 0;
         hvw = vw * 0.5;
         hvh = vh * 0.5;
         x1 = (vertexList[0] * hvw) + hvw;
@@ -1268,11 +1294,24 @@ var __hasProp = {}.hasOwnProperty,
         y3 = (vertexList[9] * -hvh) + hvh;
         z3 = vertexList[10];
         w3 = vertexList[11];
+        if (!img) {
+          g.save();
+          g.beginPath();
+          g.moveTo(x1, y1);
+          g.lineTo(x2, y2);
+          g.closePath();
+          g.strokeStyle = '#eee';
+          g.stroke();
+          g.restore();
+          continue;
+        }
         _Ax = x2 - x1;
         _Ay = y2 - y1;
+        _Az = z2 - z1;
         _Bx = x3 - x1;
         _By = y3 - y1;
-        if (((_Ax * (y3 - y2)) - (_Ay * (x3 - x2))) < 0) {
+        _Bz = z3 - z1;
+        if ((_Ax * _By) - (_Ay * _Bx) > 0) {
           continue;
         }
         Ax = (uvList[2] - uvList[0]) * width;
@@ -1295,6 +1334,7 @@ var __hasProp = {}.hasOwnProperty,
         g.moveTo(x1, y1);
         g.lineTo(x2, y2);
         g.lineTo(x3, y3);
+        g.closePath();
         if (this.wireframe) {
           g.strokeStyle = 'rgba(255, 255, 255, 0.5)';
           g.stroke();
@@ -1335,9 +1375,8 @@ var __hasProp = {}.hasOwnProperty,
     };
 
     Renderer.prototype.getTransformedPoint = function(mat, materials) {
-      var c, lightList, m, results, tmp, uvData, uvList, vertecies, vertex, _i, _j, _len, _len1, _ref;
+      var c, m, results, tmp, uvData, uvList, vertecies, vertex, _i, _j, _len, _len1, _ref;
       results = [];
-      lightList = [];
       for (_i = 0, _len = materials.length; _i < _len; _i++) {
         m = materials[_i];
         if (m instanceof Triangle) {
@@ -1350,8 +1389,13 @@ var __hasProp = {}.hasOwnProperty,
           }
           vertex.normal = m.getNormal();
           results.push(vertex);
-        } else if (m instanceof Light) {
-          continue;
+        } else if (m instanceof Line) {
+          vertecies = m.getVerticesByProjectionMatrix(mat);
+          vertex = new Vertex(vertecies, uvData, uvList);
+          if (vertex.getZPosition() < 0) {
+            continue;
+          }
+          results.push(vertex);
         } else {
           _ref = m.children;
           for (_j = 0, _len1 = _ref.length; _j < _len1; _j++) {
@@ -1367,16 +1411,8 @@ var __hasProp = {}.hasOwnProperty,
       return results;
     };
 
-    Renderer.prototype.getLights = function(materials) {
-      var m, results, _i, _len;
-      results = [];
-      for (_i = 0, _len = materials.length; _i < _len; _i++) {
-        m = materials[_i];
-        if (m instanceof Light) {
-          results.push(m);
-        }
-      }
-      return results;
+    Renderer.prototype.getLights = function(scene) {
+      return scene.lights;
     };
 
     return Renderer;
@@ -1455,6 +1491,7 @@ var __hasProp = {}.hasOwnProperty,
   exports.Texture = Texture;
   exports.Triangle = Triangle;
   exports.Scene = Scene;
+  exports.Line = Line;
   exports.Plate = Plate;
   exports.Cube = Cube;
   exports.Face = Face;
