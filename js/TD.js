@@ -1307,8 +1307,8 @@ var __hasProp = {}.hasOwnProperty,
           g.restore();
           continue;
         }
-        width = img.width;
-        height = img.height;
+        width = dcv.width = img.width;
+        height = dcv.height = img.height;
         _Ax = x2 - x1;
         _Ay = y2 - y1;
         _Az = z2 - z1;
