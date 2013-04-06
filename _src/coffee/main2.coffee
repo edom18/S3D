@@ -122,8 +122,8 @@ do (win = window, doc = window.document, exports = window) ->
                 line = new Line(x, 0, 0, x, 0, size, new Color(255, 255, 255, 0.3))
                 container.add line
 
-            ambLight = new AmbientLight(0.2)
-            dirLight = new DirectionalLight(0.8, (new Vector3(1, 1, 1)).normalize())
+            ambLight = new AmbientLight(0.1)
+            dirLight = new DirectionalLight(0.8, (new Vector3(-1, 1, 1)).normalize())
            
             scene.add ambLight
             scene.add dirLight
@@ -141,7 +141,7 @@ do (win = window, doc = window.document, exports = window) ->
             angle = 0
 
             do _loop = ->
-                angle += 1
+                angle = (++angle % 360)
                 plate1.rotation.z = angle
                 plate2.rotation.x = angle * 3
                 cube1.rotation.z = angle
@@ -149,6 +149,7 @@ do (win = window, doc = window.document, exports = window) ->
                 cube3.rotation.x = angle * 3
                 cube3.rotation.y = angle * 3
                 cube3.rotation.z = angle * 3
+                #dirLight.direction = (new Vector3(1, sin(angle * DEG_TO_RAD), 1)).normalize()
                 renderer.render scene, camera
                 setTimeout _loop, 32
 

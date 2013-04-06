@@ -88,8 +88,8 @@
         line = new Line(x, 0, 0, x, 0, size, new Color(255, 255, 255, 0.3));
         container.add(line);
       }
-      ambLight = new AmbientLight(0.2);
-      dirLight = new DirectionalLight(0.8, (new Vector3(1, 1, 1)).normalize());
+      ambLight = new AmbientLight(0.1);
+      dirLight = new DirectionalLight(0.8, (new Vector3(-1, 1, 1)).normalize());
       scene.add(ambLight);
       scene.add(dirLight);
       scene.add(plate1);
@@ -103,7 +103,7 @@
       scene.add(line3);
       angle = 0;
       return (_loop = function() {
-        angle += 1;
+        angle = ++angle % 360;
         plate1.rotation.z = angle;
         plate2.rotation.x = angle * 3;
         cube1.rotation.z = angle;
