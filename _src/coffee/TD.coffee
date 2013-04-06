@@ -731,6 +731,58 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
 # -------------------------------------------------------------------------------
 
     ###*
+        Line class
+            Line -> Object3D
+        @constructor
+        @param {Vector3} vec1
+        @param {Vector3} vec2
+    ###
+    class Line extends Object3D
+        constructor: (@vec1, @vec2) ->
+            super
+
+
+
+# -------------------------------------------------------------------------------
+
+    ###*
+        Triangle class
+            Triangle -> Object3D
+        @constructor
+        @param {Array} vertecies
+        @param {Texture} texture
+    ###
+    class Triangle extends Object3D
+        constructor: (vertices, @texture) ->
+            super
+
+            @vertices = []
+            for v, i in vertices by 3
+                vec3 = new Vector3 vertices[i + 0], vertices[i + 1], vertices[i + 2]
+                @vertices.push vec3
+
+        getVerticesByProjectionMatrix: (m) ->
+            ret = []
+
+            for v in @vertices
+                wm = Matrix4.multiply m, @matrixWorld
+                tmp = []
+                v.clone().applyProjection(wm, tmp)
+                ret = ret.concat(tmp[0].toArray().concat(tmp[1]))
+
+            return ret
+
+        getNormal: ->
+            a = (new Vector3).subVectors(@vertices[2], @vertices[1])
+            b = (new Vector3).subVectors(@vertices[1], @vertices[0])
+
+            a.applyMatrix4 @matrixWorld
+            b.applyMatrix4 @matrixWorld
+
+            return a.cross(b).normalize()
+# -------------------------------------------------------------------------------
+
+    ###*
         Face class
             Face -> Object3D
         @constructor
@@ -786,43 +838,6 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
             @add face1
             @add face2
 
-# -------------------------------------------------------------------------------
-
-    ###*
-        Triangle class
-            Triangle -> Object3D
-        @constructor
-        @param {Array} vertecies
-        @param {Texture} texture
-    ###
-    class Triangle extends Object3D
-        constructor: (vertices, @texture) ->
-            super
-
-            @vertices = []
-            for v, i in vertices by 3
-                vec3 = new Vector3 vertices[i + 0], vertices[i + 1], vertices[i + 2]
-                @vertices.push vec3
-
-        getVerticesByProjectionMatrix: (m) ->
-            ret = []
-
-            for v in @vertices
-                wm = Matrix4.multiply m, @matrixWorld
-                tmp = []
-                v.clone().applyProjection(wm, tmp)
-                ret = ret.concat(tmp[0].toArray().concat(tmp[1]))
-
-            return ret
-
-        getNormal: ->
-            a = (new Vector3).subVectors(@vertices[2], @vertices[1])
-            b = (new Vector3).subVectors(@vertices[1], @vertices[0])
-
-            a.applyMatrix4 @matrixWorld
-            b.applyMatrix4 @matrixWorld
-
-            return a.cross(b).normalize()
 
 # -------------------------------------------------------------------------------
 
@@ -983,10 +998,16 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
 
     class Scene
         constructor: ->
+            @lights    = []
             @materials = []
 
         add: (material) ->
-            @materials.push material
+
+            if material instanceof Light
+                @lights.push material
+
+            else if material instanceof Object3D
+                @materials.push material
 
         sort: (func) ->
             @materials.sort(func) if func
@@ -1017,7 +1038,7 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
             @g.fillRect 0, 0, @w, @h
 
             scene.update()
-            lights    = @getLights(scene.materials)
+            lights    = @getLights(scene)
             vertecies = @getTransformedPoint matProj, scene.materials
 
             @drawTriangles @g, vertecies, lights, @w, @h
@@ -1171,7 +1192,6 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
         getTransformedPoint: (mat, materials) ->
 
             results = []
-            lightList = []
 
             for m in materials
                 if m instanceof Triangle
@@ -1186,9 +1206,6 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
                     vertex.normal = m.getNormal()
                     results.push vertex
 
-                else if m instanceof Light
-                    continue
-
                 else
                     for c in m.children
                         tmp = @getTransformedPoint mat, c.children
@@ -1199,11 +1216,8 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
 
             return results
 
-        getLights: (materials) ->
-            results = []
-            results.push m for m in materials when m instanceof Light
-
-            return results
+        getLights: (scene) ->
+            return scene.lights
 
 # ---------------------------------------------------------------------
 
