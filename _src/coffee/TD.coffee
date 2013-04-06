@@ -107,9 +107,13 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
 
             return @crossVectors(v, w) if w
 
-            @x = (@y * v.z) - (@z * v.y)
-            @y = (@z * v.x) - (@x * v.z)
-            @z = (@x * v.y) - (@y * v.x)
+            x = @x
+            y = @y
+            z = @z
+
+            @x = (y * v.z) - (z * v.y)
+            @y = (z * v.x) - (x * v.z)
+            @z = (x * v.y) - (y * v.x)
 
             return @
 
@@ -755,10 +759,8 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
             a = (new Vector3).subVectors(@vertices[1], @vertices[0])
             b = (new Vector3).subVectors(@vertices[2], @vertices[0])
 
-            a.applyMatrix4 @matrixWorld
-            b.applyMatrix4 @matrixWorld
-
-            return a.cross(b).normalize()
+            return a.cross(b).applyMatrix4(@matrixWorld).normalize()
+        
 # -------------------------------------------------------------------------------
 
     ###*
@@ -1221,9 +1223,6 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
                 else
                     tmp = @getTransformedPoint mat, m.children
                     results = results.concat tmp
-                    #for c in m.children
-                    #    tmp = @getTransformedPoint mat, c.children
-                    #    results = results.concat tmp
 
             results.sort (a, b) ->
                  b.getZPosition() - a.getZPosition()
