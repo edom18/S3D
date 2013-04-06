@@ -18,17 +18,6 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
             for v, i in @vertecies by 4
                 cnt++
                 ret += @vertecies[i + 2] * @vertecies[i + 3]
-                #ret += @vertecies[i + 2]
-
-            return ret / cnt
-
-        getW: ->
-            ret = 0
-            cnt = 0
-
-            for v, i in @vertecies by 4
-                cnt++
-                ret += @vertecies[i + 2] * @vertecies[i + 3]
 
             return ret / cnt
 
@@ -493,11 +482,6 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
             y = v.y
             z = v.z
 
-            #te[12] = te[0] * x + te[4] * y + te[8]  * z + te[12]
-            #te[13] = te[1] * x + te[5] * y + te[9]  * z + te[13]
-            #te[14] = te[2] * x + te[6] * y + te[10] * z + te[14]
-            #te[15] = te[3] * x + te[7] * y + te[11] * z + te[15]
-
             te[0] = 1; te[4] = 0; te[8]  = 0; te[12] = x;
             te[1] = 0; te[5] = 1; te[9]  = 0; te[13] = y;
             te[2] = 0; te[6] = 0; te[10] = 1; te[14] = z;
@@ -521,19 +505,12 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
                 te = @elements
 
                 z.subVectors(eye, target).normalize()
-                #x.crossVectors(up, z).normalize()
-                #y.crossVectors(z, x).normalize()
                 x.crossVectors(z, up).normalize()
                 y.crossVectors(x, z).normalize()
 
                 tx = eye.dot x
                 ty = eye.dot y
                 tz = eye.dot z
-
-                #te[0] = x.x; te[4] = y.x; te[8]  = z.x; te[12] = 0;
-                #te[1] = x.y; te[5] = y.y; te[9]  = z.y; te[13] = 0;
-                #te[2] = x.z; te[6] = y.z; te[10] = z.z; te[14] = 0;
-                #te[3] = -tx; te[7] = -ty; te[11] = -tz; te[15] = 1;
 
                 te[0] = x.x; te[4] = x.y; te[8]  = x.z; te[12] = -tx;
                 te[1] = y.x; te[5] = y.y; te[9]  = y.z; te[13] = -ty;
@@ -618,6 +595,7 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
         constructor: ->
             @parent = null
             @children = []
+            @vertecies = []
             @position = new Vector3
             @rotation = new Vector3
             #@scale = new Vector3 1, 1, 1
@@ -672,6 +650,17 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
 
         localToWorld: (vector) ->
             return vector.applyMatrix4 @matrixWorld
+
+        getVerticesByProjectionMatrix: (m) ->
+            ret = []
+
+            for v in @vertices
+                wm = Matrix4.multiply m, @matrixWorld
+                tmp = []
+                v.clone().applyProjection(wm, tmp)
+                ret = ret.concat(tmp[0].toArray().concat(tmp[1]))
+
+            return ret
 
         add: (object) ->
             return null if @ is object
@@ -738,10 +727,11 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
         @param {Vector3} vec2
     ###
     class Line extends Object3D
-        constructor: (@vec1, @vec2) ->
+        constructor: (vec1, vec2) ->
             super
 
-
+            @vertecies.push vec1
+            @vertecies.push vec2
 
 # -------------------------------------------------------------------------------
 
@@ -760,17 +750,6 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
             for v, i in vertices by 3
                 vec3 = new Vector3 vertices[i + 0], vertices[i + 1], vertices[i + 2]
                 @vertices.push vec3
-
-        getVerticesByProjectionMatrix: (m) ->
-            ret = []
-
-            for v in @vertices
-                wm = Matrix4.multiply m, @matrixWorld
-                tmp = []
-                v.clone().applyProjection(wm, tmp)
-                ret = ret.concat(tmp[0].toArray().concat(tmp[1]))
-
-            return ret
 
         getNormal: ->
             a = (new Vector3).subVectors(@vertices[2], @vertices[1])
@@ -1182,9 +1161,10 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
 
                     fogStart = 0 if fogStrength < 0
                     g.globalAlpha = fogStrength
-                    g.fillStyle = fogColor
-                    #g.fillStyle = "rgba(0, 0, 0, #{fogStrength})"
+                    g.fillStyle   = fogColor
+                    #g.strokeStyle = fogColor
                     g.fill()
+                    #g.stroke()
 
                 g.restore()
  
@@ -1205,6 +1185,9 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
 
                     vertex.normal = m.getNormal()
                     results.push vertex
+
+                else if m instanceof Line
+                    continue
 
                 else
                     for c in m.children
