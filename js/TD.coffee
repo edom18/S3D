@@ -6,7 +6,6 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
     DEG_TO_RAD = PI / 180
     ANGLE = PI * 2
 
-
 # -------------------------------------------------------------------------------
 
     class Vertex
@@ -34,6 +33,9 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
         constructor: (@x = 0, @y = 0, @z = 0) ->
         zero: ->
             @x = @y = @z = 0;
+
+        equal: (v) ->
+            return (@x is v.x) and (@y is v.y) and (@z is v.z)
 
         sub: (v) ->
             @x -= v.x
@@ -107,9 +109,13 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
 
             return @crossVectors(v, w) if w
 
-            @x = (@y * v.z) - (@z * v.y)
-            @y = (@z * v.x) - (@x * v.z)
-            @z = (@x * v.y) - (@y * v.x)
+            x = @x
+            y = @y
+            z = @z
+
+            @x = (y * v.z) - (z * v.y)
+            @y = (z * v.x) - (x * v.z)
+            @z = (x * v.y) - (y * v.x)
 
             return @
 
@@ -285,6 +291,16 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
 
             return @
 
+        equal: (m) ->
+            te = @elements
+            me = m.elements
+
+            return (
+                (te[0] is me[0]) and (te[4] is me[4]) and (te[8]  is me[8] ) and (te[12] is me[12]) and
+                (te[1] is me[1]) and (te[5] is me[5]) and (te[9]  is me[9] ) and (te[13] is me[13]) and
+                (te[2] is me[2]) and (te[6] is me[6]) and (te[10] is me[10]) and (te[14] is me[14]) and
+                (te[3] is me[3]) and (te[7] is me[7]) and (te[11] is me[11]) and (te[15] is me[15])
+            )
 
         getInvert: ->
             out = new Matrix4
@@ -601,6 +617,8 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
             #@scale = new Vector3 1, 1, 1
             @up    = new Vector3 0, 1, 0
 
+            @matrixTranslate = new Matrix4
+            @matrixRotation = new Matrix4
             @matrix = new Matrix4
             @matrixWorld = new Matrix4
 
@@ -608,16 +626,26 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
 
         updateTranslate: do ->
             tm = new Matrix4
+            previous = null
 
             return ->
-                return tm.clone().translate(@position)
+                return false if previous and @position.equal previous
+
+                previous = @position.clone()
+                @matrixTranslate = tm.clone().translate(@position)
+
+                return true
 
         updateRotation: do ->
             rmx = new Matrix4
             rmy = new Matrix4
             rmz = new Matrix4
+            previous = null
 
             return ->
+
+                return false if previous and @rotation.equal previous
+
                 x = @rotation.x * DEG_TO_RAD
                 y = @rotation.y * DEG_TO_RAD
                 z = @rotation.z * DEG_TO_RAD
@@ -630,26 +658,28 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
                 tmp.multiplyMatrices rmx, rmy
                 tmp.multiply rmz
 
-                return tmp
+                previous = @rotation.clone()
+                @matrixRotation = tmp
 
+                return true
 
         updateMatrix: ->
-            tmp = new Matrix4
-            tmp.multiplyMatrices @updateTranslate(), @updateRotation()
-            @matrix.copy tmp
+
+            updatedRotation = @updateRotation()
+            updatedTranslate = @updateTranslate()
+
+            if updatedRotation or updatedTranslate
+                @matrix.multiplyMatrices @matrixTranslate, @matrixRotation
 
             c.updateMatrix() for c in @children
 
-        updateMatrixWorld: ->
+        updateMatrixWorld: (force) ->
             if not @parent
                 @matrixWorld.copy @matrix
             else
                 @matrixWorld.multiplyMatrices @parent.matrixWorld, @matrix
 
             c.updateMatrixWorld() for c in @children
-
-        localToWorld: (vector) ->
-            return vector.applyMatrix4 @matrixWorld
 
         getVerticesByProjectionMatrix: (m) ->
             ret = []
@@ -702,14 +732,13 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
 
         getProjectionMatrix: ->
             tmp = Matrix4.multiply @projectionMatrix, @viewMatrix
-            tmp.multiply @matrixWorld
+            return tmp.multiply @matrixWorld
 
         updateProjectionMatrix: ->
             @lookAt()
             @projectionMatrix.perspectiveLH(@fov, @aspect, @near, @far)
 
         lookAt: do ->
-
             m1 = new Matrix4
 
             return (vector) ->
@@ -751,14 +780,16 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
                 vec3 = new Vector3 vertices[i + 0], vertices[i + 1], vertices[i + 2]
                 @vertices.push vec3
 
-        getNormal: ->
-            a = (new Vector3).subVectors(@vertices[1], @vertices[0])
-            b = (new Vector3).subVectors(@vertices[2], @vertices[0])
+        getNormal: do ->
+            a = new Vector3
+            b = new Vector3
 
-            a.applyMatrix4 @matrixWorld
-            b.applyMatrix4 @matrixWorld
+            return ->
+                a.subVectors(@vertices[1], @vertices[0])
+                b.subVectors(@vertices[2], @vertices[0])
 
-            return a.cross(b).normalize()
+                return a.clone().cross(b).applyMatrix4(@matrixWorld).normalize()
+        
 # -------------------------------------------------------------------------------
 
     ###*
@@ -956,25 +987,25 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
 # -------------------------------------------------------------------------------
 
     class Light extends Object3D
-        constructor: (@color) ->
+        constructor: (@strength) ->
             super
 
 # -------------------------------------------------------------------------------
 
     class AmbientLight extends Light
-        constructor: (@color) ->
+        constructor: (strength) ->
             super
 
 # -------------------------------------------------------------------------------
 
     class DiffuseLight extends Light
-        constructor: (@color, @vector, @factor) ->
+        constructor: (strength, vector) ->
             super
 
 # -------------------------------------------------------------------------------
 
     class DirectionalLight extends Light
-        constructor: (@color, @direction) ->
+        constructor: (strength, @direction) ->
             super
 
 # -------------------------------------------------------------------------------
@@ -992,9 +1023,6 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
             else if material instanceof Object3D
                 @materials.push material
 
-        sort: (func) ->
-            @materials.sort(func) if func
-
         update: ->
             for m in @materials
                 m.updateMatrix()
@@ -1004,10 +1032,14 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
 
     class Renderer
         constructor: (@cv, @clearColor = '#fff') ->
+            @_dummyCv = doc.createElement 'canvas'
+            @_dummyG  = @_dummyCv.getContext '2d'
             @g = cv.getContext '2d'
-            @w = cv.width
-            @h = cv.height
+            @w = @_dummyCv.width  = cv.width
+            @h = @_dummyCv.height = cv.height
 
+            @fog      = true
+            @lighting = true
             @fogColor = @clearColor
             @fogStart = 200
             @fogEnd   = 1000
@@ -1021,7 +1053,7 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
             @g.fillRect 0, 0, @w, @h
 
             scene.update()
-            lights    = @getLights(scene)
+            lights    = scene.lights
             vertecies = @getTransformedPoint matProj, scene.materials
 
             @drawTriangles @g, vertecies, lights, @w, @h
@@ -1031,18 +1063,20 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
             fogColor = @fogColor
             fogStart = @fogStart
             fogEnd   = @fogEnd
-            fog = @fog
+            fog      = @fog
+            lighting = @lighting
+
+            dcv = @_dummyCv
+            dg  = @_dummyG
 
             for v, i in vertecies
 
-                img = v.uvData
+                img    = v.uvData
                 uvList = v.uvList
                 vertexList = v.vertecies
                 z = v.getZPosition()
                 fogStrength = 0
                 normal = v.normal
-                width  = img?.width
-                height = img?.height
 
                 hvw = vw * 0.5
                 hvh = vh * 0.5
@@ -1076,6 +1110,9 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
                     g.stroke()
                     g.restore()
                     continue
+
+                width  = img.width
+                height = img.height
 
                 # 変換後のベクトル成分を計算
                 _Ax = x2 - x1
@@ -1132,7 +1169,7 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
                 # |Ax Ay|^-1
                 # |Bx By|
                 # を生成
-                mi = m.getInvert()
+                mi  = m.getInvert()
                 mie = mi.elements
 
                 # 逆行列が存在しない場合はスキップ
@@ -1145,6 +1182,38 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
 
                 # 各頂点座標を元に三角形を作り、それでクリッピング
                 g.save()
+                dg.save()
+
+                dg.drawImage(img, 0, 0)
+
+                if lighting
+                    strength = 0
+                    color = new Color 0, 0, 0, 1
+
+                    for l in lights
+                        if l instanceof AmbientLight
+                            strength += l.strength
+
+                        else if l instanceof DirectionalLight
+                            L = l.direction
+                            N = normal.clone().add(L)
+                            factor = N.dot(L)
+                            strength += l.strength * factor
+                            
+                    color.a -= strength
+
+                    if color.a > 0
+                        dg.fillStyle = color.toString()
+                        dg.fillRect 0, 0, width, height
+
+                if fog
+                    fogStrength = 1 - ((fogEnd - z) / (fogEnd - fogStart))
+                    fogStrength = 0 if fogStrength < 0
+                    dg.globalAlpha = fogStrength
+                    dg.globalCompositeOperation = 'source-over'
+                    dg.fillStyle   = fogColor
+                    dg.fillRect 0, 0, width, height
+
                 g.beginPath()
                 g.moveTo(x1, y1)
                 g.lineTo(x2, y2)
@@ -1160,33 +1229,10 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
                 g.transform(a, b, c, d,
                     x1 - (a * uvList[0] * width + c * uvList[1] * height),
                     y1 - (b * uvList[0] * width + d * uvList[1] * height))
-                g.drawImage(img, 0, 0)
+                g.drawImage(dcv, 0, 0)
 
-                color = new Color 0, 0, 0, 0
-
-                for l in lights
-                    if l instanceof AmbientLight
-                        color.add(l.color)
-
-                    else if l instanceof DirectionalLight
-                        L = l.direction
-                        N = normal.clone().add(L)
-                        factor = N.dot(L)
-                        color.add(l.color.clone().multiplyScalar(factor)) if factor > 0
-
-                g.save()
-                g.globalCompositeOperation = 'lighter'
-                g.fillStyle = color.toString()
-                g.fill()
-                g.restore()
-
-                if fog
-                    fogStrength = 1 - ((fogEnd - z) / (fogEnd - fogStart))
-                    fogStrength = 0 if fogStrength < 0
-                    g.globalAlpha = fogStrength
-                    g.fillStyle   = fogColor
-                    g.fill()
-
+                dg.clearRect 0, 0, width, height
+                dg.restore()
                 g.restore()
  
 
@@ -1221,17 +1267,11 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
                 else
                     tmp = @getTransformedPoint mat, m.children
                     results = results.concat tmp
-                    #for c in m.children
-                    #    tmp = @getTransformedPoint mat, c.children
-                    #    results = results.concat tmp
 
             results.sort (a, b) ->
                  b.getZPosition() - a.getZPosition()
 
             return results
-
-        getLights: (scene) ->
-            return scene.lights
 
 # ---------------------------------------------------------------------
 

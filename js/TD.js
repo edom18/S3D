@@ -50,6 +50,10 @@ var __hasProp = {}.hasOwnProperty,
       return this.x = this.y = this.z = 0;
     };
 
+    Vector3.prototype.equal = function(v) {
+      return (this.x === v.x) && (this.y === v.y) && (this.z === v.z);
+    };
+
     Vector3.prototype.sub = function(v) {
       this.x -= v.x;
       this.y -= v.y;
@@ -126,12 +130,16 @@ var __hasProp = {}.hasOwnProperty,
     };
 
     Vector3.prototype.cross = function(v, w) {
+      var x, y, z;
       if (w) {
         return this.crossVectors(v, w);
       }
-      this.x = (this.y * v.z) - (this.z * v.y);
-      this.y = (this.z * v.x) - (this.x * v.z);
-      this.z = (this.x * v.y) - (this.y * v.x);
+      x = this.x;
+      y = this.y;
+      z = this.z;
+      this.x = (y * v.z) - (z * v.y);
+      this.y = (z * v.x) - (x * v.z);
+      this.z = (x * v.y) - (y * v.x);
       return this;
     };
 
@@ -317,6 +325,13 @@ var __hasProp = {}.hasOwnProperty,
       te[11] = 0;
       te[15] = 1;
       return this;
+    };
+
+    Matrix4.prototype.equal = function(m) {
+      var me, te;
+      te = this.elements;
+      me = m.elements;
+      return (te[0] === me[0]) && (te[4] === me[4]) && (te[8] === me[8]) && (te[12] === me[12]) && (te[1] === me[1]) && (te[5] === me[5]) && (te[9] === me[9]) && (te[13] === me[13]) && (te[2] === me[2]) && (te[6] === me[6]) && (te[10] === me[10]) && (te[14] === me[14]) && (te[3] === me[3]) && (te[7] === me[7]) && (te[11] === me[11]) && (te[15] === me[15]);
     };
 
     Matrix4.prototype.getInvert = function() {
@@ -707,26 +722,38 @@ var __hasProp = {}.hasOwnProperty,
       this.position = new Vector3;
       this.rotation = new Vector3;
       this.up = new Vector3(0, 1, 0);
+      this.matrixTranslate = new Matrix4;
+      this.matrixRotation = new Matrix4;
       this.matrix = new Matrix4;
       this.matrixWorld = new Matrix4;
       this.updateMatrix();
     }
 
     Object3D.prototype.updateTranslate = (function() {
-      var tm;
+      var previous, tm;
       tm = new Matrix4;
+      previous = null;
       return function() {
-        return tm.clone().translate(this.position);
+        if (previous && this.position.equal(previous)) {
+          return false;
+        }
+        previous = this.position.clone();
+        this.matrixTranslate = tm.clone().translate(this.position);
+        return true;
       };
     })();
 
     Object3D.prototype.updateRotation = (function() {
-      var rmx, rmy, rmz;
+      var previous, rmx, rmy, rmz;
       rmx = new Matrix4;
       rmy = new Matrix4;
       rmz = new Matrix4;
+      previous = null;
       return function() {
         var tmp, x, y, z;
+        if (previous && this.rotation.equal(previous)) {
+          return false;
+        }
         x = this.rotation.x * DEG_TO_RAD;
         y = this.rotation.y * DEG_TO_RAD;
         z = this.rotation.z * DEG_TO_RAD;
@@ -736,15 +763,19 @@ var __hasProp = {}.hasOwnProperty,
         rmz.rotationZ(z);
         tmp.multiplyMatrices(rmx, rmy);
         tmp.multiply(rmz);
-        return tmp;
+        previous = this.rotation.clone();
+        this.matrixRotation = tmp;
+        return true;
       };
     })();
 
     Object3D.prototype.updateMatrix = function() {
-      var c, tmp, _i, _len, _ref, _results;
-      tmp = new Matrix4;
-      tmp.multiplyMatrices(this.updateTranslate(), this.updateRotation());
-      this.matrix.copy(tmp);
+      var c, updatedRotation, updatedTranslate, _i, _len, _ref, _results;
+      updatedRotation = this.updateRotation();
+      updatedTranslate = this.updateTranslate();
+      if (updatedRotation || updatedTranslate) {
+        this.matrix.multiplyMatrices(this.matrixTranslate, this.matrixRotation);
+      }
       _ref = this.children;
       _results = [];
       for (_i = 0, _len = _ref.length; _i < _len; _i++) {
@@ -754,7 +785,7 @@ var __hasProp = {}.hasOwnProperty,
       return _results;
     };
 
-    Object3D.prototype.updateMatrixWorld = function() {
+    Object3D.prototype.updateMatrixWorld = function(force) {
       var c, _i, _len, _ref, _results;
       if (!this.parent) {
         this.matrixWorld.copy(this.matrix);
@@ -768,10 +799,6 @@ var __hasProp = {}.hasOwnProperty,
         _results.push(c.updateMatrixWorld());
       }
       return _results;
-    };
-
-    Object3D.prototype.localToWorld = function(vector) {
-      return vector.applyMatrix4(this.matrixWorld);
     };
 
     Object3D.prototype.getVerticesByProjectionMatrix = function(m) {
@@ -914,14 +941,16 @@ var __hasProp = {}.hasOwnProperty,
       }
     }
 
-    Triangle.prototype.getNormal = function() {
+    Triangle.prototype.getNormal = (function() {
       var a, b;
-      a = (new Vector3).subVectors(this.vertices[1], this.vertices[0]);
-      b = (new Vector3).subVectors(this.vertices[2], this.vertices[0]);
-      a.applyMatrix4(this.matrixWorld);
-      b.applyMatrix4(this.matrixWorld);
-      return a.cross(b).normalize();
-    };
+      a = new Vector3;
+      b = new Vector3;
+      return function() {
+        a.subVectors(this.vertices[1], this.vertices[0]);
+        b.subVectors(this.vertices[2], this.vertices[0]);
+        return a.clone().cross(b).applyMatrix4(this.matrixWorld).normalize();
+      };
+    })();
 
     return Triangle;
 
@@ -1127,8 +1156,8 @@ var __hasProp = {}.hasOwnProperty,
 
     __extends(Light, _super);
 
-    function Light(color) {
-      this.color = color;
+    function Light(strength) {
+      this.strength = strength;
       Light.__super__.constructor.apply(this, arguments);
     }
 
@@ -1139,8 +1168,7 @@ var __hasProp = {}.hasOwnProperty,
 
     __extends(AmbientLight, _super);
 
-    function AmbientLight(color) {
-      this.color = color;
+    function AmbientLight(strength) {
       AmbientLight.__super__.constructor.apply(this, arguments);
     }
 
@@ -1151,10 +1179,7 @@ var __hasProp = {}.hasOwnProperty,
 
     __extends(DiffuseLight, _super);
 
-    function DiffuseLight(color, vector, factor) {
-      this.color = color;
-      this.vector = vector;
-      this.factor = factor;
+    function DiffuseLight(strength, vector) {
       DiffuseLight.__super__.constructor.apply(this, arguments);
     }
 
@@ -1165,8 +1190,7 @@ var __hasProp = {}.hasOwnProperty,
 
     __extends(DirectionalLight, _super);
 
-    function DirectionalLight(color, direction) {
-      this.color = color;
+    function DirectionalLight(strength, direction) {
       this.direction = direction;
       DirectionalLight.__super__.constructor.apply(this, arguments);
     }
@@ -1186,12 +1210,6 @@ var __hasProp = {}.hasOwnProperty,
         return this.lights.push(material);
       } else if (material instanceof Object3D) {
         return this.materials.push(material);
-      }
-    };
-
-    Scene.prototype.sort = function(func) {
-      if (func) {
-        return this.materials.sort(func);
       }
     };
 
@@ -1215,9 +1233,13 @@ var __hasProp = {}.hasOwnProperty,
     function Renderer(cv, clearColor) {
       this.cv = cv;
       this.clearColor = clearColor != null ? clearColor : '#fff';
+      this._dummyCv = doc.createElement('canvas');
+      this._dummyG = this._dummyCv.getContext('2d');
       this.g = cv.getContext('2d');
-      this.w = cv.width;
-      this.h = cv.height;
+      this.w = this._dummyCv.width = cv.width;
+      this.h = this._dummyCv.height = cv.height;
+      this.fog = true;
+      this.lighting = true;
       this.fogColor = this.clearColor;
       this.fogStart = 200;
       this.fogEnd = 1000;
@@ -1231,17 +1253,20 @@ var __hasProp = {}.hasOwnProperty,
       this.g.fillStyle = this.clearColor;
       this.g.fillRect(0, 0, this.w, this.h);
       scene.update();
-      lights = this.getLights(scene);
+      lights = scene.lights;
       vertecies = this.getTransformedPoint(matProj, scene.materials);
       return this.drawTriangles(this.g, vertecies, lights, this.w, this.h);
     };
 
     Renderer.prototype.drawTriangles = function(g, vertecies, lights, vw, vh) {
-      var Ax, Ay, Bx, By, L, N, a, b, c, color, d, factor, fog, fogColor, fogEnd, fogStart, fogStrength, height, hvh, hvw, i, img, l, m, me, mi, mie, normal, uvList, v, vertexList, w1, w2, w3, width, x1, x2, x3, y1, y2, y3, z, z1, z2, z3, _Ax, _Ay, _Az, _Bx, _By, _Bz, _i, _j, _len, _len1;
+      var Ax, Ay, Bx, By, L, N, a, b, c, color, d, dcv, dg, factor, fog, fogColor, fogEnd, fogStart, fogStrength, height, hvh, hvw, i, img, l, lighting, m, me, mi, mie, normal, strength, uvList, v, vertexList, w1, w2, w3, width, x1, x2, x3, y1, y2, y3, z, z1, z2, z3, _Ax, _Ay, _Az, _Bx, _By, _Bz, _i, _j, _len, _len1;
       fogColor = this.fogColor;
       fogStart = this.fogStart;
       fogEnd = this.fogEnd;
       fog = this.fog;
+      lighting = this.lighting;
+      dcv = this._dummyCv;
+      dg = this._dummyG;
       for (i = _i = 0, _len = vertecies.length; _i < _len; i = ++_i) {
         v = vertecies[i];
         img = v.uvData;
@@ -1250,8 +1275,6 @@ var __hasProp = {}.hasOwnProperty,
         z = v.getZPosition();
         fogStrength = 0;
         normal = v.normal;
-        width = img != null ? img.width : void 0;
-        height = img != null ? img.height : void 0;
         hvw = vw * 0.5;
         hvh = vh * 0.5;
         x1 = (vertexList[0] * hvw) + hvw;
@@ -1284,6 +1307,8 @@ var __hasProp = {}.hasOwnProperty,
           g.restore();
           continue;
         }
+        width = img.width;
+        height = img.height;
         _Ax = x2 - x1;
         _Ay = y2 - y1;
         _Az = z2 - z1;
@@ -1309,6 +1334,38 @@ var __hasProp = {}.hasOwnProperty,
         b = mie[0] * _Ay + mie[2] * _By;
         d = mie[1] * _Ay + mie[3] * _By;
         g.save();
+        dg.save();
+        dg.drawImage(img, 0, 0);
+        if (lighting) {
+          strength = 0;
+          color = new Color(0, 0, 0, 1);
+          for (_j = 0, _len1 = lights.length; _j < _len1; _j++) {
+            l = lights[_j];
+            if (l instanceof AmbientLight) {
+              strength += l.strength;
+            } else if (l instanceof DirectionalLight) {
+              L = l.direction;
+              N = normal.clone().add(L);
+              factor = N.dot(L);
+              strength += l.strength * factor;
+            }
+          }
+          color.a -= strength;
+          if (color.a > 0) {
+            dg.fillStyle = color.toString();
+            dg.fillRect(0, 0, width, height);
+          }
+        }
+        if (fog) {
+          fogStrength = 1 - ((fogEnd - z) / (fogEnd - fogStart));
+          if (fogStrength < 0) {
+            fogStrength = 0;
+          }
+          dg.globalAlpha = fogStrength;
+          dg.globalCompositeOperation = 'source-over';
+          dg.fillStyle = fogColor;
+          dg.fillRect(0, 0, width, height);
+        }
         g.beginPath();
         g.moveTo(x1, y1);
         g.lineTo(x2, y2);
@@ -1320,35 +1377,9 @@ var __hasProp = {}.hasOwnProperty,
         }
         g.clip();
         g.transform(a, b, c, d, x1 - (a * uvList[0] * width + c * uvList[1] * height), y1 - (b * uvList[0] * width + d * uvList[1] * height));
-        g.drawImage(img, 0, 0);
-        color = new Color(0, 0, 0, 0);
-        for (_j = 0, _len1 = lights.length; _j < _len1; _j++) {
-          l = lights[_j];
-          if (l instanceof AmbientLight) {
-            color.add(l.color);
-          } else if (l instanceof DirectionalLight) {
-            L = l.direction;
-            N = normal.clone().add(L);
-            factor = N.dot(L);
-            if (factor > 0) {
-              color.add(l.color.clone().multiplyScalar(factor));
-            }
-          }
-        }
-        g.save();
-        g.globalCompositeOperation = 'lighter';
-        g.fillStyle = color.toString();
-        g.fill();
-        g.restore();
-        if (fog) {
-          fogStrength = 1 - ((fogEnd - z) / (fogEnd - fogStart));
-          if (fogStrength < 0) {
-            fogStrength = 0;
-          }
-          g.globalAlpha = fogStrength;
-          g.fillStyle = fogColor;
-          g.fill();
-        }
+        g.drawImage(dcv, 0, 0);
+        dg.clearRect(0, 0, width, height);
+        dg.restore();
         g.restore();
       }
     };
@@ -1387,10 +1418,6 @@ var __hasProp = {}.hasOwnProperty,
         return b.getZPosition() - a.getZPosition();
       });
       return results;
-    };
-
-    Renderer.prototype.getLights = function(scene) {
-      return scene.lights;
     };
 
     return Renderer;

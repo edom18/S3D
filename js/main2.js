@@ -52,7 +52,6 @@
     camera.lookAt(new Vector3(0, 0, 0));
     scene = new Scene;
     renderer = new Renderer(cv, '#111');
-    renderer.fog = true;
     return create = function() {
       var ambLight, angle, container, cube1, cube2, cube3, dirLight, i, line, line1, line2, line3, materials, plate1, plate2, size, x, z, _i, _j, _loop, _ref1, _ref2;
       materials = [new Texture(photoImage, [0, 0, 0, 1, 1, 0]), new Texture(photoImage, [0, 1, 1, 1, 1, 0]), new Texture(photoImage, [0, 0, 0, 1, 1, 0]), new Texture(photoImage, [0, 1, 1, 1, 1, 0]), new Texture(photoImage, [0, 0, 0, 1, 1, 0]), new Texture(photoImage, [0, 1, 1, 1, 1, 0]), new Texture(photoImage, [0, 0, 0, 1, 1, 0]), new Texture(photoImage, [0, 1, 1, 1, 1, 0]), new Texture(photoImage, [0, 0, 0, 1, 1, 0]), new Texture(photoImage, [0, 1, 1, 1, 1, 0]), new Texture(photoImage, [0, 0, 0, 1, 1, 0]), new Texture(photoImage, [0, 1, 1, 1, 1, 0])];
@@ -89,11 +88,13 @@
         line = new Line(x, 0, 0, x, 0, size, new Color(255, 255, 255, 0.3));
         container.add(line);
       }
-      ambLight = new AmbientLight(new Color(255, 0, 0, 0.2));
-      dirLight = new DirectionalLight(new Color(0, 0, 70, 0.3), (new Vector3(1, 0, -1)).normalize());
-      scene.add(container);
+      ambLight = new AmbientLight(0.2);
+      dirLight = new DirectionalLight(0.8, (new Vector3(1, 1, 1)).normalize());
+      scene.add(ambLight);
+      scene.add(dirLight);
       scene.add(plate1);
       scene.add(plate2);
+      scene.add(container);
       scene.add(cube1);
       scene.add(cube2);
       scene.add(cube3);
@@ -110,7 +111,8 @@
         cube3.rotation.x = angle * 3;
         cube3.rotation.y = angle * 3;
         cube3.rotation.z = angle * 3;
-        return renderer.render(scene, camera);
+        renderer.render(scene, camera);
+        return setTimeout(_loop, 32);
       })();
     };
   };

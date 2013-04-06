@@ -61,7 +61,8 @@ do (win = window, doc = window.document, exports = window) ->
         camera.lookAt new Vector3 0, 0, 0
         scene    = new Scene
         renderer = new Renderer cv, '#111'
-        renderer.fog = true
+        #renderer.fog      = false
+        #renderer.lighting = false
         #renderer.wireframe = true
 
         create = ->
@@ -121,24 +122,24 @@ do (win = window, doc = window.document, exports = window) ->
                 line = new Line(x, 0, 0, x, 0, size, new Color(255, 255, 255, 0.3))
                 container.add line
 
-            ambLight = new AmbientLight(new Color(255, 0, 0, 0.2))
-            dirLight = new DirectionalLight(new Color(0, 0, 70, 0.3), (new Vector3(1, 0, -1)).normalize())
+            ambLight = new AmbientLight(0.2)
+            dirLight = new DirectionalLight(0.8, (new Vector3(1, 1, 1)).normalize())
            
-            #scene.add ambLight
-            #scene.add dirLight
+            scene.add ambLight
+            scene.add dirLight
 
-            scene.add container
             scene.add plate1
             scene.add plate2
+            scene.add container
             scene.add cube1
             scene.add cube2
             scene.add cube3
-
             scene.add line1
             scene.add line2
             scene.add line3
 
             angle = 0
+
             do _loop = ->
                 angle += 1
                 plate1.rotation.z = angle
@@ -149,7 +150,7 @@ do (win = window, doc = window.document, exports = window) ->
                 cube3.rotation.y = angle * 3
                 cube3.rotation.z = angle * 3
                 renderer.render scene, camera
-                #setTimeout _loop, 32
+                setTimeout _loop, 32
 
     dragging = false
     prevX = 0
