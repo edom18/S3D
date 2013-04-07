@@ -1170,10 +1170,11 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
                 # |Bx By|
                 # を生成
                 mi  = m.getInvert()
-                mie = mi.elements
 
                 # 逆行列が存在しない場合はスキップ
-                return if not mi
+                continue if not mi
+
+                mie = mi.elements
 
                 a = mie[0] * _Ax + mie[2] * _Bx
                 c = mie[1] * _Ax + mie[3] * _Bx
