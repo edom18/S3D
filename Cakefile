@@ -20,7 +20,7 @@ fileCopy = ->
 
         return
  
-build = (watch, output = 'js', target = '_src/coffee') ->
+build = (watch, output = 'js', target = 'js') ->
     console.log 'Watching coffee scripts'
     console.log "Watch to #{target}"
  
@@ -31,7 +31,7 @@ build = (watch, output = 'js', target = '_src/coffee') ->
  
     coffee = spawn 'coffee', options
     coffee.stdout.on 'data', (data) ->
-        fileCopy()
+        #fileCopy()
         stdout_handler data
  
 style = (watch) ->
