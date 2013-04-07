@@ -21,7 +21,19 @@ do (win = window, doc = window.document, exports = window) ->
     camera   = null
     scene    = null
 
+    getVideo = ->
+
+        video = doc.getElementById 'video'
+        video.autoplay = true
+        video.loop = true
+
+        return video
+
+
     init = ->
+
+        video = getVideo()
+
         cv  = doc.getElementById 'canvas'
         ctx = cv.getContext '2d'
         w = cv.width  = win.innerWidth
@@ -67,7 +79,7 @@ do (win = window, doc = window.document, exports = window) ->
 
         create = ->
 
-            materials = [
+            materials1 = [
                 new Texture(photoImage, [0, 0, 0, 1, 1, 0])
                 new Texture(photoImage, [0, 1, 1, 1, 1, 0])
                 new Texture(photoImage, [0, 0, 0, 1, 1, 0])
@@ -82,15 +94,30 @@ do (win = window, doc = window.document, exports = window) ->
                 new Texture(photoImage, [0, 1, 1, 1, 1, 0])
             ]
 
-            cube1 = new Cube 50, 20, 20, 1, 1, 1, materials
+            materials2 = [
+                new Texture(video, [0, 0, 0, 1, 1, 0])
+                new Texture(video, [0, 1, 1, 1, 1, 0])
+                new Texture(video, [0, 0, 0, 1, 1, 0])
+                new Texture(video, [0, 1, 1, 1, 1, 0])
+                new Texture(video, [0, 0, 0, 1, 1, 0])
+                new Texture(video, [0, 1, 1, 1, 1, 0])
+                new Texture(video, [0, 0, 0, 1, 1, 0])
+                new Texture(video, [0, 1, 1, 1, 1, 0])
+                new Texture(video, [0, 0, 0, 1, 1, 0])
+                new Texture(video, [0, 1, 1, 1, 1, 0])
+                new Texture(video, [0, 0, 0, 1, 1, 0])
+                new Texture(video, [0, 1, 1, 1, 1, 0])
+            ]
+
+            cube1 = new Cube 50, 20, 20, 1, 1, 1, materials2
             cube1.position.z = -50
             cube1.rotation.z = 30
 
-            cube2 = new Cube 20, 20, 20, 1, 1, 1, materials
+            cube2 = new Cube 20, 20, 20, 1, 1, 1, materials1
             cube2.position.z = -150
             cube2.position.x = 50
 
-            cube3 = new Cube 20, 20, 20, 1, 1, 1, materials
+            cube3 = new Cube 20, 20, 20, 1, 1, 1, materials1
             cube3.position.z = -350
             cube3.position.x = 50
             cube3.position.y = 80
@@ -99,7 +126,7 @@ do (win = window, doc = window.document, exports = window) ->
             plate1.position.x = -50
             plate1.position.z = -300
 
-            plate2 = new Plate 50, 50, new Texture(logoImage, [0, 0, 0, 1, 1, 0]), new Texture(logoImage, [0, 1, 1, 1, 1, 0])
+            plate2 = new Plate 50, 50, new Texture(video, [0, 0, 0, 1, 1, 0]), new Texture(video, [0, 1, 1, 1, 1, 0])
             plate2.position.y = -100
             plate2.position.z = -500
 
@@ -149,7 +176,6 @@ do (win = window, doc = window.document, exports = window) ->
                 cube3.rotation.x = angle * 3
                 cube3.rotation.y = angle * 3
                 cube3.rotation.z = angle * 3
-                #dirLight.direction = (new Vector3(1, sin(angle * DEG_TO_RAD), 1)).normalize()
                 renderer.render scene, camera
                 setTimeout _loop, 32
 

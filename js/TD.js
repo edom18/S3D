@@ -1259,7 +1259,7 @@ var __hasProp = {}.hasOwnProperty,
     };
 
     Renderer.prototype.drawTriangles = function(g, vertecies, lights, vw, vh) {
-      var Ax, Ay, Bx, By, L, N, a, b, c, color, d, dcv, dg, factor, fog, fogColor, fogEnd, fogStart, fogStrength, height, hvh, hvw, i, img, l, lighting, m, me, mi, mie, normal, strength, uvList, v, vertexList, w1, w2, w3, width, x1, x2, x3, y1, y2, y3, z, z1, z2, z3, _Ax, _Ay, _Az, _Bx, _By, _Bz, _i, _j, _len, _len1;
+      var Ax, Ay, Bx, By, L, N, a, b, c, color, d, dcv, dg, factor, fog, fogColor, fogEnd, fogStart, fogStrength, height, hvh, hvw, i, img, l, lighting, m, me, mi, mie, normal, strength, uvList, v, vertexList, w1, w2, w3, width, x1, x2, x3, y1, y2, y3, z, z1, z2, z3, _Ax, _Ay, _Az, _Bx, _By, _Bz, _i, _j, _len, _len1, _results;
       fogColor = this.fogColor;
       fogStart = this.fogStart;
       fogEnd = this.fogEnd;
@@ -1267,6 +1267,7 @@ var __hasProp = {}.hasOwnProperty,
       lighting = this.lighting;
       dcv = this._dummyCv;
       dg = this._dummyG;
+      _results = [];
       for (i = _i = 0, _len = vertecies.length; _i < _len; i = ++_i) {
         v = vertecies[i];
         img = v.uvData;
@@ -1307,8 +1308,8 @@ var __hasProp = {}.hasOwnProperty,
           g.restore();
           continue;
         }
-        width = dcv.width = img.width;
-        height = dcv.height = img.height;
+        width = dcv.width = img.width || img.videoWidth || 0;
+        height = dcv.height = img.height || img.videoHeight || 0;
         _Ax = x2 - x1;
         _Ay = y2 - y1;
         _Az = z2 - z1;
@@ -1325,10 +1326,10 @@ var __hasProp = {}.hasOwnProperty,
         m = new Matrix2(Ax, Ay, Bx, By);
         me = m.elements;
         mi = m.getInvert();
-        mie = mi.elements;
         if (!mi) {
-          return;
+          continue;
         }
+        mie = mi.elements;
         a = mie[0] * _Ax + mie[2] * _Bx;
         c = mie[1] * _Ax + mie[3] * _Bx;
         b = mie[0] * _Ay + mie[2] * _By;
@@ -1380,8 +1381,9 @@ var __hasProp = {}.hasOwnProperty,
         g.drawImage(dcv, 0, 0);
         dg.clearRect(0, 0, width, height);
         dg.restore();
-        g.restore();
+        _results.push(g.restore());
       }
+      return _results;
     };
 
     Renderer.prototype.getTransformedPoint = function(mat, materials) {
