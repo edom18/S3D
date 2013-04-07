@@ -835,8 +835,8 @@ var __hasProp = {}.hasOwnProperty,
       updatedRotation = this.updateRotation();
       updatedTranslate = this.updateTranslate();
       if (updatedRotation || updatedTranslate || updatedScale) {
-        this.matrix.multiplyMatrices(this.matrixRotation, this.matrixScale);
-        this.matrix.multiply(this.matrixTranslate);
+        this.matrix.multiplyMatrices(this.matrixTranslate, this.matrixRotation);
+        this.matrix.multiply(this.matrixScale);
       }
       _ref = this.children;
       _results = [];
@@ -932,14 +932,8 @@ var __hasProp = {}.hasOwnProperty,
       this.projectionMatrix = new Matrix4;
     }
 
-    Camera.prototype.setWorld = function(m) {
-      return this.matrixWorld = m;
-    };
-
     Camera.prototype.getProjectionMatrix = function() {
-      var tmp;
-      tmp = Matrix4.multiply(this.projectionMatrix, this.viewMatrix);
-      return tmp.multiply(this.matrixWorld);
+      return Matrix4.multiply(this.projectionMatrix, this.viewMatrix);
     };
 
     Camera.prototype.updateProjectionMatrix = function() {
@@ -1312,6 +1306,8 @@ var __hasProp = {}.hasOwnProperty,
 
     Renderer.prototype.render = function(scene, camera) {
       var lights, matProj, vertecies;
+      camera.updateMatrix();
+      camera.updateMatrixWorld();
       camera.updateProjectionMatrix();
       matProj = camera.getProjectionMatrix();
       this.g.beginPath();
