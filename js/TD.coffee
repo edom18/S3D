@@ -5,7 +5,6 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
 
     DEG_TO_RAD = PI / 180
     ANGLE = PI * 2
-
 # -------------------------------------------------------------------------------
 
     class Vertex
