@@ -770,12 +770,8 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
             @viewMatrix = new Matrix4
             @projectionMatrix = new Matrix4
 
-        setWorld: (m) ->
-            @matrixWorld = m
-
         getProjectionMatrix: ->
-            tmp = Matrix4.multiply @projectionMatrix, @viewMatrix
-            return tmp.multiply @matrixWorld
+            return Matrix4.multiply @projectionMatrix, @viewMatrix
 
         updateProjectionMatrix: ->
             @lookAt()
@@ -1088,6 +1084,8 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
             @fogEnd   = 1000
 
         render: (scene, camera) ->
+            camera.updateMatrix()
+            camera.updateMatrixWorld()
             camera.updateProjectionMatrix()
             matProj = camera.getProjectionMatrix()
 
