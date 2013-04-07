@@ -178,14 +178,21 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
             e = m.elements
 
             #Perspective divide
-            w = 1 / (e[3] * x + e[7] * y + e[11] * z + e[15])
+            w = (e[3] * x + e[7] * y + e[11] * z + e[15])
 
-            @x = (e[0] * x + e[4] * y + e[8]  * z + e[12]) * w
-            @y = (e[1] * x + e[5] * y + e[9]  * z + e[13]) * w
-            @z = (e[2] * x + e[6] * y + e[10] * z + e[14]) * w
+            _w = 1 / w
+            _x = (e[0] * x + e[4] * y + e[8]  * z + e[12])
+            _y = (e[1] * x + e[5] * y + e[9]  * z + e[13])
+            _z = (e[2] * x + e[6] * y + e[10] * z + e[14])
+
+            return false if not ((-w <= _x <= w) or (-w <= _y <= w) or (-w <= _z <= w))
+
+            @x = _x * _w
+            @y = _y * _w
+            @z = _z * _w
 
             out[0] = @
-            out[1] = (e[3] * x + e[7] * y + e[11] * z + e[15])
+            out[1] = w
 
             return @
 
@@ -687,7 +694,10 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
             for v in @vertices
                 wm = Matrix4.multiply m, @matrixWorld
                 tmp = []
-                v.clone().applyProjection(wm, tmp)
+                outside = v.clone().applyProjection(wm, tmp)
+
+                continue if not outside
+
                 ret = ret.concat(tmp[0].toArray().concat(tmp[1]))
 
             return ret

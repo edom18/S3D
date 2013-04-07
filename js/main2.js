@@ -53,7 +53,7 @@
     img.src = 'img/aXjiA.png';
     logo.src = 'img/HTML5_Logo_512.png';
     photo.src = 'img/photo.jpg';
-    camera = new Camera(40, aspect, 1, 5000);
+    camera = new Camera(40, aspect, 0.1, 10000);
     camera.position.x = 10;
     camera.position.y = 50;
     camera.position.z = 200;

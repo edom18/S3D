@@ -194,17 +194,24 @@ var __hasProp = {}.hasOwnProperty,
 
 
     Vector3.prototype.applyProjection = function(m, out) {
-      var e, w, x, y, z;
+      var e, w, x, y, z, _w, _x, _y, _z;
       x = this.x;
       y = this.y;
       z = this.z;
       e = m.elements;
-      w = 1 / (e[3] * x + e[7] * y + e[11] * z + e[15]);
-      this.x = (e[0] * x + e[4] * y + e[8] * z + e[12]) * w;
-      this.y = (e[1] * x + e[5] * y + e[9] * z + e[13]) * w;
-      this.z = (e[2] * x + e[6] * y + e[10] * z + e[14]) * w;
+      w = e[3] * x + e[7] * y + e[11] * z + e[15];
+      _w = 1 / w;
+      _x = e[0] * x + e[4] * y + e[8] * z + e[12];
+      _y = e[1] * x + e[5] * y + e[9] * z + e[13];
+      _z = e[2] * x + e[6] * y + e[10] * z + e[14];
+      if (!(((-w <= _x && _x <= w)) || ((-w <= _y && _y <= w)) || ((-w <= _z && _z <= w)))) {
+        return false;
+      }
+      this.x = _x * _w;
+      this.y = _y * _w;
+      this.z = _z * _w;
       out[0] = this;
-      out[1] = e[3] * x + e[7] * y + e[11] * z + e[15];
+      out[1] = w;
       return this;
     };
 
@@ -802,14 +809,17 @@ var __hasProp = {}.hasOwnProperty,
     };
 
     Object3D.prototype.getVerticesByProjectionMatrix = function(m) {
-      var ret, tmp, v, wm, _i, _len, _ref;
+      var outside, ret, tmp, v, wm, _i, _len, _ref;
       ret = [];
       _ref = this.vertices;
       for (_i = 0, _len = _ref.length; _i < _len; _i++) {
         v = _ref[_i];
         wm = Matrix4.multiply(m, this.matrixWorld);
         tmp = [];
-        v.clone().applyProjection(wm, tmp);
+        outside = v.clone().applyProjection(wm, tmp);
+        if (!outside) {
+          continue;
+        }
         ret = ret.concat(tmp[0].toArray().concat(tmp[1]));
       }
       return ret;
