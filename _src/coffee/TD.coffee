@@ -1111,8 +1111,8 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
                     g.restore()
                     continue
 
-                width  = dcv.width  = img.width
-                height = dcv.height = img.height
+                width  = dcv.width  = img.width or img.videoWidth or 0
+                height = dcv.height = img.height or img.videoHeight or 0
 
                 # 変換後のベクトル成分を計算
                 _Ax = x2 - x1
