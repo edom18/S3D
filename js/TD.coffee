@@ -708,8 +708,8 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
             updatedTranslate = @updateTranslate()
 
             if updatedRotation or updatedTranslate or updatedScale
-                @matrix.multiplyMatrices @matrixRotation, @matrixScale
-                @matrix.multiply @matrixTranslate
+                @matrix.multiplyMatrices @matrixTranslate, @matrixRotation
+                @matrix.multiply @matrixScale
 
             c.updateMatrix() for c in @children
 
