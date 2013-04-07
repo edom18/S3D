@@ -67,10 +67,10 @@ do (win = window, doc = window.document, exports = window) ->
 
         camera = new Camera 40, aspect, 0.1, 10000
         camera.position.x = 10
-        camera.position.y = 50
+        camera.position.y = 20
         camera.position.z = 200
         #camera.up = new Vector3 1, 0, 0
-        camera.lookAt new Vector3 0, 0, 0
+        camera.lookAt new Vector3 0, 50, 0
         scene    = new Scene
         renderer = new Renderer cv, '#111'
         #renderer.fog      = false
@@ -109,26 +109,44 @@ do (win = window, doc = window.document, exports = window) ->
                 new Texture(video, [0, 1, 1, 1, 1, 0])
             ]
 
+            materials3 = [
+                new Color(200, 0, 0, 1)
+                new Color(200, 0, 0, 1)
+                new Color(0, 100, 0, 1)
+                new Color(0, 100, 0, 1)
+                new Color(0, 0, 150, 1)
+                new Color(0, 0, 150, 1)
+                new Color(50, 50, 50, 1)
+                new Color(50, 50, 50, 1)
+                new Color(20, 200, 30, 1)
+                new Color(20, 200, 30, 1)
+                new Color(20, 10, 50, 1)
+                new Color(20, 10, 50, 1)
+            ]
+
             cube1 = new Cube 50, 20, 20, 1, 1, 1, materials2
             cube1.position.z = -50
+            cube1.position.y = 50
             cube1.rotation.z = 30
-            #cube1.scale.set(0.5, 0.5, 0.5)
+            cube1.scale.set(0.5, 0.5, 0.5)
 
             cube2 = new Cube 20, 20, 20, 1, 1, 1, materials1
             cube2.position.z = -150
+            cube2.position.y = 50
             cube2.position.x = 50
 
-            cube3 = new Cube 20, 20, 20, 1, 1, 1, materials1
+            cube3 = new Cube 20, 20, 20, 1, 1, 1, materials3
             cube3.position.z = -350
             cube3.position.x = 50
             cube3.position.y = 80
 
             plate1 = new Plate 50, 50, new Texture(textureImage, [0.0, 0.5, 0.0, 1.0, 0.5, 0.5]), new Texture(textureImage, [0.0, 1.0, 0.5, 1.0, 0.5, 0.5])
             plate1.position.x = -50
+            plate1.position.y = 10
             plate1.position.z = -300
 
             plate2 = new Plate 50, 50, new Texture(video, [0, 0, 0, 1, 1, 0]), new Texture(video, [0, 1, 1, 1, 1, 0])
-            plate2.position.y = -100
+            plate2.position.y = 100
             plate2.position.z = -500
 
             line1 = new Line(0, 0, -200, 0, 0, 200, new Color(255, 0, 0, 0.3))
@@ -188,6 +206,10 @@ do (win = window, doc = window.document, exports = window) ->
                 cube3.rotation.x = angle * 3
                 cube3.rotation.y = angle * 3
                 cube3.rotation.z = angle * 3
+
+                s = 1 + sin(angle * DEG_TO_RAD)
+                cube3.scale.set(s, s, s)
+
                 renderer.render scene, camera
                 setTimeout _loop, 32
 

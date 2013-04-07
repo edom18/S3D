@@ -988,11 +988,15 @@ var __hasProp = {}.hasOwnProperty,
 
     __extends(Triangle, _super);
 
-    function Triangle(vertices, texture) {
+    function Triangle(vertices, material) {
       var i, v, vec3, _i, _len;
-      this.texture = texture;
       Triangle.__super__.constructor.apply(this, arguments);
       this.type = 'triangle';
+      if (material instanceof Texture) {
+        this.texture = material;
+      } else if (material instanceof Color) {
+        this.color = material;
+      }
       this.vertices = [];
       for (i = _i = 0, _len = vertices.length; _i < _len; i = _i += 3) {
         v = vertices[i];
@@ -1339,7 +1343,7 @@ var __hasProp = {}.hasOwnProperty,
     };
 
     Renderer.prototype.drawMaterials = function(g, vertecies, lights, vw, vh) {
-      var Ax, Ay, Bx, By, L, N, a, b, c, color, d, dcv, dg, factor, fog, fogColor, fogEnd, fogStart, fogStrength, height, hvh, hvw, i, img, l, lighting, m, me, mi, mie, normal, strength, uvList, v, vertexList, w1, w2, w3, width, x1, x2, x3, y1, y2, y3, z, z1, z2, z3, _Ax, _Ay, _Az, _Bx, _By, _Bz, _i, _j, _len, _len1, _results;
+      var Ax, Ay, Bx, By, L, N, a, b, c, color, d, dcv, dg, factor, fog, fogColor, fogEnd, fogStart, fogStrength, height, hvh, hvw, i, img, l, lighting, m, me, mi, mie, normal, strength, uvList, v, vertexList, w1, w2, w3, width, x1, x2, x3, y1, y2, y3, z, z1, z2, z3, _Ax, _Ay, _Az, _Bx, _By, _Bz, _i, _j, _k, _len, _len1, _len2, _results;
       fogColor = this.fogColor;
       fogStart = this.fogStart;
       fogEnd = this.fogEnd;
@@ -1350,8 +1354,6 @@ var __hasProp = {}.hasOwnProperty,
       _results = [];
       for (i = _i = 0, _len = vertecies.length; _i < _len; i = ++_i) {
         v = vertecies[i];
-        img = v.uvData;
-        uvList = v.uvList;
         vertexList = v.vertecies;
         z = v.getZPosition();
         fogStrength = 0;
@@ -1388,7 +1390,6 @@ var __hasProp = {}.hasOwnProperty,
           g.restore();
           continue;
         } else if (v.type === 'particle') {
-          debugger;
           g.save();
           if (fog) {
             fogStrength = (fogEnd - z) / (fogEnd - fogStart);
@@ -1403,8 +1404,7 @@ var __hasProp = {}.hasOwnProperty,
           g.fill();
           _results.push(g.restore());
         } else if (v.type === 'triangle') {
-          width = dcv.width = img.width || img.videoWidth || 0;
-          height = dcv.height = img.height || img.videoHeight || 0;
+          img = null;
           _Ax = x2 - x1;
           _Ay = y2 - y1;
           _Az = z2 - z1;
@@ -1414,69 +1414,118 @@ var __hasProp = {}.hasOwnProperty,
           if ((_Ax * _By) - (_Ay * _Bx) > 0) {
             continue;
           }
-          Ax = (uvList[2] - uvList[0]) * width;
-          Ay = (uvList[3] - uvList[1]) * height;
-          Bx = (uvList[4] - uvList[0]) * width;
-          By = (uvList[5] - uvList[1]) * height;
-          m = new Matrix2(Ax, Ay, Bx, By);
-          me = m.elements;
-          mi = m.getInvert();
-          if (!mi) {
-            continue;
-          }
-          mie = mi.elements;
-          a = mie[0] * _Ax + mie[2] * _Bx;
-          c = mie[1] * _Ax + mie[3] * _Bx;
-          b = mie[0] * _Ay + mie[2] * _By;
-          d = mie[1] * _Ay + mie[3] * _By;
-          g.save();
-          dg.save();
-          dg.drawImage(img, 0, 0);
-          if (lighting) {
-            strength = 0;
-            color = new Color(0, 0, 0, 1);
-            for (_j = 0, _len1 = lights.length; _j < _len1; _j++) {
-              l = lights[_j];
-              if (l instanceof AmbientLight) {
-                strength += l.strength;
-              } else if (l instanceof DirectionalLight) {
-                L = l.direction;
-                N = normal.clone().add(L);
-                factor = N.dot(L);
-                strength += l.strength * factor;
+          color = new Color(0, 0, 0, 1);
+          if (v.uvData) {
+            img = v.uvData;
+            uvList = v.uvList;
+            width = dcv.width = img.width || img.videoWidth || 0;
+            height = dcv.height = img.height || img.videoHeight || 0;
+            Ax = (uvList[2] - uvList[0]) * width;
+            Ay = (uvList[3] - uvList[1]) * height;
+            Bx = (uvList[4] - uvList[0]) * width;
+            By = (uvList[5] - uvList[1]) * height;
+            m = new Matrix2(Ax, Ay, Bx, By);
+            me = m.elements;
+            mi = m.getInvert();
+            if (!mi) {
+              continue;
+            }
+            mie = mi.elements;
+            a = mie[0] * _Ax + mie[2] * _Bx;
+            c = mie[1] * _Ax + mie[3] * _Bx;
+            b = mie[0] * _Ay + mie[2] * _By;
+            d = mie[1] * _Ay + mie[3] * _By;
+            g.save();
+            dg.save();
+            dg.drawImage(img, 0, 0);
+            if (lighting) {
+              strength = 0;
+              for (_j = 0, _len1 = lights.length; _j < _len1; _j++) {
+                l = lights[_j];
+                if (l instanceof AmbientLight) {
+                  strength += l.strength;
+                } else if (l instanceof DirectionalLight) {
+                  L = l.direction;
+                  N = normal.clone().add(L);
+                  factor = N.dot(L);
+                  strength += l.strength * factor;
+                }
+              }
+              color.a -= strength;
+              if (color.a > 0) {
+                dg.fillStyle = color.toString();
+                dg.fillRect(0, 0, width, height);
               }
             }
-            color.a -= strength;
-            if (color.a > 0) {
-              dg.fillStyle = color.toString();
+            if (fog) {
+              fogStrength = 1 - ((fogEnd - z) / (fogEnd - fogStart));
+              if (fogStrength < 0) {
+                fogStrength = 0;
+              }
+              dg.globalAlpha = fogStrength;
+              dg.fillStyle = fogColor;
               dg.fillRect(0, 0, width, height);
             }
-          }
-          if (fog) {
-            fogStrength = 1 - ((fogEnd - z) / (fogEnd - fogStart));
-            if (fogStrength < 0) {
-              fogStrength = 0;
+            g.beginPath();
+            g.moveTo(x1, y1);
+            g.lineTo(x2, y2);
+            g.lineTo(x3, y3);
+            g.closePath();
+            if (this.wireframe) {
+              g.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+              g.stroke();
             }
-            dg.globalAlpha = fogStrength;
-            dg.globalCompositeOperation = 'source-over';
-            dg.fillStyle = fogColor;
-            dg.fillRect(0, 0, width, height);
+            g.clip();
+            g.transform(a, b, c, d, x1 - (a * uvList[0] * width + c * uvList[1] * height), y1 - (b * uvList[0] * width + d * uvList[1] * height));
+            g.drawImage(dcv, 0, 0);
+            dg.clearRect(0, 0, width, height);
+            dg.restore();
+            _results.push(g.restore());
+          } else if (v.color) {
+            g.save();
+            g.beginPath();
+            g.moveTo(x1, y1);
+            g.lineTo(x2, y2);
+            g.lineTo(x3, y3);
+            g.closePath();
+            g.fillStyle = v.color.toString();
+            g.fill();
+            if (this.wireframe) {
+              g.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+              g.stroke();
+            }
+            if (lighting) {
+              strength = 0;
+              for (_k = 0, _len2 = lights.length; _k < _len2; _k++) {
+                l = lights[_k];
+                if (l instanceof AmbientLight) {
+                  strength += l.strength;
+                } else if (l instanceof DirectionalLight) {
+                  L = l.direction;
+                  N = normal.clone().add(L);
+                  factor = N.dot(L);
+                  strength += l.strength * factor;
+                }
+              }
+              color.a -= strength;
+              if (color.a > 0) {
+                g.fillStyle = color.toString();
+                g.fill();
+              }
+            }
+            if (fog) {
+              fogStrength = 1 - ((fogEnd - z) / (fogEnd - fogStart));
+              if (fogStrength < 0) {
+                fogStrength = 0;
+              }
+              g.globalAlpha = fogStrength;
+              g.fillStyle = fogColor;
+              g.fill();
+            }
+            _results.push(g.restore());
+          } else {
+            _results.push(void 0);
           }
-          g.beginPath();
-          g.moveTo(x1, y1);
-          g.lineTo(x2, y2);
-          g.lineTo(x3, y3);
-          g.closePath();
-          if (this.wireframe) {
-            g.strokeStyle = 'rgba(255, 255, 255, 0.5)';
-            g.stroke();
-          }
-          g.clip();
-          g.transform(a, b, c, d, x1 - (a * uvList[0] * width + c * uvList[1] * height), y1 - (b * uvList[0] * width + d * uvList[1] * height));
-          g.drawImage(dcv, 0, 0);
-          dg.clearRect(0, 0, width, height);
-          dg.restore();
-          _results.push(g.restore());
         } else {
           _results.push(void 0);
         }
@@ -1485,20 +1534,22 @@ var __hasProp = {}.hasOwnProperty,
     };
 
     Renderer.prototype.getTransformedPoint = function(mat, materials) {
-      var m, results, tmp, uvData, uvList, vertecies, vertex, _i, _len;
+      var m, results, tmp, vertecies, vertex, _i, _len;
       results = [];
       for (_i = 0, _len = materials.length; _i < _len; _i++) {
         m = materials[_i];
         if (m instanceof Triangle) {
           vertecies = m.getVerticesByProjectionMatrix(mat);
-          uvData = m.texture.uv_data;
-          uvList = m.texture.uv_list;
           vertex = new Vertex(vertecies);
-          vertex.uvData = uvData;
-          vertex.uvList = uvList;
           vertex.type = m.type;
           if (vertex.getZPosition() < 0) {
             continue;
+          }
+          if (m.texture) {
+            vertex.uvData = m.texture.uv_data;
+            vertex.uvList = m.texture.uv_list;
+          } else if (m.color) {
+            vertex.color = m.color;
           }
           vertex.normal = m.getNormal();
           results.push(vertex);
