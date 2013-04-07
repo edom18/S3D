@@ -36,6 +36,8 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
         equal: (v) ->
             return (@x is v.x) and (@y is v.y) and (@z is v.z)
 
+        set: (@x = 0, @y = 0, @z = 0) ->
+
         sub: (v) ->
             @x -= v.x
             @y -= v.y
@@ -512,6 +514,23 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
             return @
 
         ###*
+            Scale matrix
+            @param {Vector3} v
+        ###
+        scale: (v) ->
+            te = @elements
+            x = v.x
+            y = v.y
+            z = v.z
+
+            te[0] = x; te[4] = 0; te[8]  = 0; te[12] = 0;
+            te[1] = 0; te[5] = y; te[9]  = 0; te[13] = 0;
+            te[2] = 0; te[6] = 0; te[10] = z; te[14] = 0;
+            te[3] = 0; te[7] = 0; te[11] = 0; te[15] = 1;
+
+            return @
+
+        ###*
             @param {Vector3} eye
             @param {Vector3} target
             @param {Vector3} up
@@ -620,15 +639,28 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
             @vertices = []
             @position = new Vector3
             @rotation = new Vector3
-            #@scale = new Vector3 1, 1, 1
+            @scale = new Vector3 1, 1, 1
             @up    = new Vector3 0, 1, 0
 
+            @matrixScale = new Matrix4
             @matrixTranslate = new Matrix4
             @matrixRotation = new Matrix4
             @matrix = new Matrix4
             @matrixWorld = new Matrix4
 
             @updateMatrix()
+
+        updateScale: do ->
+            sm = new Matrix4
+            previous = null
+
+            return ->
+                return false if previous and @scale.equal previous
+
+                previous = @scale.clone()
+                @matrixScale = sm.clone().scale(@scale)
+
+                return true
 
         updateTranslate: do ->
             tm = new Matrix4
@@ -671,11 +703,13 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
 
         updateMatrix: ->
 
-            updatedRotation = @updateRotation()
+            updatedScale     = @updateScale()
+            updatedRotation  = @updateRotation()
             updatedTranslate = @updateTranslate()
 
-            if updatedRotation or updatedTranslate
-                @matrix.multiplyMatrices @matrixTranslate, @matrixRotation
+            if updatedRotation or updatedTranslate or updatedScale
+                @matrix.multiplyMatrices @matrixRotation, @matrixScale
+                @matrix.multiply @matrixTranslate
 
             c.updateMatrix() for c in @children
 
