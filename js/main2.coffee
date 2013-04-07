@@ -135,6 +135,12 @@ do (win = window, doc = window.document, exports = window) ->
             line2 = new Line(-200, 0, 0, 200, 0, 0, new Color(0, 255, 0, 0.3))
             line3 = new Line(0, 200, 0, 0, -200, 0, new Color(0, 0, 255, 0.3))
 
+            particle1 = new Particle(new Vector3(50, 50, 30), 2000)
+            particle2 = new Particle(new Vector3(150, 50, 0), 3000)
+            particle3 = new Particle(new Vector3(250, 30, -150), 2500)
+            particle4 = new Particle(new Vector3(-150, 150, -250), 4000)
+            particle5 = new Particle(new Vector3(-250, 250, 50), 3500)
+
             size = 300
             container = new Object3D
             container.position.x = -(size * 0.5)
@@ -156,6 +162,11 @@ do (win = window, doc = window.document, exports = window) ->
             scene.add ambLight
             scene.add dirLight
 
+            scene.add particle1
+            scene.add particle2
+            scene.add particle3
+            scene.add particle4
+            scene.add particle5
             scene.add plate1
             scene.add plate2
             scene.add container
