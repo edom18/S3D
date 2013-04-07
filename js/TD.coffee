@@ -4,7 +4,7 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
     {max, min, sqrt, tan, cos, sin, PI} = Math
 
     DEG_TO_RAD = PI / 180
-    ANGLE = PI * 2
+
 # -------------------------------------------------------------------------------
 
     class Vertex
@@ -722,6 +722,7 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
             c.updateMatrixWorld() for c in @children
 
         getVerticesByProjectionMatrix: (m) ->
+
             ret = []
 
             for v in @vertices
@@ -797,6 +798,7 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
     class Line extends Object3D
         constructor: (x1, y1, z1, x2, y2, z2, @color = new Color(255, 255, 255, 1)) ->
             super
+            @type = 'line'
 
             @vertices.push new Vector3 x1, y1, z1
             @vertices.push new Vector3 x2, y2, z2
@@ -813,6 +815,7 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
     class Triangle extends Object3D
         constructor: (vertices, @texture) ->
             super
+            @type = 'triangle'
 
             @vertices = []
             for v, i in vertices by 3
@@ -845,6 +848,7 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
     class Face extends Object3D
         constructor: (x1, y1, x2, y2, texture1, texture2) ->
             super
+            @type = 'face'
 
             triangle1 = new Triangle([
                 x1, y1, 0
@@ -876,6 +880,7 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
     class Plate extends Object3D
         constructor: (width, height, texture1, texture2) ->
             super
+            @type = 'plate'
 
             hw = width  * 0.5
             hh = height * 0.5
@@ -904,6 +909,7 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
     class Cube extends Object3D
         constructor: (w, h, p, sx = 1, sy = 1, sz = 1, materials) ->
             super
+            @type = 'cube'
 
             w *= 0.5
             h *= 0.5
@@ -952,26 +958,11 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
 
 # -------------------------------------------------------------------------------
 
-    #class Particle
-    #    constructor: (@v, @sp = 1, @size = 1000, @r = 255, @g = 255, @b = 255) ->
-    #        @vec = new Vector3 1, 0, 1
-
-    #    update: ->
-    #        p = new Quaternion 0, @v
-
-    #        rad = @sp * DEG_TO_RAD
-
-    #        # rad角の回転クォータニオンとその共役を生成
-    #        q = makeRotatialQuaternion(rad, @vec)
-    #        r = makeRotatialQuaternion(-rad, @vec)
-
-    #        # Quaternionを以下のように計算
-    #        # RPQ (RはQの共役）
-    #        
-    #        p = r.multiply p
-    #        p = p.multiply q
-
-    #        @v = p.v
+    class Particle extends Object3D
+        constructor: (vec, @size = 10, @color = new Color(255, 255, 255, 1)) ->
+            super
+            @vertices.push vec
+            @type = 'particle'
 
 # -------------------------------------------------------------------------------
 
@@ -1097,9 +1088,9 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
             lights    = scene.lights
             vertecies = @getTransformedPoint matProj, scene.materials
 
-            @drawTriangles @g, vertecies, lights, @w, @h
+            @drawMaterials @g, vertecies, lights, @w, @h
 
-        drawTriangles: (g, vertecies, lights, vw, vh) ->
+        drawMaterials: (g, vertecies, lights, vw, vh) ->
 
             fogColor = @fogColor
             fogStart = @fogStart
@@ -1135,7 +1126,7 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
                 z3 =  vertexList[10]
                 w3 =  vertexList[11]
 
-                if not img
+                if v.type is 'line'
                     g.save()
 
                     if fog
@@ -1152,130 +1143,146 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
                     g.restore()
                     continue
 
-                width  = dcv.width  = img.width or img.videoWidth or 0
-                height = dcv.height = img.height or img.videoHeight or 0
+                else if v.type is 'particle'
+                    debugger
+                    g.save()
 
-                # 変換後のベクトル成分を計算
-                _Ax = x2 - x1
-                _Ay = y2 - y1
-                _Az = z2 - z1
-                _Bx = x3 - x1
-                _By = y3 - y1
-                _Bz = z3 - z1
+                    if fog
+                        fogStrength = ((fogEnd - z) / (fogEnd - fogStart))
+                        fogStrength = 0 if fogStrength < 0
+                        g.globalAlpha = fogStrength
 
-                # 裏面カリング
-                # 頂点を結ぶ順が反時計回りの場合は「裏面」になり、その場合は描画をスキップ
-                # 裏面かどうかの判定は外積を利用する
-                # 判定は、p1, p2, p3の3点から、p1->p2, p1->p3のベクトルとの外積を利用する。
-                continue if (_Ax * _By) - (_Ay * _Bx) > 0
+                    g.beginPath()
+                    g.fillStyle = v.color.toString()
+                    g.arc x1, y1, v.size / w1, 0, PI * 2, true
+                    g.fill()
+                    g.restore()
 
-                # 変換前のベクトル成分を計算
-                Ax = (uvList[2] - uvList[0]) * width
-                Ay = (uvList[3] - uvList[1]) * height
-                Bx = (uvList[4] - uvList[0]) * width
-                By = (uvList[5] - uvList[1]) * height
+                else if v.type is 'triangle'
+                    width  = dcv.width  = img.width or img.videoWidth or 0
+                    height = dcv.height = img.height or img.videoHeight or 0
 
-                # move position from A(Ax, Ay) to _A(_Ax, _Ay)
-                # move position from B(Ax, Ay) to _B(_Bx, _By)
-                # A,Bのベクトルを、_A,_Bのベクトルに変換することが目的。
-                # 変換を達成するには、a, b, c, dそれぞれの係数を導き出す必要がある。
-                #
-                #    ↓まずは公式。アフィン変換の移動以外を考える。
-                #
-                # _Ax = a * Ax + c * Ay
-                # _Ay = b * Ax + d * Ay
-                # _Bx = a * Bx + c * By
-                # _By = b * Bx + d * By
-                #
-                #    ↓上記の公式を行列の計算で表すと以下に。
-                #
-                # |_Ax| = |Ax Ay||a|
-                # |_Bx| = |Bx By||c|
-                #
-                #    ↓a, cについて求めたいのだから、左に掛けているものを「1」にする必要がある。
-                #    　行列を1にするには、逆行列を左から掛ければいいので、両辺に逆行列を掛ける。（^-1は逆行列の意味）
-                #
-                # |Ax Ay|^-1 |_Ax| = |a|
-                # |Bx By|    |_Bx| = |c|
+                    # 変換後のベクトル成分を計算
+                    _Ax = x2 - x1
+                    _Ay = y2 - y1
+                    _Az = z2 - z1
+                    _Bx = x3 - x1
+                    _By = y3 - y1
+                    _Bz = z3 - z1
 
-                # 上記の
-                # |Ax Ay|
-                # |Bx By|
-                # を生成
-                m = new Matrix2(Ax, Ay, Bx, By)
-                me = m.elements
+                    # 裏面カリング
+                    # 頂点を結ぶ順が反時計回りの場合は「裏面」になり、その場合は描画をスキップ
+                    # 裏面かどうかの判定は外積を利用する
+                    # 判定は、p1, p2, p3の3点から、p1->p2, p1->p3のベクトルとの外積を利用する。
+                    continue if (_Ax * _By) - (_Ay * _Bx) > 0
 
-                # 逆行列を取得
-                # 上記の
-                # |Ax Ay|^-1
-                # |Bx By|
-                # を生成
-                mi  = m.getInvert()
+                    # 変換前のベクトル成分を計算
+                    Ax = (uvList[2] - uvList[0]) * width
+                    Ay = (uvList[3] - uvList[1]) * height
+                    Bx = (uvList[4] - uvList[0]) * width
+                    By = (uvList[5] - uvList[1]) * height
 
-                # 逆行列が存在しない場合はスキップ
-                continue if not mi
+                    # move position from A(Ax, Ay) to _A(_Ax, _Ay)
+                    # move position from B(Ax, Ay) to _B(_Bx, _By)
+                    # A,Bのベクトルを、_A,_Bのベクトルに変換することが目的。
+                    # 変換を達成するには、a, b, c, dそれぞれの係数を導き出す必要がある。
+                    #
+                    #    ↓まずは公式。アフィン変換の移動以外を考える。
+                    #
+                    # _Ax = a * Ax + c * Ay
+                    # _Ay = b * Ax + d * Ay
+                    # _Bx = a * Bx + c * By
+                    # _By = b * Bx + d * By
+                    #
+                    #    ↓上記の公式を行列の計算で表すと以下に。
+                    #
+                    # |_Ax| = |Ax Ay||a|
+                    # |_Bx| = |Bx By||c|
+                    #
+                    #    ↓a, cについて求めたいのだから、左に掛けているものを「1」にする必要がある。
+                    #    　行列を1にするには、逆行列を左から掛ければいいので、両辺に逆行列を掛ける。（^-1は逆行列の意味）
+                    #
+                    # |Ax Ay|^-1 |_Ax| = |a|
+                    # |Bx By|    |_Bx| = |c|
 
-                mie = mi.elements
+                    # 上記の
+                    # |Ax Ay|
+                    # |Bx By|
+                    # を生成
+                    m = new Matrix2(Ax, Ay, Bx, By)
+                    me = m.elements
 
-                a = mie[0] * _Ax + mie[2] * _Bx
-                c = mie[1] * _Ax + mie[3] * _Bx
-                b = mie[0] * _Ay + mie[2] * _By
-                d = mie[1] * _Ay + mie[3] * _By
+                    # 逆行列を取得
+                    # 上記の
+                    # |Ax Ay|^-1
+                    # |Bx By|
+                    # を生成
+                    mi  = m.getInvert()
 
-                # 各頂点座標を元に三角形を作り、それでクリッピング
-                g.save()
-                dg.save()
+                    # 逆行列が存在しない場合はスキップ
+                    continue if not mi
 
-                dg.drawImage(img, 0, 0)
+                    mie = mi.elements
 
-                if lighting
-                    strength = 0
-                    color = new Color 0, 0, 0, 1
+                    a = mie[0] * _Ax + mie[2] * _Bx
+                    c = mie[1] * _Ax + mie[3] * _Bx
+                    b = mie[0] * _Ay + mie[2] * _By
+                    d = mie[1] * _Ay + mie[3] * _By
 
-                    for l in lights
-                        if l instanceof AmbientLight
-                            strength += l.strength
+                    # 各頂点座標を元に三角形を作り、それでクリッピング
+                    g.save()
+                    dg.save()
 
-                        else if l instanceof DirectionalLight
-                            L = l.direction
-                            N = normal.clone().add(L)
-                            factor = N.dot(L)
-                            strength += l.strength * factor
-                            
-                    color.a -= strength
+                    dg.drawImage(img, 0, 0)
 
-                    if color.a > 0
-                        dg.fillStyle = color.toString()
+                    if lighting
+                        strength = 0
+                        color = new Color 0, 0, 0, 1
+
+                        for l in lights
+                            if l instanceof AmbientLight
+                                strength += l.strength
+
+                            else if l instanceof DirectionalLight
+                                L = l.direction
+                                N = normal.clone().add(L)
+                                factor = N.dot(L)
+                                strength += l.strength * factor
+                                
+                        color.a -= strength
+
+                        if color.a > 0
+                            dg.fillStyle = color.toString()
+                            dg.fillRect 0, 0, width, height
+
+                    if fog
+                        fogStrength = 1 - ((fogEnd - z) / (fogEnd - fogStart))
+                        fogStrength = 0 if fogStrength < 0
+                        dg.globalAlpha = fogStrength
+                        dg.globalCompositeOperation = 'source-over'
+                        dg.fillStyle   = fogColor
                         dg.fillRect 0, 0, width, height
 
-                if fog
-                    fogStrength = 1 - ((fogEnd - z) / (fogEnd - fogStart))
-                    fogStrength = 0 if fogStrength < 0
-                    dg.globalAlpha = fogStrength
-                    dg.globalCompositeOperation = 'source-over'
-                    dg.fillStyle   = fogColor
-                    dg.fillRect 0, 0, width, height
+                    g.beginPath()
+                    g.moveTo(x1, y1)
+                    g.lineTo(x2, y2)
+                    g.lineTo(x3, y3)
+                    g.closePath()
 
-                g.beginPath()
-                g.moveTo(x1, y1)
-                g.lineTo(x2, y2)
-                g.lineTo(x3, y3)
-                g.closePath()
+                    if @wireframe
+                        g.strokeStyle = 'rgba(255, 255, 255, 0.5)'
+                        g.stroke()
 
-                if @wireframe
-                    g.strokeStyle = 'rgba(255, 255, 255, 0.5)'
-                    g.stroke()
+                    g.clip()
 
-                g.clip()
+                    g.transform(a, b, c, d,
+                        x1 - (a * uvList[0] * width + c * uvList[1] * height),
+                        y1 - (b * uvList[0] * width + d * uvList[1] * height))
+                    g.drawImage(dcv, 0, 0)
 
-                g.transform(a, b, c, d,
-                    x1 - (a * uvList[0] * width + c * uvList[1] * height),
-                    y1 - (b * uvList[0] * width + d * uvList[1] * height))
-                g.drawImage(dcv, 0, 0)
-
-                dg.clearRect 0, 0, width, height
-                dg.restore()
-                g.restore()
+                    dg.clearRect 0, 0, width, height
+                    dg.restore()
+                    g.restore()
  
 
         getTransformedPoint: (mat, materials) ->
@@ -1291,6 +1298,7 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
                     vertex = new Vertex vertecies
                     vertex.uvData = uvData
                     vertex.uvList = uvList
+                    vertex.type = m.type
 
                     continue if vertex.getZPosition() < 0
 
@@ -1301,6 +1309,18 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
                     vertecies = m.getVerticesByProjectionMatrix(mat)
                     vertex = new Vertex vertecies
                     vertex.color = m.color
+                    vertex.type = m.type
+
+                    continue if vertex.getZPosition() < 0
+
+                    results.push vertex
+
+                else if m instanceof Particle
+                    vertecies = m.getVerticesByProjectionMatrix(mat)
+                    vertex = new Vertex vertecies
+                    vertex.color = m.color
+                    vertex.size  = m.size
+                    vertex.type = m.type
 
                     continue if vertex.getZPosition() < 0
 
@@ -1403,7 +1423,7 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
     exports.Plate = Plate
     exports.Cube  = Cube
     exports.Face  = Face
-    #exports.Particle = Particle
+    exports.Particle = Particle
     exports.Texture  = Texture
     exports.Vector3  = Vector3
     exports.Color    = Color
