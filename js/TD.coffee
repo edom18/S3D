@@ -813,9 +813,15 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
         @param {Texture} texture
     ###
     class Triangle extends Object3D
-        constructor: (vertices, @texture) ->
+        constructor: (vertices, material) ->
             super
             @type = 'triangle'
+
+            if material instanceof Texture
+                @texture = material
+
+            else if material instanceof Color
+                @color = material
 
             @vertices = []
             for v, i in vertices by 3
@@ -1103,8 +1109,6 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
 
             for v, i in vertecies
 
-                img    = v.uvData
-                uvList = v.uvList
                 vertexList = v.vertecies
                 z = v.getZPosition()
                 fogStrength = 0
@@ -1144,7 +1148,6 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
                     continue
 
                 else if v.type is 'particle'
-                    debugger
                     g.save()
 
                     if fog
@@ -1159,16 +1162,12 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
                     g.restore()
 
                 else if v.type is 'triangle'
-                    width  = dcv.width  = img.width or img.videoWidth or 0
-                    height = dcv.height = img.height or img.videoHeight or 0
+
+                    img = null
 
                     # 変換後のベクトル成分を計算
-                    _Ax = x2 - x1
-                    _Ay = y2 - y1
-                    _Az = z2 - z1
-                    _Bx = x3 - x1
-                    _By = y3 - y1
-                    _Bz = z3 - z1
+                    _Ax = x2 - x1; _Ay = y2 - y1; _Az = z2 - z1
+                    _Bx = x3 - x1; _By = y3 - y1; _Bz = z3 - z1
 
                     # 裏面カリング
                     # 頂点を結ぶ順が反時計回りの場合は「裏面」になり、その場合は描画をスキップ
@@ -1176,114 +1175,164 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
                     # 判定は、p1, p2, p3の3点から、p1->p2, p1->p3のベクトルとの外積を利用する。
                     continue if (_Ax * _By) - (_Ay * _Bx) > 0
 
-                    # 変換前のベクトル成分を計算
-                    Ax = (uvList[2] - uvList[0]) * width
-                    Ay = (uvList[3] - uvList[1]) * height
-                    Bx = (uvList[4] - uvList[0]) * width
-                    By = (uvList[5] - uvList[1]) * height
+                    color = new Color 0, 0, 0, 1
 
-                    # move position from A(Ax, Ay) to _A(_Ax, _Ay)
-                    # move position from B(Ax, Ay) to _B(_Bx, _By)
-                    # A,Bのベクトルを、_A,_Bのベクトルに変換することが目的。
-                    # 変換を達成するには、a, b, c, dそれぞれの係数を導き出す必要がある。
-                    #
-                    #    ↓まずは公式。アフィン変換の移動以外を考える。
-                    #
-                    # _Ax = a * Ax + c * Ay
-                    # _Ay = b * Ax + d * Ay
-                    # _Bx = a * Bx + c * By
-                    # _By = b * Bx + d * By
-                    #
-                    #    ↓上記の公式を行列の計算で表すと以下に。
-                    #
-                    # |_Ax| = |Ax Ay||a|
-                    # |_Bx| = |Bx By||c|
-                    #
-                    #    ↓a, cについて求めたいのだから、左に掛けているものを「1」にする必要がある。
-                    #    　行列を1にするには、逆行列を左から掛ければいいので、両辺に逆行列を掛ける。（^-1は逆行列の意味）
-                    #
-                    # |Ax Ay|^-1 |_Ax| = |a|
-                    # |Bx By|    |_Bx| = |c|
+                    if v.uvData
+                        img    = v.uvData
+                        uvList = v.uvList
+                        width  = dcv.width  = img.width or img.videoWidth or 0
+                        height = dcv.height = img.height or img.videoHeight or 0
 
-                    # 上記の
-                    # |Ax Ay|
-                    # |Bx By|
-                    # を生成
-                    m = new Matrix2(Ax, Ay, Bx, By)
-                    me = m.elements
+                        # 変換前のベクトル成分を計算
+                        Ax = (uvList[2] - uvList[0]) * width
+                        Ay = (uvList[3] - uvList[1]) * height
+                        Bx = (uvList[4] - uvList[0]) * width
+                        By = (uvList[5] - uvList[1]) * height
 
-                    # 逆行列を取得
-                    # 上記の
-                    # |Ax Ay|^-1
-                    # |Bx By|
-                    # を生成
-                    mi  = m.getInvert()
+                        # move position from A(Ax, Ay) to _A(_Ax, _Ay)
+                        # move position from B(Ax, Ay) to _B(_Bx, _By)
+                        # A,Bのベクトルを、_A,_Bのベクトルに変換することが目的。
+                        # 変換を達成するには、a, b, c, dそれぞれの係数を導き出す必要がある。
+                        #
+                        #    ↓まずは公式。アフィン変換の移動以外を考える。
+                        #
+                        # _Ax = a * Ax + c * Ay
+                        # _Ay = b * Ax + d * Ay
+                        # _Bx = a * Bx + c * By
+                        # _By = b * Bx + d * By
+                        #
+                        #    ↓上記の公式を行列の計算で表すと以下に。
+                        #
+                        # |_Ax| = |Ax Ay||a|
+                        # |_Bx| = |Bx By||c|
+                        #
+                        #    ↓a, cについて求めたいのだから、左に掛けているものを「1」にする必要がある。
+                        #    　行列を1にするには、逆行列を左から掛ければいいので、両辺に逆行列を掛ける。（^-1は逆行列の意味）
+                        #
+                        # |Ax Ay|^-1 |_Ax| = |a|
+                        # |Bx By|    |_Bx| = |c|
 
-                    # 逆行列が存在しない場合はスキップ
-                    continue if not mi
+                        # 上記の
+                        # |Ax Ay|
+                        # |Bx By|
+                        # を生成
+                        m = new Matrix2(Ax, Ay, Bx, By)
+                        me = m.elements
 
-                    mie = mi.elements
+                        # 逆行列を取得
+                        # 上記の
+                        # |Ax Ay|^-1
+                        # |Bx By|
+                        # を生成
+                        mi  = m.getInvert()
 
-                    a = mie[0] * _Ax + mie[2] * _Bx
-                    c = mie[1] * _Ax + mie[3] * _Bx
-                    b = mie[0] * _Ay + mie[2] * _By
-                    d = mie[1] * _Ay + mie[3] * _By
+                        # 逆行列が存在しない場合はスキップ
+                        continue if not mi
 
-                    # 各頂点座標を元に三角形を作り、それでクリッピング
-                    g.save()
-                    dg.save()
+                        mie = mi.elements
 
-                    dg.drawImage(img, 0, 0)
+                        a = mie[0] * _Ax + mie[2] * _Bx
+                        c = mie[1] * _Ax + mie[3] * _Bx
+                        b = mie[0] * _Ay + mie[2] * _By
+                        d = mie[1] * _Ay + mie[3] * _By
 
-                    if lighting
-                        strength = 0
-                        color = new Color 0, 0, 0, 1
+                        # 各頂点座標を元に三角形を作り、それでクリッピング
+                        g.save()
+                        dg.save()
 
-                        for l in lights
-                            if l instanceof AmbientLight
-                                strength += l.strength
+                        dg.drawImage(img, 0, 0)
 
-                            else if l instanceof DirectionalLight
-                                L = l.direction
-                                N = normal.clone().add(L)
-                                factor = N.dot(L)
-                                strength += l.strength * factor
-                                
-                        color.a -= strength
+                        if lighting
+                            strength = 0
 
-                        if color.a > 0
-                            dg.fillStyle = color.toString()
+                            for l in lights
+                                if l instanceof AmbientLight
+                                    strength += l.strength
+
+                                else if l instanceof DirectionalLight
+                                    L = l.direction
+                                    N = normal.clone().add(L)
+                                    factor = N.dot(L)
+                                    strength += l.strength * factor
+                                    
+                            color.a -= strength
+
+                            if color.a > 0
+                                dg.fillStyle = color.toString()
+                                dg.fillRect 0, 0, width, height
+
+                        if fog
+                            fogStrength = 1 - ((fogEnd - z) / (fogEnd - fogStart))
+                            fogStrength = 0 if fogStrength < 0
+                            dg.globalAlpha = fogStrength
+                            dg.fillStyle   = fogColor
                             dg.fillRect 0, 0, width, height
 
-                    if fog
-                        fogStrength = 1 - ((fogEnd - z) / (fogEnd - fogStart))
-                        fogStrength = 0 if fogStrength < 0
-                        dg.globalAlpha = fogStrength
-                        dg.globalCompositeOperation = 'source-over'
-                        dg.fillStyle   = fogColor
-                        dg.fillRect 0, 0, width, height
+                        g.beginPath()
+                        g.moveTo(x1, y1)
+                        g.lineTo(x2, y2)
+                        g.lineTo(x3, y3)
+                        g.closePath()
 
-                    g.beginPath()
-                    g.moveTo(x1, y1)
-                    g.lineTo(x2, y2)
-                    g.lineTo(x3, y3)
-                    g.closePath()
+                        if @wireframe
+                            g.strokeStyle = 'rgba(255, 255, 255, 0.5)'
+                            g.stroke()
 
-                    if @wireframe
-                        g.strokeStyle = 'rgba(255, 255, 255, 0.5)'
-                        g.stroke()
+                        g.clip()
 
-                    g.clip()
+                        g.transform(a, b, c, d,
+                            x1 - (a * uvList[0] * width + c * uvList[1] * height),
+                            y1 - (b * uvList[0] * width + d * uvList[1] * height))
 
-                    g.transform(a, b, c, d,
-                        x1 - (a * uvList[0] * width + c * uvList[1] * height),
-                        y1 - (b * uvList[0] * width + d * uvList[1] * height))
-                    g.drawImage(dcv, 0, 0)
+                        g.drawImage(dcv, 0, 0)
 
-                    dg.clearRect 0, 0, width, height
-                    dg.restore()
-                    g.restore()
- 
+                        dg.clearRect 0, 0, width, height
+                        dg.restore()
+                        g.restore()
+
+                    else if v.color
+
+                        g.save()
+                        g.beginPath()
+                        g.moveTo(x1, y1)
+                        g.lineTo(x2, y2)
+                        g.lineTo(x3, y3)
+                        g.closePath()
+
+                        g.fillStyle = v.color.toString()
+                        g.fill()
+
+                        if @wireframe
+                            g.strokeStyle = 'rgba(255, 255, 255, 0.5)'
+                            g.stroke()
+
+                        if lighting
+                            strength = 0
+
+                            for l in lights
+                                if l instanceof AmbientLight
+                                    strength += l.strength
+
+                                else if l instanceof DirectionalLight
+                                    L = l.direction
+                                    N = normal.clone().add(L)
+                                    factor = N.dot(L)
+                                    strength += l.strength * factor
+                                    
+                            color.a -= strength
+
+                            if color.a > 0
+                                g.fillStyle = color.toString()
+                                g.fill()
+
+                        if fog
+                            fogStrength = 1 - ((fogEnd - z) / (fogEnd - fogStart))
+                            fogStrength = 0 if fogStrength < 0
+                            g.globalAlpha = fogStrength
+                            g.fillStyle   = fogColor
+                            g.fill()
+
+                        g.restore()
 
         getTransformedPoint: (mat, materials) ->
 
@@ -1292,15 +1341,17 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
             for m in materials
                 if m instanceof Triangle
                     vertecies = m.getVerticesByProjectionMatrix(mat)
-                    uvData    = m.texture.uv_data
-                    uvList    = m.texture.uv_list
 
                     vertex = new Vertex vertecies
-                    vertex.uvData = uvData
-                    vertex.uvList = uvList
                     vertex.type = m.type
 
                     continue if vertex.getZPosition() < 0
+
+                    if m.texture
+                        vertex.uvData = m.texture.uv_data
+                        vertex.uvList = m.texture.uv_list
+                    else if m.color
+                        vertex.color = m.color
 
                     vertex.normal = m.getNormal()
                     results.push vertex
