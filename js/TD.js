@@ -1315,16 +1315,20 @@ var __hasProp = {}.hasOwnProperty,
     function Renderer(cv, clearColor) {
       this.cv = cv;
       this.clearColor = clearColor != null ? clearColor : '#fff';
-      this._dummyCv = doc.createElement('canvas');
-      this._dummyG = this._dummyCv.getContext('2d');
+      this._prerenderCv = doc.createElement('canvas');
+      this._prerenderG = this._prerenderCv.getContext('2d');
+      this._colorCv = doc.createElement('canvas');
+      this._colorG = this._colorCv.getContext('2d');
+      this._colorCv.width = this._colorCv.height = 1;
       this.g = cv.getContext('2d');
-      this.w = this._dummyCv.width = cv.width;
-      this.h = this._dummyCv.height = cv.height;
+      this.w = this._prerenderCv.width = cv.width;
+      this.h = this._prerenderCv.height = cv.height;
       this.fog = true;
       this.lighting = true;
       this.fogColor = this.clearColor;
       this.fogStart = 200;
       this.fogEnd = 1000;
+      this.wireframeColor = 'rgba(255, 255, 255, 0.5)';
     }
 
     Renderer.prototype.render = function(scene, camera) {
@@ -1343,14 +1347,17 @@ var __hasProp = {}.hasOwnProperty,
     };
 
     Renderer.prototype.drawMaterials = function(g, vertecies, lights, vw, vh) {
-      var Ax, Ay, Bx, By, L, N, a, b, c, color, d, dcv, dg, factor, fog, fogColor, fogEnd, fogStart, fogStrength, height, hvh, hvw, i, img, l, lighting, m, me, mi, mie, normal, strength, uvList, v, vertexList, w1, w2, w3, width, x1, x2, x3, y1, y2, y3, z, z1, z2, z3, _Ax, _Ay, _Az, _Bx, _By, _Bz, _i, _j, _k, _len, _len1, _len2, _results;
+      var Ax, Ay, Bx, By, L, N, a, b, c, ccv, cg, color, d, data, factor, fog, fogColor, fogEnd, fogStart, fogStrength, height, hvh, hvw, i, img, l, lighting, m, me, mi, mie, normal, pcv, pg, strength, uvList, v, vertexList, w1, w2, w3, width, wireframeColor, x1, x2, x3, y1, y2, y3, z, z1, z2, z3, _Ax, _Ay, _Az, _Bx, _By, _Bz, _a, _b, _g, _i, _j, _k, _len, _len1, _len2, _r, _results;
       fogColor = this.fogColor;
       fogStart = this.fogStart;
       fogEnd = this.fogEnd;
       fog = this.fog;
       lighting = this.lighting;
-      dcv = this._dummyCv;
-      dg = this._dummyG;
+      pcv = this._prerenderCv;
+      pg = this._prerenderG;
+      ccv = this._colorCv;
+      cg = this._colorG;
+      wireframeColor = this.wireframeColor;
       _results = [];
       for (i = _i = 0, _len = vertecies.length; _i < _len; i = ++_i) {
         v = vertecies[i];
@@ -1418,8 +1425,8 @@ var __hasProp = {}.hasOwnProperty,
           if (v.uvData) {
             img = v.uvData;
             uvList = v.uvList;
-            width = dcv.width = img.width || img.videoWidth || 0;
-            height = dcv.height = img.height || img.videoHeight || 0;
+            width = pcv.width = img.width || img.videoWidth || 0;
+            height = pcv.height = img.height || img.videoHeight || 0;
             Ax = (uvList[2] - uvList[0]) * width;
             Ay = (uvList[3] - uvList[1]) * height;
             Bx = (uvList[4] - uvList[0]) * width;
@@ -1436,8 +1443,9 @@ var __hasProp = {}.hasOwnProperty,
             b = mie[0] * _Ay + mie[2] * _By;
             d = mie[1] * _Ay + mie[3] * _By;
             g.save();
-            dg.save();
-            dg.drawImage(img, 0, 0);
+            pg.save();
+            cg.save();
+            pg.drawImage(img, 0, 0);
             if (lighting) {
               strength = 0;
               for (_j = 0, _len1 = lights.length; _j < _len1; _j++) {
@@ -1453,8 +1461,8 @@ var __hasProp = {}.hasOwnProperty,
               }
               color.a -= strength;
               if (color.a > 0) {
-                dg.fillStyle = color.toString();
-                dg.fillRect(0, 0, width, height);
+                cg.fillStyle = color.toString();
+                cg.fillRect(0, 0, 1, 1);
               }
             }
             if (fog) {
@@ -1462,38 +1470,39 @@ var __hasProp = {}.hasOwnProperty,
               if (fogStrength < 0) {
                 fogStrength = 0;
               }
-              dg.globalAlpha = fogStrength;
-              dg.fillStyle = fogColor;
-              dg.fillRect(0, 0, width, height);
+              cg.globalAlpha = fogStrength;
+              cg.fillStyle = fogColor;
+              cg.fillRect(0, 0, 1, 1);
             }
+            data = cg.getImageData(0, 0, 1, 1).data;
+            _r = data[0];
+            _g = data[1];
+            _b = data[2];
+            _a = data[3] / 255;
+            pg.fillStyle = (new Color(_r, _g, _b, _a)).toString();
+            pg.fillRect(0, 0, width, height);
             g.beginPath();
             g.moveTo(x1, y1);
             g.lineTo(x2, y2);
             g.lineTo(x3, y3);
             g.closePath();
             if (this.wireframe) {
-              g.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+              g.strokeStyle = wireframeColor;
               g.stroke();
             }
             g.clip();
             g.transform(a, b, c, d, x1 - (a * uvList[0] * width + c * uvList[1] * height), y1 - (b * uvList[0] * width + d * uvList[1] * height));
-            g.drawImage(dcv, 0, 0);
-            dg.clearRect(0, 0, width, height);
-            dg.restore();
+            g.drawImage(pcv, 0, 0);
+            pg.clearRect(0, 0, width, height);
+            cg.clearRect(0, 0, 1, 1);
+            cg.restore();
+            pg.restore();
             _results.push(g.restore());
           } else if (v.color) {
             g.save();
-            g.beginPath();
-            g.moveTo(x1, y1);
-            g.lineTo(x2, y2);
-            g.lineTo(x3, y3);
-            g.closePath();
-            g.fillStyle = v.color.toString();
-            g.fill();
-            if (this.wireframe) {
-              g.strokeStyle = 'rgba(255, 255, 255, 0.5)';
-              g.stroke();
-            }
+            cg.save();
+            cg.fillStyle = v.color.toString();
+            cg.fillRect(0, 0, 1, 1);
             if (lighting) {
               strength = 0;
               for (_k = 0, _len2 = lights.length; _k < _len2; _k++) {
@@ -1509,8 +1518,8 @@ var __hasProp = {}.hasOwnProperty,
               }
               color.a -= strength;
               if (color.a > 0) {
-                g.fillStyle = color.toString();
-                g.fill();
+                cg.fillStyle = color.toString();
+                cg.fillRect(0, 0, 1, 1);
               }
             }
             if (fog) {
@@ -1518,10 +1527,29 @@ var __hasProp = {}.hasOwnProperty,
               if (fogStrength < 0) {
                 fogStrength = 0;
               }
-              g.globalAlpha = fogStrength;
-              g.fillStyle = fogColor;
-              g.fill();
+              cg.globalAlpha = fogStrength;
+              cg.fillStyle = fogColor;
+              cg.fillRect(0, 0, 1, 1);
             }
+            data = cg.getImageData(0, 0, 1, 1).data;
+            _r = data[0];
+            _g = data[1];
+            _b = data[2];
+            _a = data[3] / 255;
+            g.beginPath();
+            g.moveTo(x1, y1);
+            g.lineTo(x2, y2);
+            g.lineTo(x3, y3);
+            g.closePath();
+            g.strokeStyle = g.fillStyle = (new Color(_r, _g, _b, _a)).toString();
+            g.fill();
+            g.stroke();
+            if (this.wireframe) {
+              g.strokeStyle = wireframeColor;
+              g.stroke();
+            }
+            cg.clearRect(0, 0, 1, 1);
+            cg.restore();
             _results.push(g.restore());
           } else {
             _results.push(void 0);
