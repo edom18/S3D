@@ -4,16 +4,11 @@ do (win = window, doc = window.document, exports = window) ->
     {tan, cos, sin, PI} = Math
     {Object3D, Line, Color, AmbientLight, DirectionalLight, Plate, Face, Cube, Texture, Triangle, Matrix4, Camera, Renderer, Scene, Vector3, Particle} = window.S3D
 
-    DEG_TO_RAD = PI / 180
-
     isTouch = 'ontouchstart' of window
     MOUSE_DOWN = if isTouch then 'touchstart' else 'mousedown'
     MOUSE_MOVE = if isTouch then 'touchmove' else 'mousemove'
     MOUSE_UP   = if isTouch then 'touchend' else 'mouseup'
 
-    textureImage = null
-    logoImage    = null
-    photoImage   = null
     rotX = 0
     rotY = 0
 
@@ -21,18 +16,7 @@ do (win = window, doc = window.document, exports = window) ->
     camera   = null
     scene    = null
 
-    getVideo = ->
-
-        video = doc.getElementById 'video'
-        video.autoplay = true
-        video.loop = true
-
-        return video
-
-
     init = ->
-
-        video = getVideo()
 
         cv  = doc.getElementById 'canvas'
         ctx = cv.getContext '2d'
@@ -40,30 +24,6 @@ do (win = window, doc = window.document, exports = window) ->
         h = cv.height = win.innerHeight
         fov = 60
         aspect = w / h
-
-        cnt = 3
-        img = new Image()
-        logo = new Image()
-        photo = new Image()
-
-        img.onload = ->
-            textureImage = img
-            --cnt or create()
-
-        logo.onload = ->
-            logoImage = logo
-            --cnt or create()
-
-        photo.onload = ->
-            photoImage = photo
-            --cnt or create()
-
-        img.src = 'img/aXjiA.png'
-        logo.src = 'img/HTML5_Logo_512.png'
-        photo.src = 'img/photo.jpg'
-        #photo.src = 'http://jsrun.it/assets/y/r/A/V/yrAVl.jpg'
-        #logo.src = 'http://jsrun.it/assets/z/1/2/9/z129U.png'
-        #img.src = 'http://jsrun.it/assets/k/M/J/J/kMJJS.png'
 
         camera = new Camera 40, aspect, 0.1, 10000
         camera.position.x = 10
@@ -73,26 +33,11 @@ do (win = window, doc = window.document, exports = window) ->
         camera.lookAt new Vector3 0, 0, 0
         scene    = new Scene
         renderer = new Renderer cv, '#111'
-        #renderer.fog      = false
-        #renderer.lighting = false
+        renderer.fog      = false
+        renderer.lighting = false
         #renderer.wireframe = true
 
         create = ->
-
-            materials1 = [
-                new Texture(photoImage, [0, 0, 0, 1, 1, 0])
-                new Texture(photoImage, [0, 1, 1, 1, 1, 0])
-                new Texture(photoImage, [0, 0, 0, 1, 1, 0])
-                new Texture(photoImage, [0, 1, 1, 1, 1, 0])
-                new Texture(photoImage, [0, 0, 0, 1, 1, 0])
-                new Texture(photoImage, [0, 1, 1, 1, 1, 0])
-                new Texture(photoImage, [0, 0, 0, 1, 1, 0])
-                new Texture(photoImage, [0, 1, 1, 1, 1, 0])
-                new Texture(photoImage, [0, 0, 0, 1, 1, 0])
-                new Texture(photoImage, [0, 1, 1, 1, 1, 0])
-                new Texture(photoImage, [0, 0, 0, 1, 1, 0])
-                new Texture(photoImage, [0, 1, 1, 1, 1, 0])
-            ]
 
             materials2 = [
                 new Texture(video, [0, 0, 0, 1, 1, 0])
@@ -108,28 +53,6 @@ do (win = window, doc = window.document, exports = window) ->
                 new Texture(video, [0, 0, 0, 1, 1, 0])
                 new Texture(video, [0, 1, 1, 1, 1, 0])
             ]
-
-            cube1 = new Cube 50, 20, 20, 1, 1, 1, materials2
-            cube1.position.z = -50
-            cube1.rotation.z = 30
-            #cube1.scale.set(0.5, 0.5, 0.5)
-
-            cube2 = new Cube 20, 20, 20, 1, 1, 1, materials1
-            cube2.position.z = -150
-            cube2.position.x = 50
-
-            cube3 = new Cube 20, 20, 20, 1, 1, 1, materials1
-            cube3.position.z = -350
-            cube3.position.x = 50
-            cube3.position.y = 80
-
-            plate1 = new Plate 50, 50, new Texture(textureImage, [0.0, 0.5, 0.0, 1.0, 0.5, 0.5]), new Texture(textureImage, [0.0, 1.0, 0.5, 1.0, 0.5, 0.5])
-            plate1.position.x = -50
-            plate1.position.z = -300
-
-            plate2 = new Plate 50, 50, new Texture(video, [0, 0, 0, 1, 1, 0]), new Texture(video, [0, 1, 1, 1, 1, 0])
-            plate2.position.y = -100
-            plate2.position.z = -500
 
             line1 = new Line(0, 0, -200, 0, 0, 200, new Color(255, 0, 0, 0.3))
             line2 = new Line(-200, 0, 0, 200, 0, 0, new Color(0, 255, 0, 0.3))
@@ -152,33 +75,52 @@ do (win = window, doc = window.document, exports = window) ->
 
             ambLight = new AmbientLight(0.1)
             dirLight = new DirectionalLight(0.8, (new Vector3(-1, 1, 1)).normalize())
+
+            videoContainer = new Object3D
+
+            div = 5
+            videoWidth  = video.videoWidth
+            videoHeight = video.videoHeight
+            divW = videoWidth  / div
+            divH = videoHeight / div
+
+            videoContainer.position.x = -videoWidth / 2
+            videoContainer.position.y = videoHeight / 2
+            videoContainer.scale.set(0.1, 0.1, 0.1)
+
+            for i in [0...div]
+                for j in [0...div]
+                    uv_x1 = ((j + 0) * divW) / videoWidth
+                    uv_y1 = ((i + 0) * divH) / videoHeight
+                    uv_x2 = ((j + 0) * divW) / videoWidth
+                    uv_y2 = ((i + 1) * divH) / videoHeight
+                    uv_x3 = ((j + 1) * divW) / videoWidth
+                    uv_y3 = ((i + 1) * divH) / videoHeight
+                    uv_x4 = ((j + 1) * divW) / videoWidth
+                    uv_y4 = ((i + 0) * divH) / videoHeight
+
+                    face = new Face j * divW, i * divH, (j * divW + divW), -(i * divH + divH), new Texture(video, [uv_x1, uv_y1, uv_x2, uv_y2, uv_x4, uv_y4]), new Texture(video, [uv_x2, uv_y2, uv_x3, uv_y3, uv_x4, uv_y4])
+                    videoContainer.add face
            
             scene.add ambLight
             scene.add dirLight
 
-            scene.add plate1
-            scene.add plate2
+            scene.add videoContainer
             scene.add container
-            scene.add cube1
-            scene.add cube2
-            scene.add cube3
             scene.add line1
             scene.add line2
             scene.add line3
 
-            angle = 0
-
             do _loop = ->
-                angle = (++angle % 360)
-                plate1.rotation.z = angle
-                plate2.rotation.x = angle * 3
-                cube1.rotation.z = angle
-                cube2.rotation.x = angle * 2
-                cube3.rotation.x = angle * 3
-                cube3.rotation.y = angle * 3
-                cube3.rotation.z = angle * 3
                 renderer.render scene, camera
                 setTimeout _loop, 32
+
+        video = doc.getElementById 'video'
+        video.autoplay = true
+        video.loop = true
+        video.addEventListener 'canplaythrough', create, false
+
+    # -----------------------------------------------------------------
 
     dragging = false
     prevX = 0

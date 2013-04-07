@@ -54,6 +54,12 @@ var __hasProp = {}.hasOwnProperty,
       return (this.x === v.x) && (this.y === v.y) && (this.z === v.z);
     };
 
+    Vector3.prototype.set = function(x, y, z) {
+      this.x = x != null ? x : 0;
+      this.y = y != null ? y : 0;
+      this.z = z != null ? z : 0;
+    };
+
     Vector3.prototype.sub = function(v) {
       this.x -= v.x;
       this.y -= v.y;
@@ -587,6 +593,37 @@ var __hasProp = {}.hasOwnProperty,
     };
 
     /**
+        Scale matrix
+        @param {Vector3} v
+    */
+
+
+    Matrix4.prototype.scale = function(v) {
+      var te, x, y, z;
+      te = this.elements;
+      x = v.x;
+      y = v.y;
+      z = v.z;
+      te[0] = x;
+      te[4] = 0;
+      te[8] = 0;
+      te[12] = 0;
+      te[1] = 0;
+      te[5] = y;
+      te[9] = 0;
+      te[13] = 0;
+      te[2] = 0;
+      te[6] = 0;
+      te[10] = z;
+      te[14] = 0;
+      te[3] = 0;
+      te[7] = 0;
+      te[11] = 0;
+      te[15] = 1;
+      return this;
+    };
+
+    /**
         @param {Vector3} eye
         @param {Vector3} target
         @param {Vector3} up
@@ -728,13 +765,29 @@ var __hasProp = {}.hasOwnProperty,
       this.vertices = [];
       this.position = new Vector3;
       this.rotation = new Vector3;
+      this.scale = new Vector3(1, 1, 1);
       this.up = new Vector3(0, 1, 0);
+      this.matrixScale = new Matrix4;
       this.matrixTranslate = new Matrix4;
       this.matrixRotation = new Matrix4;
       this.matrix = new Matrix4;
       this.matrixWorld = new Matrix4;
       this.updateMatrix();
     }
+
+    Object3D.prototype.updateScale = (function() {
+      var previous, sm;
+      sm = new Matrix4;
+      previous = null;
+      return function() {
+        if (previous && this.scale.equal(previous)) {
+          return false;
+        }
+        previous = this.scale.clone();
+        this.matrixScale = sm.clone().scale(this.scale);
+        return true;
+      };
+    })();
 
     Object3D.prototype.updateTranslate = (function() {
       var previous, tm;
@@ -777,11 +830,13 @@ var __hasProp = {}.hasOwnProperty,
     })();
 
     Object3D.prototype.updateMatrix = function() {
-      var c, updatedRotation, updatedTranslate, _i, _len, _ref, _results;
+      var c, updatedRotation, updatedScale, updatedTranslate, _i, _len, _ref, _results;
+      updatedScale = this.updateScale();
       updatedRotation = this.updateRotation();
       updatedTranslate = this.updateTranslate();
-      if (updatedRotation || updatedTranslate) {
-        this.matrix.multiplyMatrices(this.matrixTranslate, this.matrixRotation);
+      if (updatedRotation || updatedTranslate || updatedScale) {
+        this.matrix.multiplyMatrices(this.matrixRotation, this.matrixScale);
+        this.matrix.multiply(this.matrixTranslate);
       }
       _ref = this.children;
       _results = [];
