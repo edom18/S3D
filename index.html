@@ -3,12 +3,18 @@
 <head>
 <meta charset="UTF-8" />
 <title>Canvas context 2Dで座標変換を実装する</title>
+<meta name="viewport" content="width=device-width, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 <meta name="Description" content="" />
 <meta name="Keywords"  content="" />
 <link rel="stylesheet" href="css/main.css" />
 </head>
 <body>
 <div>
+    <div id="ctrl">
+        <p><input type="button" id="fog" value="フォグ[ON]" /></p>
+        <p><input type="button" id="light" value="ライティング[ON]" /></p>
+        <p><input type="button" id="wire" value="ワイヤーフレーム[OFF]" /></p>
+    <!-- /#ctrl --></div>
     <canvas id="canvas" width="300" height="300"></canvas>
     <video id="video" autoplay style="display: none;">
         <source type="video/mp4" src="video/sample.mp4"></source>

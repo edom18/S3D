@@ -62,3 +62,23 @@ a img {
 article, aside, details, figcaption, figure, footer, header, hgroup, menu, nav, section, summary {
   display: block;
 }
+
+/* line 3, ../_src/scss/main.scss */
+#ctrl {
+  position: absolute;
+  left: 0;
+  top: 0;
+  padding: 15px;
+  background-color: rgba(255, 255, 255, 0.2);
+  z-index: 100;
+}
+/* line 11, ../_src/scss/main.scss */
+#ctrl p {
+  display: inline-block;
+}
+/* line 13, ../_src/scss/main.scss */
+#ctrl p input {
+  width: 150px;
+  height: 20px;
+  margin-bottom: 5px;
+}

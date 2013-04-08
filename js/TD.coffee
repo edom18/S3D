@@ -1211,8 +1211,8 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
                     if v.uvData
                         img    = v.uvData
                         uvList = v.uvList
-                        width  = pcv.width  = img.width or img.videoWidth or 0
-                        height = pcv.height = img.height or img.videoHeight or 0
+                        pcv.width  = width  = img.width  or img.videoWidth  or 0
+                        pcv.height = height = img.height or img.videoHeight or 0
 
                         # 変換前のベクトル成分を計算
                         Ax = (uvList[2] - uvList[0]) * width
@@ -1255,7 +1255,7 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
                         # |Ax Ay|^-1
                         # |Bx By|
                         # を生成
-                        mi  = m.getInvert()
+                        mi = m.getInvert()
 
                         # 逆行列が存在しない場合はスキップ
                         continue if not mi

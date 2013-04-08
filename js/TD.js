@@ -7,6 +7,7 @@ var __hasProp = {}.hasOwnProperty,
   var AmbientLight, Camera, Color, Cube, DEG_TO_RAD, DiffuseLight, DirectionalLight, Face, Light, Line, Matrix2, Matrix4, Object3D, PI, Particle, Plate, Quaternion, Renderer, Scene, Texture, Triangle, Vector3, Vertex, cos, makeRotatialQuaternion, max, min, sin, sqrt, tan;
   max = Math.max, min = Math.min, sqrt = Math.sqrt, tan = Math.tan, cos = Math.cos, sin = Math.sin, PI = Math.PI;
   DEG_TO_RAD = PI / 180;
+  win.Float32Array = win.Float32Array || win.Array;
   Vertex = (function() {
 
     function Vertex(vertecies) {
@@ -1445,8 +1446,8 @@ var __hasProp = {}.hasOwnProperty,
           if (v.uvData) {
             img = v.uvData;
             uvList = v.uvList;
-            width = pcv.width = img.width || img.videoWidth || 0;
-            height = pcv.height = img.height || img.videoHeight || 0;
+            pcv.width = width = img.width || img.videoWidth || 0;
+            pcv.height = height = img.height || img.videoHeight || 0;
             Ax = (uvList[2] - uvList[0]) * width;
             Ay = (uvList[3] - uvList[1]) * height;
             Bx = (uvList[4] - uvList[0]) * width;

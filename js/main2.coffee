@@ -4,11 +4,14 @@ do (win = window, doc = window.document, exports = window) ->
     {tan, cos, sin, PI} = Math
     {Object3D, Line, Color, AmbientLight, DirectionalLight, Plate, Face, Cube, Texture, Triangle, Matrix4, Camera, Renderer, Scene, Vector3, Particle} = window.S3D
 
+    $ = (selector) ->
+        doc.querySelector selector
+
     requestAnimFrame = do ->
-        return requestAnimationFrame or
-               webkitRequestAnimationFrame or
-               mozRequestAnimationFrame or
-               msRequestAnimationFrame or
+        return win.requestAnimationFrame or
+               win.webkitRequestAnimationFrame or
+               win.mozRequestAnimationFrame or
+               win.msRequestAnimationFrame or
                (callback) ->
                    setTimeout callback, 16
 
@@ -133,17 +136,6 @@ do (win = window, doc = window.document, exports = window) ->
                 new Color(200, 0, 0, 1)
                 new Color(200, 0, 0, 1)
                 new Color(200, 0, 0, 1)
-                #new Color(200, 0, 0, 1)
-                #new Color(0, 100, 0, 1)
-                #new Color(0, 100, 0, 1)
-                #new Color(0, 0, 150, 1)
-                #new Color(0, 0, 150, 1)
-                #new Color(50, 50, 50, 1)
-                #new Color(50, 50, 50, 1)
-                #new Color(20, 200, 30, 1)
-                #new Color(20, 200, 30, 1)
-                #new Color(20, 10, 50, 1)
-                #new Color(20, 10, 50, 1)
             ]
 
             cube1 = new Cube 50, 20, 20, 1, 1, 1, materials2
@@ -197,7 +189,7 @@ do (win = window, doc = window.document, exports = window) ->
                 container.add line
 
             ambLight = new AmbientLight(0.1)
-            dirLight = new DirectionalLight(0.8, (new Vector3(-1, 1, 1)).normalize())
+            dirLight = new DirectionalLight(0.8, (new Vector3(0, 0, -1)).normalize())
            
             scene.add ambLight
             scene.add dirLight
@@ -234,7 +226,6 @@ do (win = window, doc = window.document, exports = window) ->
 
                 renderer.render scene, camera
                 requestAnimFrame _loop
-                #setTimeout _loop, 32
 
         dragging = false
         prevX = 0
@@ -292,6 +283,35 @@ do (win = window, doc = window.document, exports = window) ->
 
         doc.addEventListener MOUSE_UP, (e) ->
             dragging = false
+        , false
+
+        # コントロール
+        btnFog   = $('#fog')
+        btnLight = $('#light')
+        btnWire  = $('#wire')
+        fog   = true
+        light = true
+        wire  = false
+
+        btnFog.addEventListener MOUSE_DOWN, ->
+            fog = !fog
+            type = if fog then 'ON' else 'OFF'
+            btnFog.value = "フォグ[#{type}]"
+            renderer.fog = fog
+        , false
+
+        btnLight.addEventListener MOUSE_DOWN, ->
+            light = !light
+            type = if light then 'ON' else 'OFF'
+            btnLight.value = "ライティング[#{type}]"
+            renderer.lighting = light
+        , false
+
+        btnWire.addEventListener MOUSE_DOWN, ->
+            wire = !wire
+            type = if wire then 'ON' else 'OFF'
+            btnWire.value = "ワイヤーフレーム[#{type}]"
+            renderer.wireframe = wire
         , false
 
     doc.addEventListener 'DOMContentLoaded', init, false
