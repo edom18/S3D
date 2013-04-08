@@ -26,6 +26,7 @@
     camera.position.y = 120;
     camera.position.z = 280;
     camera.lookAt(new Vector3(0, 100, 0));
+    camera.lookAtLock = true;
     scene = new Scene;
     renderer = new Renderer(cv, '#111');
     initialized = false;
