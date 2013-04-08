@@ -1325,9 +1325,7 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
 
                         g.drawImage pcv, 0, 0
 
-                        pg.clearRect 0, 0, width, height
                         cg.clearRect 0, 0, 1, 1
-
                         cg.restore()
                         pg.restore()
                         g.restore()
