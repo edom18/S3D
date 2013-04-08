@@ -784,8 +784,7 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
             previous = null
 
             return ->
-                if not previous
-                    previous = @position.clone()
+                previous = @position.clone() if not previous
 
                 return if @position.equal previous
 
