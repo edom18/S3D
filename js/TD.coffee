@@ -5,6 +5,8 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
 
     DEG_TO_RAD = PI / 180
 
+    win.Float32Array = win.Float32Array or win.Array
+
 # -------------------------------------------------------------------------------
 
     class Vertex
@@ -186,6 +188,7 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
             _y = (e[1] * x + e[5] * y + e[9]  * z + e[13])
             _z = (e[2] * x + e[6] * y + e[10] * z + e[14])
 
+            # クリップ空間外に出たものはレンダリングしない
             return false if not ((-w <= _x <= w) or (-w <= _y <= w) or (-w <= _z <= w))
 
             @x = _x * _w
