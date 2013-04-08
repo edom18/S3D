@@ -63,8 +63,10 @@
     camera.position.y = 20;
     camera.position.z = 200;
     camera.lookAt(new Vector3(0, 50, 0));
+    camera.lookAtLock = true;
     scene = new Scene;
     renderer = new Renderer(cv, '#111');
+    win.camera = camera;
     create = function() {
       var ambLight, angle, container, cube1, cube2, cube3, dirLight, i, line, line1, line2, line3, materials1, materials2, materials3, particle1, particle2, particle3, particle4, particle5, plate1, plate2, size, x, z, _i, _j, _loop, _ref1, _ref2;
       materials1 = [new Texture(photoImage, [0, 0, 0, 1, 1, 0]), new Texture(photoImage, [0, 1, 1, 1, 1, 0]), new Texture(photoImage, [0, 0, 0, 1, 1, 0]), new Texture(photoImage, [0, 1, 1, 1, 1, 0]), new Texture(photoImage, [0, 0, 0, 1, 1, 0]), new Texture(photoImage, [0, 1, 1, 1, 1, 0]), new Texture(photoImage, [0, 0, 0, 1, 1, 0]), new Texture(photoImage, [0, 1, 1, 1, 1, 0]), new Texture(photoImage, [0, 0, 0, 1, 1, 0]), new Texture(photoImage, [0, 1, 1, 1, 1, 0]), new Texture(photoImage, [0, 0, 0, 1, 1, 0]), new Texture(photoImage, [0, 1, 1, 1, 1, 0])];

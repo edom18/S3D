@@ -927,6 +927,7 @@ var __hasProp = {}.hasOwnProperty,
       this.far = far;
       this.position = position != null ? position : new Vector3(0, 0, 20);
       Camera.__super__.constructor.apply(this, arguments);
+      this.lookAtMatrix = new Matrix4;
       this.viewMatrix = new Matrix4;
       this.projectionMatrix = new Matrix4;
     }
@@ -936,16 +937,35 @@ var __hasProp = {}.hasOwnProperty,
     };
 
     Camera.prototype.updateProjectionMatrix = function() {
-      this.lookAt();
+      this.updateLookAt();
       return this.projectionMatrix.perspectiveLH(this.fov, this.aspect, this.near, this.far);
     };
+
+    Camera.prototype.updateLookAt = (function() {
+      var lm, previous;
+      lm = new Matrix4;
+      previous = null;
+      return function() {
+        if (!previous) {
+          previous = this.position.clone();
+        }
+        if (this.position.equal(previous)) {
+          return;
+        }
+        if (!this.lookAtLock) {
+          this.target.add(this.position.clone().sub(previous));
+        }
+        this.lookAt();
+        return previous = this.position.clone();
+      };
+    })();
 
     Camera.prototype.lookAt = (function() {
       var m1;
       m1 = new Matrix4;
-      return function(vector) {
-        this.vector = vector || this.vector || new Vector3;
-        m1.lookAt(this.position, this.vector, this.up);
+      return function(target) {
+        this.target = target || this.target || new Vector3;
+        m1.lookAt(this.position, this.target, this.up);
         return this.viewMatrix.copy(m1);
       };
     })();

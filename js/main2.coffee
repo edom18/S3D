@@ -79,11 +79,14 @@ do (win = window, doc = window.document, exports = window) ->
         camera.position.z = 200
         #camera.up = new Vector3 1, 0, 0
         camera.lookAt new Vector3 0, 50, 0
+        camera.lookAtLock = true
         scene    = new Scene
         renderer = new Renderer cv, '#111'
         #renderer.fog      = false
         #renderer.lighting = false
         #renderer.wireframe = true
+
+        win.camera = camera
 
         create = ->
 
