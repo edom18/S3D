@@ -768,22 +768,39 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
         constructor: (@fov, @aspect, @near, @far, @position = new Vector3(0, 0, 20)) ->
             super
 
-            @viewMatrix = new Matrix4
+            @lookAtMatrix     = new Matrix4
+            @viewMatrix       = new Matrix4
             @projectionMatrix = new Matrix4
 
         getProjectionMatrix: ->
             return Matrix4.multiply @projectionMatrix, @viewMatrix
 
         updateProjectionMatrix: ->
-            @lookAt()
+            @updateLookAt()
             @projectionMatrix.perspectiveLH(@fov, @aspect, @near, @far)
+
+        updateLookAt: do ->
+            lm = new Matrix4
+            previous = null
+
+            return ->
+                if not previous
+                    previous = @position.clone()
+
+                return if @position.equal previous
+
+                if not @lookAtLock
+                    @target.add(@position.clone().sub previous)
+
+                @lookAt()
+                previous = @position.clone()
 
         lookAt: do ->
             m1 = new Matrix4
 
-            return (vector) ->
-                @vector = vector or @vector or new Vector3
-                m1.lookAt @position, @vector, @up
+            return (target) ->
+                @target = target or @target or new Vector3
+                m1.lookAt @position, @target, @up
                 @viewMatrix.copy m1
 
 # -------------------------------------------------------------------------------
