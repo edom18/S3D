@@ -4,6 +4,14 @@ do (win = window, doc = window.document, exports = window) ->
     {tan, cos, sin, PI} = Math
     {Object3D, Line, Color, AmbientLight, DirectionalLight, Plate, Face, Cube, Texture, Triangle, Matrix4, Camera, Renderer, Scene, Vector3, Particle} = window.S3D
 
+    requestAnimFrame = do ->
+        return requestAnimationFrame or
+               webkitRequestAnimationFrame or
+               mozRequestAnimationFrame or
+               msRequestAnimationFrame or
+               (callback) ->
+                   setTimeout callback, 16
+
     DEG_TO_RAD = PI / 180
 
     isTouch = 'ontouchstart' of window
@@ -222,7 +230,8 @@ do (win = window, doc = window.document, exports = window) ->
                 cube3.scale.set(s, s, s)
 
                 renderer.render scene, camera
-                setTimeout _loop, 32
+                requestAnimFrame _loop
+                #setTimeout _loop, 32
 
         dragging = false
         prevX = 0

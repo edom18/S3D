@@ -4,6 +4,14 @@ do (win = window, doc = window.document, exports = window) ->
     {random, tan, cos, sin, PI} = Math
     {Object3D, Line, Color, AmbientLight, DirectionalLight, Plate, Face, Cube, Texture, Triangle, Matrix4, Camera, Renderer, Scene, Vector3, Particle} = window.S3D
 
+    requestAnimFrame = do ->
+        return requestAnimationFrame or
+               webkitRequestAnimationFrame or
+               mozRequestAnimationFrame or
+               msRequestAnimationFrame or
+               (callback) ->
+                   setTimeout callback, 16
+
     isTouch = 'ontouchstart' of window
     MOUSE_DOWN = if isTouch then 'touchstart' else 'mousedown'
     MOUSE_MOVE = if isTouch then 'touchmove' else 'mousemove'
@@ -109,7 +117,8 @@ do (win = window, doc = window.document, exports = window) ->
                     f.position.z = f.position.originalZ + (sin(angle * DEG_TO_RAD) * f.position.originalZ)
 
                 renderer.render scene, camera
-                setTimeout _loop, 32
+                requestAnimFrame _loop
+                #setTimeout _loop, 32
 
         video = doc.getElementById 'video'
         video.autoplay = true
