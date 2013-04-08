@@ -10,7 +10,10 @@
 <body>
 <div>
     <canvas id="canvas" width="300" height="300"></canvas>
-    <video src="video/sample.mp4" id="video" autoplay style="display: none;"></video>
+    <video id="video" autoplay style="display: none;">
+        <source type="video/mp4" src="video/sample.mp4"></source>
+        <source type="video/ogg" src="video/sample.ogv"></source>
+    </video>
 <!--    <video src="http://craftymind.com/factory/html5video/BigBuckBunny_640x360.mp4" id="video" autoplay style="display: none;"></video>-->
 </div>
 

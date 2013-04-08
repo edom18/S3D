@@ -1513,7 +1513,6 @@ var __hasProp = {}.hasOwnProperty,
             g.clip();
             g.transform(a, b, c, d, x1 - (a * uvList[0] * width + c * uvList[1] * height), y1 - (b * uvList[0] * width + d * uvList[1] * height));
             g.drawImage(pcv, 0, 0);
-            pg.clearRect(0, 0, width, height);
             cg.clearRect(0, 0, 1, 1);
             cg.restore();
             pg.restore();
