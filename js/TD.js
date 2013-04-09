@@ -1582,7 +1582,7 @@ var __hasProp = {}.hasOwnProperty,
               g.stroke();
             }
             g.clip();
-            g.transform(a, b, c, d, x1 - (a * uvList[0] * width + c * uvList[1] * height), y1 - (b * uvList[0] * width + d * uvList[1] * height));
+            g.setTransform(a, b, c, d, x1 - (a * uvList[0] * width + c * uvList[1] * height), y1 - (b * uvList[0] * width + d * uvList[1] * height));
             g.drawImage(pcv, 0, 0);
             cg.clearRect(0, 0, 1, 1);
             g.restore();
@@ -1787,5 +1787,5 @@ var __hasProp = {}.hasOwnProperty,
   exports.Color = Color;
   exports.Quaternion = Quaternion;
   exports.AmbientLight = AmbientLight;
-  return exports.DirectionalLight = DirectionalLight;
+  exports.DirectionalLight = DirectionalLight;
 })(window, window.document, window.S3D || (window.S3D = {}));

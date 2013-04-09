@@ -63,7 +63,7 @@ do (win = window, doc = window.document, exports = window) ->
         win.camera = camera
 
         create = ->
-            plate1 = new Plate 500, 339, 10, 10, photoImage, photoImage
+            plate1 = new Plate 500, 339, 2, 2, photoImage, photoImage
             #plate1 = new Plate 500, 339, 10, 10, new Color(255, 0, 0, 1), new Color(255, 0, 0, 1), new Color(0, 0, 255, 1), new Color(0, 0, 255, 1)
             plate1.rotation.z = 45
             plate1.position.set 0, 40, 0

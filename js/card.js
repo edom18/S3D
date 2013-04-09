@@ -49,7 +49,7 @@
     win.camera = camera;
     create = function() {
       var ambLight, angle, container, dirLight, i, line, line1, line2, line3, plate1, size, x, z, _i, _j, _loop, _ref1, _ref2;
-      plate1 = new Plate(500, 339, 10, 10, photoImage, photoImage);
+      plate1 = new Plate(500, 339, 2, 2, photoImage, photoImage);
       plate1.rotation.z = 45;
       plate1.position.set(0, 40, 0);
       plate1.scale.set(0.1, 0.1, 0.1);
