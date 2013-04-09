@@ -1219,6 +1219,17 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
 
             for v, i in vertecies
 
+                #save
+                prevFillStyle     = g.fillStyle
+                prevStrokeStyle   = g.strokeStyle
+                prevAlpha         = g.globalAlpha
+                prevPgFillStyle   = pg.fillStyle
+                prevPgStrokeStyle = pg.strokeStyle
+                prevPgAlpha       = pg.globalAlpha
+                prevCgFillStyle   = cg.fillStyle
+                prevCgStrokeStyle = cg.strokeStyle
+                prevCgAlpha       = cg.globalAlpha
+
                 vertexList = v.vertecies
                 z = v.getZPosition()
                 fogStrength = 0
@@ -1241,8 +1252,6 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
                 w3 =  vertexList[11]
 
                 if v.type is 'line'
-                    g.save()
-
                     if fog
                         fogStrength = ((fogEnd - z) / (fogEnd - fogStart))
                         fogStrength = 0 if fogStrength < 0
@@ -1254,12 +1263,8 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
                     g.closePath()
                     g.strokeStyle = v.color.toString()
                     g.stroke()
-                    g.restore()
-                    continue
 
                 else if v.type is 'particle'
-                    g.save()
-
                     if fog
                         fogStrength = ((fogEnd - z) / (fogEnd - fogStart))
                         fogStrength = 0 if fogStrength < 0
@@ -1269,7 +1274,6 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
                     g.fillStyle = v.color.toString()
                     g.arc x1, y1, v.size / w1, 0, PI * 2, true
                     g.fill()
-                    g.restore()
 
                 else if v.type is 'triangle'
 
@@ -1348,8 +1352,7 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
 
                         # 各頂点座標を元に三角形を作り、それでクリッピング
                         g.save()
-                        pg.save()
-                        cg.save()
+                        #cg.save()
 
                         pg.drawImage(img, 0, 0)
 
@@ -1409,15 +1412,10 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
                         g.drawImage pcv, 0, 0
 
                         cg.clearRect 0, 0, 1, 1
-                        cg.restore()
-                        pg.restore()
+                        #cg.restore()
                         g.restore()
 
                     else if v.color
-
-                        g.save()
-                        cg.save()
-
                         cg.fillStyle = v.color.toString()
                         cg.fillRect 0, 0, 1, 1
 
@@ -1469,8 +1467,16 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
                             g.stroke()
 
                         cg.clearRect 0, 0, 1, 1
-                        cg.restore()
-                        g.restore()
+
+                 g.fillStyle    = prevFillStyle
+                 g.strokeStyle  = prevStrokeStyle
+                 g.globalAlpha  = prevAlpha
+                 pg.fillStyle   = prevPgFillStyle
+                 pg.strokeStyle = prevPgStrokeStyle
+                 pg.globalAlpha = prevPgAlpha
+                 cg.fillStyle   = prevCgFillStyle
+                 cg.strokeStyle = prevCgStrokeStyle
+                 cg.globalAlpha = prevCgAlpha
 
         getTransformedPoint: (mat, materials) ->
 
