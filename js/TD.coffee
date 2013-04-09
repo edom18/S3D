@@ -1405,7 +1405,7 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
 
                         g.clip()
 
-                        g.transform(a, b, c, d,
+                        g.setTransform(a, b, c, d,
                             x1 - (a * uvList[0] * width + c * uvList[1] * height),
                             y1 - (b * uvList[0] * width + d * uvList[1] * height))
 
@@ -1468,15 +1468,15 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
 
                         cg.clearRect 0, 0, 1, 1
 
-                 g.fillStyle    = prevFillStyle
-                 g.strokeStyle  = prevStrokeStyle
-                 g.globalAlpha  = prevAlpha
-                 pg.fillStyle   = prevPgFillStyle
-                 pg.strokeStyle = prevPgStrokeStyle
-                 pg.globalAlpha = prevPgAlpha
-                 cg.fillStyle   = prevCgFillStyle
-                 cg.strokeStyle = prevCgStrokeStyle
-                 cg.globalAlpha = prevCgAlpha
+                g.fillStyle    = prevFillStyle
+                g.strokeStyle  = prevStrokeStyle
+                g.globalAlpha  = prevAlpha
+                pg.fillStyle   = prevPgFillStyle
+                pg.strokeStyle = prevPgStrokeStyle
+                pg.globalAlpha = prevPgAlpha
+                cg.fillStyle   = prevCgFillStyle
+                cg.strokeStyle = prevCgStrokeStyle
+                cg.globalAlpha = prevCgAlpha
 
         getTransformedPoint: (mat, materials) ->
 
@@ -1626,3 +1626,5 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
     exports.Quaternion = Quaternion
     exports.AmbientLight = AmbientLight
     exports.DirectionalLight = DirectionalLight
+
+    return
