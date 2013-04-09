@@ -870,6 +870,55 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
         @param {Texture} texture1
         @param {Texture} texture2
     ###
+    class Face2 extends Object3D
+        constructor: (width, height, divW, divH, texture1, texture2) ->
+            super
+            @type = 'face'
+
+            partW = width / divW
+            partH = -height / divH
+
+            for wi in [0...divH]
+                for hi in [0...divW]
+                    x1 = ((wi + 0) * partW)
+                    y1 = ((hi + 0) * partH)
+                    x2 = ((wi + 0) * partW)
+                    y2 = ((hi + 1) * partH)
+                    x3 = ((wi + 1) * partW)
+                    y3 = ((hi + 1) * partH)
+                    x4 = ((wi + 1) * partW)
+                    y4 = ((hi + 0) * partH)
+
+                    triangle1 = new Triangle([
+                        x1, y1, 0
+                        x2, y2, 0
+                        x4, y4, 0
+                    ], texture1)
+
+                    triangle2 = new Triangle([
+                        x2, y2, 0
+                        x3, y3, 0
+                        x4, y4, 0
+                    ], texture1)
+
+                    #triangle1.position.set(j * partW, -(i * partH), 0)
+                    #triangle2.position.set(j * partW, -(i * partH), 0)
+
+                    @add triangle1
+                    @add triangle2
+
+
+    ###*
+        Face class
+            Face -> Object3D
+        @constructor
+        @param {number} x1
+        @param {number} y1
+        @param {number} x2
+        @param {number} y2
+        @param {Texture} texture1
+        @param {Texture} texture2
+    ###
     class Face extends Object3D
         constructor: (x1, y1, x2, y2, texture1, texture2) ->
             super
@@ -1201,7 +1250,7 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
                     _Bx = x3 - x1; _By = y3 - y1; _Bz = z3 - z1
 
                     # 裏面カリング
-                    # 頂点を結ぶ順が反時計回りの場合は「裏面」になり、その場合は描画をスキップ
+                    # 頂点を結ぶ順が時計回りの場合は「裏面」になり、その場合は描画をスキップ
                     # 裏面かどうかの判定は外積を利用する
                     # 判定は、p1, p2, p3の3点から、p1->p2, p1->p3のベクトルとの外積を利用する。
                     continue if (_Ax * _By) - (_Ay * _Bx) > 0
@@ -1532,6 +1581,7 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
     exports.Plate = Plate
     exports.Cube  = Cube
     exports.Face  = Face
+    exports.Face2  = Face2
     exports.Particle = Particle
     exports.Texture  = Texture
     exports.Vector3  = Vector3
