@@ -979,14 +979,13 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
             @add face1
             @add face2
 
-
 # -------------------------------------------------------------------------------
 
     ###*
         Cube class
         @constructor
-        @param {number} w width.
-        @param {number} h height.
+        @param {number} width.
+        @param {number} height.
         @param {number} p profound.
         @param {number} sx divide as x axis.
         @param {number} sy divide as y axis.
@@ -994,42 +993,46 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
         @param {<Array.<Texture>} materials texture materials.
     ###
     class Cube extends Object3D
-        constructor: (w, h, p, sx = 1, sy = 1, sz = 1, materials) ->
+        constructor: (width, height, p, sx = 1, sy = 1, sz = 1, materials) ->
             super
             @type = 'cube'
 
-            w *= 0.5
-            h *= 0.5
-            p *= 0.5
+            #width *= 0.5
+            #height *= 0.5
+            #p *= 0.5
+
+            hw = width  * 0.5
+            hh = height * 0.5
+            hp = p * 0.5
 
             #TOP
-            topFace = new Face -w, h, w, -h, materials[0], materials[1]
+            topFace = new Face2 width, p, sx, sz, materials[0], materials[1]
             topFace.rotation.x = -90
-            topFace.position.y = h
+            topFace.position.y = hh
 
             #BOTTOM
-            bottomFace = new Face -w, h, w, -h, materials[2], materials[3]
+            bottomFace = new Face2 width, p, sx, sz, materials[2], materials[3]
             bottomFace.rotation.x = 90
-            bottomFace.position.y = -h
+            bottomFace.position.y = -hh
 
-            #FRONT
-            frontFace = new Face -w, h, w, -h, materials[4], materials[5]
-            frontFace.position.z = p
+            ##FRONT
+            frontFace = new Face2 width, height, sx, sy, materials[4], materials[5]
+            frontFace.position.z = hp
 
-            #BACK
-            backFace = new Face -w, h, w, -h, materials[6], materials[7]
+            ##BACK
+            backFace = new Face2 width, height, sx, sy, materials[6], materials[7]
             backFace.rotation.y = 180
-            backFace.position.z = -p
+            backFace.position.z = -hp
 
-            #LEFT
-            leftFace = new Face -p, h, p, -h, materials[8], materials[9]
+            ##LEFT
+            leftFace = new Face2 p, height, sz, sy, materials[8], materials[9]
             leftFace.rotation.y = -90
-            leftFace.position.x = -w
+            leftFace.position.x = -hw
 
-            #RIGHT
-            rightFace = new Face -p, h, p, -h, materials[10], materials[11]
+            ##RIGHT
+            rightFace = new Face2 p, height, sz, sy, materials[10], materials[11]
             rightFace.rotation.y = 90
-            rightFace.position.x = w
+            rightFace.position.x = hw
 
             @add rightFace
             @add leftFace
