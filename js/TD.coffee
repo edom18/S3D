@@ -34,11 +34,13 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
         constructor: (@x = 0, @y = 0, @z = 0) ->
         zero: ->
             @x = @y = @z = 0;
+            return @
 
         equal: (v) ->
             return (@x is v.x) and (@y is v.y) and (@z is v.z)
 
         set: (@x = 0, @y = 0, @z = 0) ->
+            return @
 
         sub: (v) ->
             @x -= v.x
@@ -71,7 +73,7 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
             return @
 
         norm: ->
-            sqrt(@x * @x + @y * @y + @z * @z)
+            return sqrt(@x * @x + @y * @y + @z * @z)
 
         normalize: ->
             nrm = @norm()
@@ -103,6 +105,7 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
             @x = a.x * b.x
             @y = a.y * b.y
             @z = a.z * b.z
+            return @
 
         #dot product
         dot: (v) ->
@@ -209,7 +212,7 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
             return [@x, @y, @z]
 
         toString: ->
-            "#{@x},#{@y},#{@z}"
+            return "#{@x},#{@y},#{@z}"
 
 
 # -------------------------------------------------------------------
@@ -1371,10 +1374,11 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
 
                         if fog
                             fogStrength = 1 - ((fogEnd - z) / (fogEnd - fogStart))
-                            fogStrength = 0 if fogStrength < 0
-                            cg.globalAlpha = fogStrength
-                            cg.fillStyle   = fogColor
-                            cg.fillRect 0, 0, 1, 1
+
+                            if fogStrength > 0
+                                cg.globalAlpha = fogStrength
+                                cg.fillStyle   = fogColor
+                                cg.fillRect 0, 0, 1, 1
 
                         data = cg.getImageData(0, 0, 1, 1).data
 
