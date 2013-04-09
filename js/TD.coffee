@@ -871,38 +871,54 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
         @param {Texture} texture2
     ###
     class Face2 extends Object3D
-        constructor: (width, height, divW, divH, texture1, texture2) ->
+        constructor: (width, height, divW, divH, image1, image2) ->
             super
             @type = 'face'
 
+            hw = width  * 0.5
+            hh = height * 0.5
             partW = width / divW
             partH = -height / divH
 
             for wi in [0...divH]
                 for hi in [0...divW]
-                    x1 = ((wi + 0) * partW)
-                    y1 = ((hi + 0) * partH)
-                    x2 = ((wi + 0) * partW)
-                    y2 = ((hi + 1) * partH)
-                    x3 = ((wi + 1) * partW)
-                    y3 = ((hi + 1) * partH)
-                    x4 = ((wi + 1) * partW)
-                    y4 = ((hi + 0) * partH)
+                    x1 = ((wi + 0) * partW) - hw
+                    y1 = ((hi + 0) * partH) + hh
+                    x2 = ((wi + 0) * partW) - hw
+                    y2 = ((hi + 1) * partH) + hh
+                    x3 = ((wi + 1) * partW) - hw
+                    y3 = ((hi + 1) * partH) + hh
+                    x4 = ((wi + 1) * partW) - hw
+                    y4 = ((hi + 0) * partH) + hh
+
+                    uv_x1 = ((wi + 0) *  partW) / width
+                    uv_y1 = ((hi + 0) * -partH) / height
+                    uv_x2 = ((wi + 0) *  partW) / width
+                    uv_y2 = ((hi + 1) * -partH) / height
+                    uv_x3 = ((wi + 1) *  partW) / width
+                    uv_y3 = ((hi + 1) * -partH) / height
+                    uv_x4 = ((wi + 1) *  partW) / width
+                    uv_y4 = ((hi + 0) * -partH) / height
 
                     triangle1 = new Triangle([
                         x1, y1, 0
                         x2, y2, 0
                         x4, y4, 0
-                    ], texture1)
+                    ], new Texture(image1, [
+                        uv_x1, uv_y1
+                        uv_x2, uv_y2
+                        uv_x4, uv_y4
+                    ]))
 
                     triangle2 = new Triangle([
                         x2, y2, 0
                         x3, y3, 0
                         x4, y4, 0
-                    ], texture1)
-
-                    #triangle1.position.set(j * partW, -(i * partH), 0)
-                    #triangle2.position.set(j * partW, -(i * partH), 0)
+                    ], new Texture(image2, [
+                        uv_x2, uv_y2
+                        uv_x3, uv_y3
+                        uv_x4, uv_y4
+                    ]))
 
                     @add triangle1
                     @add triangle2
@@ -952,15 +968,12 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
         @param {Texture} texture2
     ###
     class Plate extends Object3D
-        constructor: (width, height, texture1, texture2) ->
+        constructor: (width, height, sx, sy, image1, image2) ->
             super
             @type = 'plate'
 
-            hw = width  * 0.5
-            hh = height * 0.5
-
-            face1 = new Face -hw, hh, hw, -hh, texture1, texture2
-            face2 = new Face -hw, hh, hw, -hh, texture1, texture2
+            face1 = new Face2 width, height, sx, sy, image1, image2
+            face2 = new Face2 width, height, sx, sy, image1, image2
             face2.rotation.y = 180
 
             @add face1
