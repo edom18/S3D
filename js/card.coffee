@@ -50,7 +50,7 @@ do (win = window, doc = window.document, exports = window) ->
         camera = new Camera 40, aspect, 0.1, 10000
         camera.position.x = 0
         camera.position.y = 120
-        camera.position.z = 220
+        camera.position.z = 320
         #camera.up = new Vector3 1, 0, 0
         camera.lookAt new Vector3 0, 50, 0
         camera.lookAtLock = true
@@ -63,7 +63,8 @@ do (win = window, doc = window.document, exports = window) ->
         win.camera = camera
 
         create = ->
-            plate1 = new Plate 500, 339, 5, 5, photoImage, photoImage
+            plate1 = new Plate 500, 339, 10, 10, photoImage, photoImage
+            #plate1 = new Plate 500, 339, 10, 10, new Color(255, 0, 0, 1), new Color(255, 0, 0, 1), new Color(0, 0, 255, 1), new Color(0, 0, 255, 1)
             plate1.rotation.z = 45
             plate1.position.set 0, 40, 0
             plate1.scale.set 0.1, 0.1, 0.1

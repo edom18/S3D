@@ -47,7 +47,8 @@ var __hasProp = {}.hasOwnProperty,
     }
 
     Vector3.prototype.zero = function() {
-      return this.x = this.y = this.z = 0;
+      this.x = this.y = this.z = 0;
+      return this;
     };
 
     Vector3.prototype.equal = function(v) {
@@ -58,6 +59,7 @@ var __hasProp = {}.hasOwnProperty,
       this.x = x != null ? x : 0;
       this.y = y != null ? y : 0;
       this.z = z != null ? z : 0;
+      return this;
     };
 
     Vector3.prototype.sub = function(v) {
@@ -128,7 +130,8 @@ var __hasProp = {}.hasOwnProperty,
     Vector3.prototype.multiplyVectors = function(a, b) {
       this.x = a.x * b.x;
       this.y = a.y * b.y;
-      return this.z = a.z * b.z;
+      this.z = a.z * b.z;
+      return this;
     };
 
     Vector3.prototype.dot = function(v) {
@@ -1145,12 +1148,18 @@ var __hasProp = {}.hasOwnProperty,
 
     __extends(Plate, _super);
 
-    function Plate(width, height, sx, sy, image1, image2) {
+    function Plate(width, height, sx, sy, image1, image2, image3, image4) {
       var face1, face2;
+      if (image3 == null) {
+        image3 = image1;
+      }
+      if (image4 == null) {
+        image4 = image2;
+      }
       Plate.__super__.constructor.apply(this, arguments);
       this.type = 'plate';
       face1 = new Face2(width, height, sx, sy, image1, image2);
-      face2 = new Face2(width, height, sx, sy, image1, image2);
+      face2 = new Face2(width, height, sx, sy, image3, image4);
       face2.rotation.y = 180;
       this.add(face1);
       this.add(face2);
@@ -1428,7 +1437,7 @@ var __hasProp = {}.hasOwnProperty,
     };
 
     Renderer.prototype.drawMaterials = function(g, vertecies, lights, vw, vh) {
-      var Ax, Ay, Bx, By, L, N, a, b, c, ccv, cg, color, d, data, factor, fog, fogColor, fogEnd, fogStart, fogStrength, height, hvh, hvw, i, img, l, lighting, m, me, mi, mie, normal, pcv, pg, strength, uvList, v, vertexList, w1, w2, w3, width, wireframeColor, x1, x2, x3, y1, y2, y3, z, z1, z2, z3, _Ax, _Ay, _Az, _Bx, _By, _Bz, _a, _b, _g, _i, _j, _k, _len, _len1, _len2, _r, _results;
+      var Ax, Ay, Bx, By, L, N, a, b, c, ccv, cg, color, d, data, factor, fog, fogColor, fogEnd, fogStart, fogStrength, height, hvh, hvw, i, img, l, lighting, m, me, mi, mie, normal, pcv, pg, prevAlpha, prevCgAlpha, prevCgFillStyle, prevCgStrokeStyle, prevFillStyle, prevPgAlpha, prevPgFillStyle, prevPgStrokeStyle, prevStrokeStyle, strength, uvList, v, vertexList, w1, w2, w3, width, wireframeColor, x1, x2, x3, y1, y2, y3, z, z1, z2, z3, _Ax, _Ay, _Az, _Bx, _By, _Bz, _a, _b, _g, _i, _j, _k, _len, _len1, _len2, _r, _results;
       fogColor = this.fogColor;
       fogStart = this.fogStart;
       fogEnd = this.fogEnd;
@@ -1442,6 +1451,15 @@ var __hasProp = {}.hasOwnProperty,
       _results = [];
       for (i = _i = 0, _len = vertecies.length; _i < _len; i = ++_i) {
         v = vertecies[i];
+        prevFillStyle = g.fillStyle;
+        prevStrokeStyle = g.strokeStyle;
+        prevAlpha = g.globalAlpha;
+        prevPgFillStyle = pg.fillStyle;
+        prevPgStrokeStyle = pg.strokeStyle;
+        prevPgAlpha = pg.globalAlpha;
+        prevCgFillStyle = cg.fillStyle;
+        prevCgStrokeStyle = cg.strokeStyle;
+        prevCgAlpha = cg.globalAlpha;
         vertexList = v.vertecies;
         z = v.getZPosition();
         fogStrength = 0;
@@ -1461,7 +1479,6 @@ var __hasProp = {}.hasOwnProperty,
         z3 = vertexList[10];
         w3 = vertexList[11];
         if (v.type === 'line') {
-          g.save();
           if (fog) {
             fogStrength = (fogEnd - z) / (fogEnd - fogStart);
             if (fogStrength < 0) {
@@ -1475,10 +1492,7 @@ var __hasProp = {}.hasOwnProperty,
           g.closePath();
           g.strokeStyle = v.color.toString();
           g.stroke();
-          g.restore();
-          continue;
         } else if (v.type === 'particle') {
-          g.save();
           if (fog) {
             fogStrength = (fogEnd - z) / (fogEnd - fogStart);
             if (fogStrength < 0) {
@@ -1490,7 +1504,6 @@ var __hasProp = {}.hasOwnProperty,
           g.fillStyle = v.color.toString();
           g.arc(x1, y1, v.size / w1, 0, PI * 2, true);
           g.fill();
-          _results.push(g.restore());
         } else if (v.type === 'triangle') {
           img = null;
           _Ax = x2 - x1;
@@ -1524,8 +1537,6 @@ var __hasProp = {}.hasOwnProperty,
             b = mie[0] * _Ay + mie[2] * _By;
             d = mie[1] * _Ay + mie[3] * _By;
             g.save();
-            pg.save();
-            cg.save();
             pg.drawImage(img, 0, 0);
             if (lighting) {
               strength = 0;
@@ -1548,12 +1559,11 @@ var __hasProp = {}.hasOwnProperty,
             }
             if (fog) {
               fogStrength = 1 - ((fogEnd - z) / (fogEnd - fogStart));
-              if (fogStrength < 0) {
-                fogStrength = 0;
+              if (fogStrength > 0) {
+                cg.globalAlpha = fogStrength;
+                cg.fillStyle = fogColor;
+                cg.fillRect(0, 0, 1, 1);
               }
-              cg.globalAlpha = fogStrength;
-              cg.fillStyle = fogColor;
-              cg.fillRect(0, 0, 1, 1);
             }
             data = cg.getImageData(0, 0, 1, 1).data;
             _r = data[0];
@@ -1575,12 +1585,8 @@ var __hasProp = {}.hasOwnProperty,
             g.transform(a, b, c, d, x1 - (a * uvList[0] * width + c * uvList[1] * height), y1 - (b * uvList[0] * width + d * uvList[1] * height));
             g.drawImage(pcv, 0, 0);
             cg.clearRect(0, 0, 1, 1);
-            cg.restore();
-            pg.restore();
-            _results.push(g.restore());
+            g.restore();
           } else if (v.color) {
-            g.save();
-            cg.save();
             cg.fillStyle = v.color.toString();
             cg.fillRect(0, 0, 1, 1);
             if (lighting) {
@@ -1629,14 +1635,17 @@ var __hasProp = {}.hasOwnProperty,
               g.stroke();
             }
             cg.clearRect(0, 0, 1, 1);
-            cg.restore();
-            _results.push(g.restore());
-          } else {
-            _results.push(void 0);
           }
-        } else {
-          _results.push(void 0);
         }
+        g.fillStyle = prevFillStyle;
+        g.strokeStyle = prevStrokeStyle;
+        g.globalAlpha = prevAlpha;
+        pg.fillStyle = prevPgFillStyle;
+        pg.strokeStyle = prevPgStrokeStyle;
+        pg.globalAlpha = prevPgAlpha;
+        cg.fillStyle = prevCgFillStyle;
+        cg.strokeStyle = prevCgStrokeStyle;
+        _results.push(cg.globalAlpha = prevCgAlpha);
       }
       return _results;
     };

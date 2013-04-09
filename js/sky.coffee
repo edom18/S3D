@@ -107,7 +107,7 @@ do (win = window, doc = window.document, exports = window) ->
                 line = new Line(x, 0, 0, x, 0, size, new Color(255, 255, 255, 0.3))
                 container.add line
 
-            #scene.add container
+                #scene.add container
 
             ambLight = new AmbientLight(1.0)
             scene.add ambLight
