@@ -4,7 +4,7 @@ var __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
 (function(win, doc, exports) {
-  var AmbientLight, Camera, Color, Cube, DEG_TO_RAD, DiffuseLight, DirectionalLight, Face, Light, Line, Matrix2, Matrix4, Object3D, PI, Particle, Plate, Quaternion, Renderer, Scene, Texture, Triangle, Vector3, Vertex, cos, makeRotatialQuaternion, max, min, sin, sqrt, tan;
+  var AmbientLight, Camera, Color, Cube, DEG_TO_RAD, DiffuseLight, DirectionalLight, Face, Face2, Light, Line, Matrix2, Matrix4, Object3D, PI, Particle, Plate, Quaternion, Renderer, Scene, Texture, Triangle, Vector3, Vertex, cos, makeRotatialQuaternion, max, min, sin, sqrt, tan;
   max = Math.max, min = Math.min, sqrt = Math.sqrt, tan = Math.tan, cos = Math.cos, sin = Math.sin, PI = Math.PI;
   DEG_TO_RAD = PI / 180;
   win.Float32Array = win.Float32Array || win.Array;
@@ -1052,6 +1052,68 @@ var __hasProp = {}.hasOwnProperty,
       @param {Texture} texture2
   */
 
+  Face2 = (function(_super) {
+
+    __extends(Face2, _super);
+
+    function Face2(width, height, divW, divH, image1, image2) {
+      var hh, hi, hw, partH, partW, texture1, texture2, triangle1, triangle2, uv_x1, uv_x2, uv_x3, uv_x4, uv_y1, uv_y2, uv_y3, uv_y4, wi, x1, x2, x3, x4, y1, y2, y3, y4, _i, _j;
+      Face2.__super__.constructor.apply(this, arguments);
+      this.type = 'face';
+      hw = width * 0.5;
+      hh = height * 0.5;
+      partW = width / divW;
+      partH = -height / divH;
+      for (wi = _i = 0; 0 <= divH ? _i < divH : _i > divH; wi = 0 <= divH ? ++_i : --_i) {
+        for (hi = _j = 0; 0 <= divW ? _j < divW : _j > divW; hi = 0 <= divW ? ++_j : --_j) {
+          x1 = ((wi + 0) * partW) - hw;
+          y1 = ((hi + 0) * partH) + hh;
+          x2 = ((wi + 0) * partW) - hw;
+          y2 = ((hi + 1) * partH) + hh;
+          x3 = ((wi + 1) * partW) - hw;
+          y3 = ((hi + 1) * partH) + hh;
+          x4 = ((wi + 1) * partW) - hw;
+          y4 = ((hi + 0) * partH) + hh;
+          texture1 = null;
+          texture2 = null;
+          if (image1 instanceof Color) {
+            texture1 = image1;
+            texture2 = image2;
+          } else {
+            uv_x1 = ((wi + 0) * partW) / width;
+            uv_y1 = ((hi + 0) * -partH) / height;
+            uv_x2 = ((wi + 0) * partW) / width;
+            uv_y2 = ((hi + 1) * -partH) / height;
+            uv_x3 = ((wi + 1) * partW) / width;
+            uv_y3 = ((hi + 1) * -partH) / height;
+            uv_x4 = ((wi + 1) * partW) / width;
+            uv_y4 = ((hi + 0) * -partH) / height;
+            texture1 = new Texture(image1, [uv_x1, uv_y1, uv_x2, uv_y2, uv_x4, uv_y4]);
+            texture2 = new Texture(image2, [uv_x2, uv_y2, uv_x3, uv_y3, uv_x4, uv_y4]);
+          }
+          triangle1 = new Triangle([x1, y1, 0, x2, y2, 0, x4, y4, 0], texture1);
+          triangle2 = new Triangle([x2, y2, 0, x3, y3, 0, x4, y4, 0], texture2);
+          this.add(triangle1);
+          this.add(triangle2);
+        }
+      }
+    }
+
+    return Face2;
+
+  })(Object3D);
+  /**
+      Face class
+          Face -> Object3D
+      @constructor
+      @param {number} x1
+      @param {number} y1
+      @param {number} x2
+      @param {number} y2
+      @param {Texture} texture1
+      @param {Texture} texture2
+  */
+
   Face = (function(_super) {
 
     __extends(Face, _super);
@@ -1083,14 +1145,12 @@ var __hasProp = {}.hasOwnProperty,
 
     __extends(Plate, _super);
 
-    function Plate(width, height, texture1, texture2) {
-      var face1, face2, hh, hw;
+    function Plate(width, height, sx, sy, image1, image2) {
+      var face1, face2;
       Plate.__super__.constructor.apply(this, arguments);
       this.type = 'plate';
-      hw = width * 0.5;
-      hh = height * 0.5;
-      face1 = new Face(-hw, hh, hw, -hh, texture1, texture2);
-      face2 = new Face(-hw, hh, hw, -hh, texture1, texture2);
+      face1 = new Face2(width, height, sx, sy, image1, image2);
+      face2 = new Face2(width, height, sx, sy, image1, image2);
       face2.rotation.y = 180;
       this.add(face1);
       this.add(face2);
@@ -1102,8 +1162,8 @@ var __hasProp = {}.hasOwnProperty,
   /**
       Cube class
       @constructor
-      @param {number} w width.
-      @param {number} h height.
+      @param {number} width.
+      @param {number} height.
       @param {number} p profound.
       @param {number} sx divide as x axis.
       @param {number} sy divide as y axis.
@@ -1115,8 +1175,8 @@ var __hasProp = {}.hasOwnProperty,
 
     __extends(Cube, _super);
 
-    function Cube(w, h, p, sx, sy, sz, materials) {
-      var backFace, bottomFace, frontFace, leftFace, rightFace, topFace;
+    function Cube(width, height, p, sx, sy, sz, materials) {
+      var backFace, bottomFace, frontFace, hh, hp, hw, leftFace, rightFace, topFace;
       if (sx == null) {
         sx = 1;
       }
@@ -1128,26 +1188,26 @@ var __hasProp = {}.hasOwnProperty,
       }
       Cube.__super__.constructor.apply(this, arguments);
       this.type = 'cube';
-      w *= 0.5;
-      h *= 0.5;
-      p *= 0.5;
-      topFace = new Face(-w, h, w, -h, materials[0], materials[1]);
+      hw = width * 0.5;
+      hh = height * 0.5;
+      hp = p * 0.5;
+      topFace = new Face2(width, p, sx, sz, materials[0], materials[1]);
       topFace.rotation.x = -90;
-      topFace.position.y = h;
-      bottomFace = new Face(-w, h, w, -h, materials[2], materials[3]);
+      topFace.position.y = hh;
+      bottomFace = new Face2(width, p, sx, sz, materials[2], materials[3]);
       bottomFace.rotation.x = 90;
-      bottomFace.position.y = -h;
-      frontFace = new Face(-w, h, w, -h, materials[4], materials[5]);
-      frontFace.position.z = p;
-      backFace = new Face(-w, h, w, -h, materials[6], materials[7]);
+      bottomFace.position.y = -hh;
+      frontFace = new Face2(width, height, sx, sy, materials[4], materials[5]);
+      frontFace.position.z = hp;
+      backFace = new Face2(width, height, sx, sy, materials[6], materials[7]);
       backFace.rotation.y = 180;
-      backFace.position.z = -p;
-      leftFace = new Face(-p, h, p, -h, materials[8], materials[9]);
+      backFace.position.z = -hp;
+      leftFace = new Face2(p, height, sz, sy, materials[8], materials[9]);
       leftFace.rotation.y = -90;
-      leftFace.position.x = -w;
-      rightFace = new Face(-p, h, p, -h, materials[10], materials[11]);
+      leftFace.position.x = -hw;
+      rightFace = new Face2(p, height, sz, sy, materials[10], materials[11]);
       rightFace.rotation.y = 90;
-      rightFace.position.x = w;
+      rightFace.position.x = hw;
       this.add(rightFace);
       this.add(leftFace);
       this.add(backFace);
@@ -1711,6 +1771,7 @@ var __hasProp = {}.hasOwnProperty,
   exports.Plate = Plate;
   exports.Cube = Cube;
   exports.Face = Face;
+  exports.Face2 = Face2;
   exports.Particle = Particle;
   exports.Texture = Texture;
   exports.Vector3 = Vector3;

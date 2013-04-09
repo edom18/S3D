@@ -2,7 +2,7 @@ do (win = window, doc = window.document, exports = window) ->
 
     #Import
     {tan, cos, sin, PI} = Math
-    {Object3D, Line, Color, AmbientLight, DirectionalLight, Plate, Face, Cube, Texture, Triangle, Matrix4, Camera, Renderer, Scene, Vector3, Particle} = window.S3D
+    {Face2, Object3D, Line, Color, AmbientLight, DirectionalLight, Plate, Face, Cube, Texture, Triangle, Matrix4, Camera, Renderer, Scene, Vector3, Particle} = window.S3D
 
     $ = (selector) ->
         doc.querySelector selector
@@ -94,33 +94,33 @@ do (win = window, doc = window.document, exports = window) ->
         create = ->
 
             materials1 = [
-                new Texture(photoImage, [0, 0, 0, 1, 1, 0])
-                new Texture(photoImage, [0, 1, 1, 1, 1, 0])
-                new Texture(photoImage, [0, 0, 0, 1, 1, 0])
-                new Texture(photoImage, [0, 1, 1, 1, 1, 0])
-                new Texture(photoImage, [0, 0, 0, 1, 1, 0])
-                new Texture(photoImage, [0, 1, 1, 1, 1, 0])
-                new Texture(photoImage, [0, 0, 0, 1, 1, 0])
-                new Texture(photoImage, [0, 1, 1, 1, 1, 0])
-                new Texture(photoImage, [0, 0, 0, 1, 1, 0])
-                new Texture(photoImage, [0, 1, 1, 1, 1, 0])
-                new Texture(photoImage, [0, 0, 0, 1, 1, 0])
-                new Texture(photoImage, [0, 1, 1, 1, 1, 0])
+                photoImage
+                photoImage
+                photoImage
+                photoImage
+                photoImage
+                photoImage
+                photoImage
+                photoImage
+                photoImage
+                photoImage
+                photoImage
+                photoImage
             ]
 
             materials2 = [
-                new Texture(video, [0, 0, 0, 1, 1, 0])
-                new Texture(video, [0, 1, 1, 1, 1, 0])
-                new Texture(video, [0, 0, 0, 1, 1, 0])
-                new Texture(video, [0, 1, 1, 1, 1, 0])
-                new Texture(video, [0, 0, 0, 1, 1, 0])
-                new Texture(video, [0, 1, 1, 1, 1, 0])
-                new Texture(video, [0, 0, 0, 1, 1, 0])
-                new Texture(video, [0, 1, 1, 1, 1, 0])
-                new Texture(video, [0, 0, 0, 1, 1, 0])
-                new Texture(video, [0, 1, 1, 1, 1, 0])
-                new Texture(video, [0, 0, 0, 1, 1, 0])
-                new Texture(video, [0, 1, 1, 1, 1, 0])
+                video
+                video
+                video
+                video
+                video
+                video
+                video
+                video
+                video
+                video
+                video
+                video
             ]
 
             materials3 = [
@@ -154,14 +154,11 @@ do (win = window, doc = window.document, exports = window) ->
             cube3.position.x = 50
             cube3.position.y = 80
 
-            plate1 = new Plate 50, 50, new Texture(textureImage, [0.0, 0.5, 0.0, 1.0, 0.5, 0.5]), new Texture(textureImage, [0.0, 1.0, 0.5, 1.0, 0.5, 0.5])
-            plate1.position.x = -50
-            plate1.position.y = 10
-            plate1.position.z = -300
+            plate1 = new Plate 50, 50, 1, 1, textureImage, textureImage
+            plate1.position.set -50, 10, -300
 
-            plate2 = new Plate 50, 50, new Texture(video, [0, 0, 0, 1, 1, 0]), new Texture(video, [0, 1, 1, 1, 1, 0])
-            plate2.position.y = 100
-            plate2.position.z = -500
+            plate2 = new Plate 50, 50, 1, 1, video, video
+            plate2.position.set 0, 100, -500
 
             line1 = new Line(0, 0, -200, 0, 0, 200, new Color(255, 0, 0, 0.3))
             line2 = new Line(-200, 0, 0, 200, 0, 0, new Color(0, 255, 0, 0.3))
@@ -173,7 +170,7 @@ do (win = window, doc = window.document, exports = window) ->
             particle4 = new Particle(new Vector3(-150, 150, -250), 4000)
             particle5 = new Particle(new Vector3(-250, 250, 50), 3500)
 
-            size = 300
+            size = 500
             container = new Object3D
             container.position.x = -(size * 0.5)
             container.position.z = -(size * 0.5)
@@ -189,7 +186,7 @@ do (win = window, doc = window.document, exports = window) ->
                 container.add line
 
             ambLight = new AmbientLight(0.1)
-            dirLight = new DirectionalLight(0.8, (new Vector3(0, 0, -1)).normalize())
+            dirLight = new DirectionalLight(0.8, (new Vector3(1, 0, 1)).normalize())
            
             scene.add ambLight
             scene.add dirLight
