@@ -979,12 +979,12 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
         @param {Texture} texture2
     ###
     class Plate extends Object3D
-        constructor: (width, height, sx, sy, image1, image2) ->
+        constructor: (width, height, sx, sy, image1, image2, image3 = image1, image4 = image2) ->
             super
             @type = 'plate'
 
             face1 = new Face2 width, height, sx, sy, image1, image2
-            face2 = new Face2 width, height, sx, sy, image1, image2
+            face2 = new Face2 width, height, sx, sy, image3, image4
             face2.rotation.y = 180
 
             @add face1
