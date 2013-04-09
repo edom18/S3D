@@ -891,38 +891,49 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
                     x4 = ((wi + 1) * partW) - hw
                     y4 = ((hi + 0) * partH) + hh
 
-                    uv_x1 = ((wi + 0) *  partW) / width
-                    uv_y1 = ((hi + 0) * -partH) / height
-                    uv_x2 = ((wi + 0) *  partW) / width
-                    uv_y2 = ((hi + 1) * -partH) / height
-                    uv_x3 = ((wi + 1) *  partW) / width
-                    uv_y3 = ((hi + 1) * -partH) / height
-                    uv_x4 = ((wi + 1) *  partW) / width
-                    uv_y4 = ((hi + 0) * -partH) / height
+                    texture1 = null
+                    texture2 = null
+
+                    if image1 instanceof Color
+                        texture1 = image1
+                        texture2 = image2
+
+                    else
+                        uv_x1 = ((wi + 0) *  partW) / width
+                        uv_y1 = ((hi + 0) * -partH) / height
+                        uv_x2 = ((wi + 0) *  partW) / width
+                        uv_y2 = ((hi + 1) * -partH) / height
+                        uv_x3 = ((wi + 1) *  partW) / width
+                        uv_y3 = ((hi + 1) * -partH) / height
+                        uv_x4 = ((wi + 1) *  partW) / width
+                        uv_y4 = ((hi + 0) * -partH) / height
+
+                        texture1 = new Texture(image1, [
+                            uv_x1, uv_y1
+                            uv_x2, uv_y2
+                            uv_x4, uv_y4
+                        ])
+
+                        texture2 = new Texture(image2, [
+                            uv_x2, uv_y2
+                            uv_x3, uv_y3
+                            uv_x4, uv_y4
+                        ])
 
                     triangle1 = new Triangle([
                         x1, y1, 0
                         x2, y2, 0
                         x4, y4, 0
-                    ], new Texture(image1, [
-                        uv_x1, uv_y1
-                        uv_x2, uv_y2
-                        uv_x4, uv_y4
-                    ]))
+                    ], texture1)
 
                     triangle2 = new Triangle([
                         x2, y2, 0
                         x3, y3, 0
                         x4, y4, 0
-                    ], new Texture(image2, [
-                        uv_x2, uv_y2
-                        uv_x3, uv_y3
-                        uv_x4, uv_y4
-                    ]))
+                    ], texture2)
 
                     @add triangle1
                     @add triangle2
-
 
     ###*
         Face class
