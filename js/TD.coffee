@@ -840,7 +840,18 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
             @type = 'triangle'
 
             if material instanceof Texture
-                @texture = material
+                if {}.toString.call(material.uv_data) is '[object String]'
+                    @color = new Color(0, 0, 0, 0)
+                    img = new Image
+                    img.onload = =>
+                        material.uv_data = img
+                        @setTexture material
+                        img = null
+
+                    img.src = material.uv_data
+
+                else
+                    @setTexture material
 
             else if material instanceof Color
                 @color = material
@@ -859,6 +870,10 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
                 b.subVectors(@vertices[2], @vertices[0])
 
                 return a.clone().cross(b).applyMatrix4(@matrixWorld).normalize()
+
+        setTexture: (texture) ->
+            return false if not texture instanceof Texture
+            @texture = texture
         
 # -------------------------------------------------------------------------------
 
