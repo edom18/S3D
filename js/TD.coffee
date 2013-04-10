@@ -953,6 +953,11 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
                     @add triangle1
                     @add triangle2
 
+        setTexture: (texture, targetFace) ->
+            #TODO will be implement this method.
+            return if not (texture instanceof Color or texture instanceof Texture)
+
+
     ###*
         Face class
             Face -> Object3D
