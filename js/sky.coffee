@@ -56,7 +56,7 @@ do (win = window, doc = window.document, exports = window) ->
             topImg = $('#texture > .top')
             bottomImg = $('#texture > .bottom')
 
-            div = 3
+            div = 4
 
             #front
             face1 = new Face2 size, size, div, div, frontImg, frontImg
@@ -113,7 +113,13 @@ do (win = window, doc = window.document, exports = window) ->
             scene.add ambLight
 
             # Rendering start
-            renderer.render scene, camera
+            angle = 0
+            do _loop = ->
+                angle = (angle += 3) % 360
+                camera.position.x = sin(angle * DEG_TO_RAD) * 250
+                camera.position.z = cos(angle * DEG_TO_RAD) * 250
+                renderer.render scene, camera
+                #setTimeout _loop, 8
 
         create()
 

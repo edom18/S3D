@@ -39,14 +39,14 @@
     renderer = new Renderer(cv, '#111');
     renderer.fog = false;
     create = function() {
-      var ambLight, backImg, bottomImg, container, div, face1, face2, face3, face4, face5, face6, frontImg, i, leftImg, line, rightImg, topImg, x, z, _i, _j, _ref1, _ref2;
+      var ambLight, angle, backImg, bottomImg, container, div, face1, face2, face3, face4, face5, face6, frontImg, i, leftImg, line, rightImg, topImg, x, z, _i, _j, _loop, _ref1, _ref2;
       frontImg = $('#texture > .front');
       backImg = $('#texture > .back');
       leftImg = $('#texture > .left');
       rightImg = $('#texture > .right');
       topImg = $('#texture > .top');
       bottomImg = $('#texture > .bottom');
-      div = 3;
+      div = 4;
       face1 = new Face2(size, size, div, div, frontImg, frontImg);
       face1.position.z = -hSize;
       scene.add(face1);
@@ -85,7 +85,13 @@
       }
       ambLight = new AmbientLight(1.0);
       scene.add(ambLight);
-      return renderer.render(scene, camera);
+      angle = 0;
+      return (_loop = function() {
+        angle = (angle += 3) % 360;
+        camera.position.x = sin(angle * DEG_TO_RAD) * 250;
+        camera.position.z = cos(angle * DEG_TO_RAD) * 250;
+        return renderer.render(scene, camera);
+      })();
     };
     create();
     dragging = false;
