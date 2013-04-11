@@ -1390,6 +1390,7 @@ var __hasProp = {}.hasOwnProperty,
     function DirectionalLight(strength, direction) {
       this.direction = direction;
       DirectionalLight.__super__.constructor.apply(this, arguments);
+      this.direction.normalize();
     }
 
     return DirectionalLight;
@@ -1462,7 +1463,7 @@ var __hasProp = {}.hasOwnProperty,
     };
 
     Renderer.prototype.drawMaterials = function(g, vertecies, lights, vw, vh) {
-      var Ax, Ay, Bx, By, L, N, a, b, c, ccv, cg, color, d, data, factor, fog, fogColor, fogEnd, fogStart, fogStrength, height, hvh, hvw, i, img, l, lighting, m, me, mi, mie, normal, pcv, pg, prevAlpha, prevCgAlpha, prevCgFillStyle, prevCgStrokeStyle, prevFillStyle, prevPgAlpha, prevPgFillStyle, prevPgStrokeStyle, prevStrokeStyle, strength, uvList, v, vertexList, w1, w2, w3, width, wireframeColor, x1, x2, x3, y1, y2, y3, z, z1, z2, z3, _Ax, _Ay, _Az, _Bx, _By, _Bz, _a, _b, _g, _i, _j, _k, _len, _len1, _len2, _r, _results;
+      var Ax, Ay, Bx, By, L, N, a, b, c, ccv, cg, color, d, data, factor, fog, fogColor, fogEnd, fogStart, fogStrength, height, hvh, hvw, i, img, l, lighting, m, me, mi, mie, normal, pcv, pg, prevAlpha, prevCgAlpha, prevCgFillStyle, prevCgStrokeStyle, prevFillStyle, prevPgAlpha, prevPgFillStyle, prevPgStrokeStyle, prevStrokeStyle, strength, uvList, v, vertexList, w1, w2, w3, width, wireframeColor, x1, x2, x3, y1, y2, y3, z, z1, z2, z3, _Ax, _Ay, _Az, _Bx, _By, _Bz, __Ax, __Ay, __Bx, __By, _a, _b, _g, _i, _j, _k, _len, _len1, _len2, _r, _results;
       fogColor = this.fogColor;
       fogStart = this.fogStart;
       fogEnd = this.fogEnd;
@@ -1531,16 +1532,20 @@ var __hasProp = {}.hasOwnProperty,
           g.fill();
         } else if (v.type === 'triangle') {
           img = null;
+          __Ax = vertexList[4] - vertexList[0];
+          __Ay = vertexList[5] - vertexList[1];
+          __Bx = vertexList[8] - vertexList[0];
+          __By = vertexList[9] - vertexList[1];
+          if ((__Ax * __By) - (__Ay * __Bx) < 0) {
+            continue;
+          }
+          color = new Color(0, 0, 0, 1);
           _Ax = x2 - x1;
           _Ay = y2 - y1;
           _Az = z2 - z1;
           _Bx = x3 - x1;
           _By = y3 - y1;
           _Bz = z3 - z1;
-          if ((_Ax * _By) - (_Ay * _Bx) > 0) {
-            continue;
-          }
-          color = new Color(0, 0, 0, 1);
           if (v.uvData) {
             img = v.uvData;
             uvList = v.uvList;
@@ -1622,8 +1627,11 @@ var __hasProp = {}.hasOwnProperty,
                   strength += l.strength;
                 } else if (l instanceof DirectionalLight) {
                   L = l.direction;
-                  N = normal.clone().add(L);
+                  N = normal;
                   factor = N.dot(L);
+                  if (factor < 0) {
+                    factor = 0;
+                  }
                   strength += l.strength * factor;
                 }
               }

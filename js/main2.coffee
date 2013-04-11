@@ -147,7 +147,7 @@ do (win = window, doc = window.document, exports = window) ->
                 container.add line
 
             ambLight = new AmbientLight(0.1)
-            dirLight = new DirectionalLight(0.8, (new Vector3(1, 0, 1)).normalize())
+            dirLight = new DirectionalLight(1.0, (new Vector3(0, 0, 1)).normalize())
            
             scene.add ambLight
             scene.add dirLight
