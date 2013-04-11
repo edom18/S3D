@@ -34,7 +34,7 @@
     return video;
   };
   init = function() {
-    var aspect, base, btnFog, btnLight, btnWire, cnt, create, ctx, cv, dragging, fog, fov, h, img, light, logo, moveX, moveY, photo, prevX, prevY, startZoom, video, w, wire;
+    var aspect, base, btnFog, btnLight, btnWire, create, ctx, cv, dragging, fog, fov, h, light, moveX, moveY, prevX, prevY, startZoom, video, w, wire;
     video = getVideo();
     cv = doc.getElementById('canvas');
     ctx = cv.getContext('2d');
@@ -42,25 +42,6 @@
     h = cv.height = win.innerHeight;
     fov = 60;
     aspect = w / h;
-    cnt = 3;
-    img = new Image();
-    logo = new Image();
-    photo = new Image();
-    img.onload = function() {
-      textureImage = img;
-      return --cnt || create();
-    };
-    logo.onload = function() {
-      logoImage = logo;
-      return --cnt || create();
-    };
-    photo.onload = function() {
-      photoImage = photo;
-      return --cnt || create();
-    };
-    img.src = 'img/aXjiA.png';
-    logo.src = 'img/HTML5_Logo_512.png';
-    photo.src = 'img/photo.jpg';
     camera = new Camera(40, aspect, 0.1, 10000);
     camera.position.x = 10;
     camera.position.y = 20;
@@ -69,10 +50,13 @@
     camera.lookAtLock = true;
     scene = new Scene;
     renderer = new Renderer(cv, '#111');
-    win.camera = camera;
     create = function() {
-      var ambLight, angle, container, cube1, cube2, cube3, dirLight, i, line, line1, line2, line3, materials1, materials2, materials3, particle1, particle2, particle3, particle4, particle5, plate1, plate2, size, x, z, _i, _j, _loop, _ref1, _ref2;
-      materials1 = [photoImage, photoImage, photoImage, photoImage, photoImage, photoImage, photoImage, photoImage, photoImage, photoImage, photoImage, photoImage];
+      var ambLight, angle, container, cube1, cube2, cube3, dirLight, i, imgHtml5LogoURL, imgPhotoURL, imgURL, line, line1, line2, line3, materials1, materials2, materials3, onJsdoit, particle1, particle2, particle3, particle4, particle5, plate1, plate2, size, x, z, _i, _j, _loop, _ref1, _ref2;
+      onJsdoit = document.domain === 'jsrun.it';
+      imgURL = !onJsdoit ? 'img/aXjiA.png' : 'http://jsrun.it/assets/y/r/A/V/yrAVl.jpg';
+      imgHtml5LogoURL = !onJsdoit ? 'img/HTML5_Logo_512.png' : 'http://jsrun.it/assets/z/1/2/9/z129U.png';
+      imgPhotoURL = !onJsdoit ? 'img/photo.jpg' : 'http://jsrun.it/assets/k/M/J/J/kMJJS.png';
+      materials1 = [imgPhotoURL, imgPhotoURL, imgPhotoURL, imgPhotoURL, imgPhotoURL, imgPhotoURL, imgPhotoURL, imgPhotoURL, imgPhotoURL, imgPhotoURL, imgPhotoURL, imgPhotoURL];
       materials2 = [video, video, video, video, video, video, video, video, video, video, video, video];
       materials3 = [new Color(200, 0, 0, 1), new Color(200, 0, 0, 1), new Color(200, 0, 0, 1), new Color(200, 0, 0, 1), new Color(200, 0, 0, 1), new Color(200, 0, 0, 1), new Color(200, 0, 0, 1), new Color(200, 0, 0, 1), new Color(200, 0, 0, 1), new Color(200, 0, 0, 1), new Color(200, 0, 0, 1), new Color(200, 0, 0, 1)];
       cube1 = new Cube(50, 20, 20, 1, 1, 1, materials2);
@@ -88,7 +72,7 @@
       cube3.position.z = -350;
       cube3.position.x = 50;
       cube3.position.y = 80;
-      plate1 = new Plate(50, 50, 1, 1, textureImage, textureImage);
+      plate1 = new Plate(50, 50, 1, 1, imgHtml5LogoURL, imgHtml5LogoURL);
       plate1.position.set(-50, 10, -300);
       plate2 = new Plate(50, 50, 1, 1, video, video);
       plate2.position.set(0, 100, -500);
@@ -149,6 +133,7 @@
         return requestAnimFrame(_loop);
       })();
     };
+    create();
     dragging = false;
     prevX = 0;
     prevY = 0;

@@ -1013,11 +1013,23 @@ var __hasProp = {}.hasOwnProperty,
     __extends(Triangle, _super);
 
     function Triangle(vertices, material) {
-      var i, v, vec3, _i, _len;
+      var i, img, v, vec3, _i, _len,
+        _this = this;
       Triangle.__super__.constructor.apply(this, arguments);
       this.type = 'triangle';
       if (material instanceof Texture) {
-        this.texture = material;
+        if ({}.toString.call(material.uv_data) === '[object String]') {
+          this.color = new Color(0, 0, 0, 0);
+          img = new Image;
+          img.onload = function() {
+            material.uv_data = img;
+            _this.setTexture(material);
+            return img = null;
+          };
+          img.src = material.uv_data;
+        } else {
+          this.setTexture(material);
+        }
       } else if (material instanceof Color) {
         this.color = material;
       }
@@ -1039,6 +1051,13 @@ var __hasProp = {}.hasOwnProperty,
         return a.clone().cross(b).applyMatrix4(this.matrixWorld).normalize();
       };
     })();
+
+    Triangle.prototype.setTexture = function(texture) {
+      if (!texture instanceof Texture) {
+        return false;
+      }
+      return this.texture = texture;
+    };
 
     return Triangle;
 
@@ -1101,6 +1120,12 @@ var __hasProp = {}.hasOwnProperty,
         }
       }
     }
+
+    Face2.prototype.setTexture = function(texture, targetFace) {
+      if (!(texture instanceof Color || texture instanceof Texture)) {
+
+      }
+    };
 
     return Face2;
 

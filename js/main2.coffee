@@ -52,29 +52,6 @@ do (win = window, doc = window.document, exports = window) ->
         fov = 60
         aspect = w / h
 
-        cnt = 3
-        img = new Image()
-        logo = new Image()
-        photo = new Image()
-
-        img.onload = ->
-            textureImage = img
-            --cnt or create()
-
-        logo.onload = ->
-            logoImage = logo
-            --cnt or create()
-
-        photo.onload = ->
-            photoImage = photo
-            --cnt or create()
-
-        img.src = 'img/aXjiA.png'
-        logo.src = 'img/HTML5_Logo_512.png'
-        photo.src = 'img/photo.jpg'
-        #photo.src = 'http://jsrun.it/assets/y/r/A/V/yrAVl.jpg'
-        #logo.src = 'http://jsrun.it/assets/z/1/2/9/z129U.png'
-        #img.src = 'http://jsrun.it/assets/k/M/J/J/kMJJS.png'
 
         camera = new Camera 40, aspect, 0.1, 10000
         camera.position.x = 10
@@ -89,38 +66,22 @@ do (win = window, doc = window.document, exports = window) ->
         #renderer.lighting = false
         #renderer.wireframe = true
 
-        win.camera = camera
-
         create = ->
 
+            onJsdoit = document.domain is 'jsrun.it'
+
+            imgURL          = if not onJsdoit then 'img/aXjiA.png' else 'http://jsrun.it/assets/y/r/A/V/yrAVl.jpg'
+            imgHtml5LogoURL = if not onJsdoit then 'img/HTML5_Logo_512.png' else 'http://jsrun.it/assets/z/1/2/9/z129U.png'
+            imgPhotoURL     = if not onJsdoit then 'img/photo.jpg' else 'http://jsrun.it/assets/k/M/J/J/kMJJS.png'
+
             materials1 = [
-                photoImage
-                photoImage
-                photoImage
-                photoImage
-                photoImage
-                photoImage
-                photoImage
-                photoImage
-                photoImage
-                photoImage
-                photoImage
-                photoImage
+                imgPhotoURL, imgPhotoURL, imgPhotoURL, imgPhotoURL, imgPhotoURL, imgPhotoURL,
+                imgPhotoURL, imgPhotoURL, imgPhotoURL, imgPhotoURL, imgPhotoURL, imgPhotoURL
             ]
 
             materials2 = [
-                video
-                video
-                video
-                video
-                video
-                video
-                video
-                video
-                video
-                video
-                video
-                video
+                video, video, video, video, video, video,
+                video, video, video, video, video, video
             ]
 
             materials3 = [
@@ -154,7 +115,7 @@ do (win = window, doc = window.document, exports = window) ->
             cube3.position.x = 50
             cube3.position.y = 80
 
-            plate1 = new Plate 50, 50, 1, 1, textureImage, textureImage
+            plate1 = new Plate 50, 50, 1, 1, imgHtml5LogoURL, imgHtml5LogoURL
             plate1.position.set -50, 10, -300
 
             plate2 = new Plate 50, 50, 1, 1, video, video
@@ -223,6 +184,8 @@ do (win = window, doc = window.document, exports = window) ->
 
                 renderer.render scene, camera
                 requestAnimFrame _loop
+
+        create()
 
         dragging = false
         prevX = 0
