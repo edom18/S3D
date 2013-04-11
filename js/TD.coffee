@@ -1161,6 +1161,7 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
     class DirectionalLight extends Light
         constructor: (strength, @direction) ->
             super
+            @direction.normalize()
 
 # -------------------------------------------------------------------------------
 
