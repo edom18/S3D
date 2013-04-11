@@ -868,7 +868,7 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
             return ->
                 a.subVectors(@vertices[1], @vertices[0])
                 b.subVectors(@vertices[2], @vertices[0])
-
+                
                 return a.clone().cross(b).applyMatrix4(@matrixWorld).normalize()
 
         setTexture: (texture) ->
