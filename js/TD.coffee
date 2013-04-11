@@ -1300,21 +1300,19 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
 
                     img = null
 
-                    # スクリーン座標変換前の頂点データから変換後のベクトル成分を計算
-                    #_Ax = x2 - x1; _Ay = y2 - y1; _Az = z2 - z1
-                    #_Bx = x3 - x1; _By = y3 - y1; _Bz = z3 - z1
-
-                    _Ax = vertexList[4] - vertexList[0]; _Ay = vertexList[5] - vertexList[1]; _Az = z2 - z1
-                    _Bx = vertexList[8] - vertexList[0]; _By = vertexList[9] - vertexList[1]; _Bz = z3 - z1
-                    #continue if (_Ax * _By) - (_Ay * _Bx) < 0
-
                     # 裏面カリング
                     # 頂点を結ぶ順が時計回りの場合は「裏面」になり、その場合は描画をスキップ
                     # 裏面かどうかの判定は外積を利用する
                     # 判定は、p1, p2, p3の3点から、p1->p2, p1->p3のベクトルとの外積を利用する。
-                    continue if (_Ax * _By) - (_Ay * _Bx) < 0
+
+                    __Ax = vertexList[4] - vertexList[0]; __Ay = vertexList[5] - vertexList[1];
+                    __Bx = vertexList[8] - vertexList[0]; __By = vertexList[9] - vertexList[1];
+
+                    continue if (__Ax * __By) - (__Ay * __Bx) < 0
 
                     color = new Color 0, 0, 0, 1
+                    _Ax = x2 - x1; _Ay = y2 - y1; _Az = z2 - z1
+                    _Bx = x3 - x1; _By = y3 - y1; _Bz = z3 - z1
 
                     if v.uvData
                         img    = v.uvData
