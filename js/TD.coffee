@@ -1485,6 +1485,7 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
 
                         g.strokeStyle = g.fillStyle = (new Color(_r, _g, _b, _a)).toString()
                         g.fill()
+                        g.stroke()
 
                         if @wireframe
                             g.strokeStyle = wireframeColor
