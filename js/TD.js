@@ -4,7 +4,7 @@ var __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
 (function(win, doc, exports) {
-  var AmbientLight, Camera, Color, Cube, DEG_TO_RAD, DiffuseLight, DirectionalLight, Face, Face2, Light, Line, Matrix2, Matrix4, Object3D, PI, Particle, Plate, Quaternion, Renderer, Scene, Texture, Triangle, Vector3, Vertex, cos, makeRotatialQuaternion, max, min, sin, sqrt, tan;
+  var AmbientLight, Camera, Color, Cube, DEG_TO_RAD, DirectionalLight, Face, Face2, Light, Line, Matrix2, Matrix4, Object3D, PI, Particle, Plate, PointLight, Quaternion, Renderer, Scene, Texture, Triangle, Vector3, Vertex, cos, makeRotatialQuaternion, max, min, sin, sqrt, tan;
   max = Math.max, min = Math.min, sqrt = Math.sqrt, tan = Math.tan, cos = Math.cos, sin = Math.sin, PI = Math.PI;
   DEG_TO_RAD = PI / 180;
   win.Float32Array = win.Float32Array || win.Array;
@@ -1059,6 +1059,17 @@ var __hasProp = {}.hasOwnProperty,
       };
     })();
 
+    Triangle.prototype.getCenter = (function() {
+      var result;
+      result = new Vector3;
+      return function() {
+        var ret;
+        result.addVectors(this.vertices[1], this.vertices[0]);
+        ret = result.clone().add(this.vertices[2]);
+        return ret.multiplyScalar(1 / 3);
+      };
+    })();
+
     Triangle.prototype.setTexture = function(texture) {
       if (!texture instanceof Texture) {
         return false;
@@ -1379,17 +1390,17 @@ var __hasProp = {}.hasOwnProperty,
     return AmbientLight;
 
   })(Light);
-  DiffuseLight = (function(_super) {
+  PointLight = (function(_super) {
 
-    __extends(DiffuseLight, _super);
+    __extends(PointLight, _super);
 
-    function DiffuseLight(strength, attenuation, position) {
-      DiffuseLight.__super__.constructor.apply(this, arguments);
+    function PointLight(strength, attenuation, position) {
+      PointLight.__super__.constructor.apply(this, arguments);
       this.position = position;
       this.attenuation = attenuation;
     }
 
-    return DiffuseLight;
+    return PointLight;
 
   })(Light);
   DirectionalLight = (function(_super) {
@@ -1432,7 +1443,7 @@ var __hasProp = {}.hasOwnProperty,
       _results = [];
       for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
         l = _ref1[_j];
-        if (l instanceof DiffuseLight) {
+        if (l instanceof PointLight) {
           l.updateMatrix();
           _results.push(l.updateMatrixWorld());
         } else {
@@ -1482,7 +1493,7 @@ var __hasProp = {}.hasOwnProperty,
     };
 
     Renderer.prototype.drawMaterials = function(g, vertecies, lights, vw, vh) {
-      var Ax, Ay, Bx, By, L, N, a, b, c, ccv, cg, color, d, data, factor, fog, fogColor, fogEnd, fogStart, fogStrength, height, hvh, hvw, i, img, l, lighting, m, me, mi, mie, normal, pcv, pg, prevAlpha, prevCgAlpha, prevCgFillStyle, prevCgStrokeStyle, prevFillStyle, prevPgAlpha, prevPgFillStyle, prevPgStrokeStyle, prevStrokeStyle, strength, temp, uvList, v, vertexList, w1, w2, w3, width, wireframeColor, x1, x2, x3, y1, y2, y3, z, z1, z2, z3, _Ax, _Ay, _Az, _Bx, _By, _Bz, __Ax, __Ay, __Bx, __By, _a, _b, _g, _i, _j, _k, _len, _len1, _len2, _r, _results;
+      var Ax, Ay, Bx, By, L, N, a, b, c, ccv, cg, color, d, data, distance, factor, fog, fogColor, fogEnd, fogStart, fogStrength, height, hvh, hvw, i, img, l, lighting, m, me, mi, mie, normal, pcv, pg, prevAlpha, prevCgAlpha, prevCgFillStyle, prevCgStrokeStyle, prevFillStyle, prevPgAlpha, prevPgFillStyle, prevPgStrokeStyle, prevStrokeStyle, str, strength, uvList, v, vertexList, w1, w2, w3, width, wireframeColor, x1, x2, x3, y1, y2, y3, z, z1, z2, z3, _Ax, _Ay, _Az, _Bx, _By, _Bz, __Ax, __Ay, __Bx, __By, _a, _b, _g, _i, _j, _k, _len, _len1, _len2, _r, _results;
       fogColor = this.fogColor;
       fogStart = this.fogStart;
       fogEnd = this.fogEnd;
@@ -1600,8 +1611,19 @@ var __hasProp = {}.hasOwnProperty,
                   if (factor > 0) {
                     strength += l.strength * factor;
                   }
-                } else if (l instanceof DiffuseLight) {
-                  console.log;
+                } else if (l instanceof PointLight) {
+                  distance = l.position.clone().sub(v.center).norm();
+                  L = l.position.clone().normalize();
+                  N = normal;
+                  factor = N.dot(L);
+                  if (l.attenuation < distance) {
+                    str = 0;
+                  } else {
+                    str = (l.attenuation - distance) / l.attenuation;
+                  }
+                  if (factor > 0 && str > 0) {
+                    strength += l.strength * str * factor;
+                  }
                 }
               }
               color.a -= strength;
@@ -1655,14 +1677,18 @@ var __hasProp = {}.hasOwnProperty,
                   if (factor > 0) {
                     strength += l.strength * factor;
                   }
-                } else if (l instanceof DiffuseLight) {
+                } else if (l instanceof PointLight) {
+                  distance = l.position.clone().sub(v.center).norm();
                   L = l.position.clone().normalize();
-                  N = normal.clone();
+                  N = normal;
                   factor = N.dot(L);
-                  temp = (N.sub(l.position).norm() - l.attenuation) / l.attenuation;
-                  if (temp > 0 && factor > 0) {
-                    debugger;
-                    strength += l.strength * temp * factor;
+                  if (l.attenuation < distance) {
+                    str = 0;
+                  } else {
+                    str = (l.attenuation - distance) / l.attenuation;
+                  }
+                  if (factor > 0 && str > 0) {
+                    strength += l.strength * str * factor;
                   }
                 }
               }
@@ -1733,6 +1759,7 @@ var __hasProp = {}.hasOwnProperty,
             vertex.color = m.color;
           }
           vertex.normal = m.getNormal();
+          vertex.center = m.getCenter();
           results.push(vertex);
         } else if (m instanceof Line) {
           vertecies = m.getVerticesByProjectionMatrix(mat);
@@ -1852,5 +1879,5 @@ var __hasProp = {}.hasOwnProperty,
   exports.Quaternion = Quaternion;
   exports.AmbientLight = AmbientLight;
   exports.DirectionalLight = DirectionalLight;
-  exports.DiffuseLight = DiffuseLight;
+  exports.PointLight = PointLight;
 })(window, window.document, window.S3D || (window.S3D = {}));

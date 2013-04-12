@@ -2,7 +2,7 @@ do (win = window, doc = window.document, exports = window) ->
 
     #Import
     {atan2, random, tan, cos, sin, PI} = Math
-    {DiffuseLight, Face2, Object3D, Line, Color, AmbientLight, DirectionalLight, Plate, Face, Cube, Texture, Triangle, Matrix4, Camera, Renderer, Scene, Vector3, Particle} = window.S3D
+    {PointLight, Face2, Object3D, Line, Color, AmbientLight, DirectionalLight, Plate, Face, Cube, Texture, Triangle, Matrix4, Camera, Renderer, Scene, Vector3, Particle} = window.S3D
 
     $ = (selector) ->
         doc.querySelector selector
@@ -74,12 +74,12 @@ do (win = window, doc = window.document, exports = window) ->
                 container.add line
 
             ambLight = new AmbientLight(0.1)
-            dirLight = new DirectionalLight(0.8, (new Vector3(1, 0, 1)).normalize())
-            diffLight = new DiffuseLight(1.0, 50, (new Vector3(0, 0, 0)))
+            dirLight = new DirectionalLight(0.1, (new Vector3(1, 0, 1)).normalize())
+            pointLight = new PointLight(1.0, 200, (new Vector3(0, 100, 0)))
             
             scene.add ambLight
             scene.add dirLight
-            scene.add diffLight
+            scene.add pointLight
 
             r = 100
             for s in [60...360] by 60
@@ -104,18 +104,20 @@ do (win = window, doc = window.document, exports = window) ->
 
             angle = 0
 
-            dummy = new Particle(new Vector3, 5000)
+            dummy = new Particle(new Vector3(0, 0, 0), 5000)
             scene.add dummy
             do _loop = ->
                 angle = ((angle += 1) % 360)
-                dirLight.direction.x = cos(angle * DEG_TO_RAD)
-                dirLight.direction.y = sin(angle * DEG_TO_RAD)
+                #dirLight.direction.x = cos(angle * DEG_TO_RAD)
+                #dirLight.direction.y = sin(angle * DEG_TO_RAD)
                 dummy.position.x = cos(angle * DEG_TO_RAD) * 150
                 dummy.position.y = sin(angle * DEG_TO_RAD) * 150
-                dirLight.direction.z = 0
+                pointLight.position.y = sin(angle * DEG_TO_RAD) * 150
+                pointLight.position.x = cos(angle * DEG_TO_RAD) * 150
+                #dirLight.direction.z = 0
 
                 renderer.render scene, camera
-                #requestAnimFrame _loop
+                requestAnimFrame _loop
 
         create()
 
