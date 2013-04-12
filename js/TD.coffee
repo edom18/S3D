@@ -879,6 +879,15 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
                 
                 return a.clone().cross(b).applyMatrix4(@matrixWorld).normalize()
 
+        getCenter: do ->
+            result = new Vector3
+
+            return ->
+                result.addVectors(@vertices[1], @vertices[0])
+                ret = result.clone().add(@vertices[2])
+                return ret.multiplyScalar(1 / 3)
+
+
         setTexture: (texture) ->
             return false if not texture instanceof Texture
             @texture = texture
@@ -1160,7 +1169,7 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
 
 # -------------------------------------------------------------------------------
 
-    class DiffuseLight extends Light
+    class PointLight extends Light
         constructor: (strength, attenuation, position) ->
             super
             @position = position
@@ -1193,7 +1202,7 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
                 m.updateMatrixWorld()
 
             for l in @lights
-                if l instanceof DiffuseLight
+                if l instanceof PointLight
                     l.updateMatrix()
                     l.updateMatrixWorld()
 
@@ -1406,8 +1415,19 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
                                     factor = N.dot(L)
                                     strength += l.strength * factor if factor > 0
 
-                                else if l instanceof DiffuseLight
-                                    console.log
+                                else if l instanceof PointLight
+                                    distance = l.position.clone().sub(v.center).norm()
+                                    L = l.position.clone().normalize()
+                                    N = normal
+                                    factor = N.dot(L)
+
+                                    if l.attenuation < distance
+                                        str = 0
+                                    else
+                                        str = (l.attenuation - distance) / l.attenuation
+
+                                    if factor > 0 and str > 0
+                                        strength += l.strength * str * factor
                                     
                             color.a -= strength
 
@@ -1472,14 +1492,19 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
                                     factor = N.dot(L)
                                     strength += l.strength * factor if factor > 0
 
-                                else if l instanceof DiffuseLight
+                                else if l instanceof PointLight
+                                    distance = l.position.clone().sub(v.center).norm()
                                     L = l.position.clone().normalize()
-                                    N = normal.clone()
+                                    N = normal
                                     factor = N.dot(L)
-                                    temp = (N.sub(l.position).norm() - l.attenuation) / l.attenuation
-                                    if temp > 0 and factor > 0
-                                        debugger
-                                        strength += l.strength * temp * factor
+
+                                    if l.attenuation < distance
+                                        str = 0
+                                    else
+                                        str = (l.attenuation - distance) / l.attenuation
+
+                                    if factor > 0 and str > 0
+                                        strength += l.strength * str * factor
                                     
                             color.a -= strength
 
@@ -1547,6 +1572,7 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
                         vertex.color = m.color
 
                     vertex.normal = m.getNormal()
+                    vertex.center = m.getCenter()
                     results.push vertex
 
                 else if m instanceof Line
@@ -1675,6 +1701,6 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
     exports.Quaternion = Quaternion
     exports.AmbientLight = AmbientLight
     exports.DirectionalLight = DirectionalLight
-    exports.DiffuseLight = DiffuseLight
+    exports.PointLight = PointLight
 
     return
