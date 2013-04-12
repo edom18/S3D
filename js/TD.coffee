@@ -716,14 +716,22 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
             if updatedRotation or updatedTranslate or updatedScale
                 @matrix.multiplyMatrices @matrixTranslate, @matrixRotation
                 @matrix.multiply @matrixScale
+                @needUpdateMatrix = true
+
+            else
+                @needUpdateMatrix = false
 
             c.updateMatrix() for c in @children
 
         updateMatrixWorld: (force) ->
+
             if not @parent
                 @matrixWorld.copy @matrix
             else
-                @matrixWorld.multiplyMatrices @parent.matrixWorld, @matrix
+                if force or @parent.needUpdateMatrix
+                    @matrixWorld.multiplyMatrices @parent.matrixWorld, @matrix
+                else
+                    debugger
 
             c.updateMatrixWorld() for c in @children
 
@@ -1153,8 +1161,10 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
 # -------------------------------------------------------------------------------
 
     class DiffuseLight extends Light
-        constructor: (strength, vector) ->
+        constructor: (strength, attenuation, position) ->
             super
+            @position = position
+            @attenuation = attenuation
 
 # -------------------------------------------------------------------------------
 
@@ -1171,7 +1181,6 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
             @materials = []
 
         add: (material) ->
-
             if material instanceof Light
                 @lights.push material
 
@@ -1182,6 +1191,11 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
             for m in @materials
                 m.updateMatrix()
                 m.updateMatrixWorld()
+
+            for l in @lights
+                if l instanceof DiffuseLight
+                    l.updateMatrix()
+                    l.updateMatrixWorld()
 
 # -------------------------------------------------------------------------------
 
@@ -1459,7 +1473,13 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
                                     strength += l.strength * factor if factor > 0
 
                                 else if l instanceof DiffuseLight
-                                    console.log
+                                    L = l.position.clone().normalize()
+                                    N = normal.clone()
+                                    factor = N.dot(L)
+                                    temp = (N.sub(l.position).norm() - l.attenuation) / l.attenuation
+                                    if temp > 0 and factor > 0
+                                        debugger
+                                        strength += l.strength * temp * factor
                                     
                             color.a -= strength
 
@@ -1655,5 +1675,6 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
     exports.Quaternion = Quaternion
     exports.AmbientLight = AmbientLight
     exports.DirectionalLight = DirectionalLight
+    exports.DiffuseLight = DiffuseLight
 
     return
