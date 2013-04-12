@@ -840,6 +840,9 @@ var __hasProp = {}.hasOwnProperty,
       if (updatedRotation || updatedTranslate || updatedScale) {
         this.matrix.multiplyMatrices(this.matrixTranslate, this.matrixRotation);
         this.matrix.multiply(this.matrixScale);
+        this.needUpdateMatrix = true;
+      } else {
+        this.needUpdateMatrix = false;
       }
       _ref = this.children;
       _results = [];
@@ -855,7 +858,11 @@ var __hasProp = {}.hasOwnProperty,
       if (!this.parent) {
         this.matrixWorld.copy(this.matrix);
       } else {
-        this.matrixWorld.multiplyMatrices(this.parent.matrixWorld, this.matrix);
+        if (force || this.parent.needUpdateMatrix) {
+          this.matrixWorld.multiplyMatrices(this.parent.matrixWorld, this.matrix);
+        } else {
+          debugger;
+        }
       }
       _ref = this.children;
       _results = [];
@@ -1376,8 +1383,10 @@ var __hasProp = {}.hasOwnProperty,
 
     __extends(DiffuseLight, _super);
 
-    function DiffuseLight(strength, vector) {
+    function DiffuseLight(strength, attenuation, position) {
       DiffuseLight.__super__.constructor.apply(this, arguments);
+      this.position = position;
+      this.attenuation = attenuation;
     }
 
     return DiffuseLight;
@@ -1412,13 +1421,23 @@ var __hasProp = {}.hasOwnProperty,
     };
 
     Scene.prototype.update = function() {
-      var m, _i, _len, _ref, _results;
+      var l, m, _i, _j, _len, _len1, _ref, _ref1, _results;
       _ref = this.materials;
-      _results = [];
       for (_i = 0, _len = _ref.length; _i < _len; _i++) {
         m = _ref[_i];
         m.updateMatrix();
-        _results.push(m.updateMatrixWorld());
+        m.updateMatrixWorld();
+      }
+      _ref1 = this.lights;
+      _results = [];
+      for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
+        l = _ref1[_j];
+        if (l instanceof DiffuseLight) {
+          l.updateMatrix();
+          _results.push(l.updateMatrixWorld());
+        } else {
+          _results.push(void 0);
+        }
       }
       return _results;
     };
@@ -1463,7 +1482,7 @@ var __hasProp = {}.hasOwnProperty,
     };
 
     Renderer.prototype.drawMaterials = function(g, vertecies, lights, vw, vh) {
-      var Ax, Ay, Bx, By, L, N, a, b, c, ccv, cg, color, d, data, factor, fog, fogColor, fogEnd, fogStart, fogStrength, height, hvh, hvw, i, img, l, lighting, m, me, mi, mie, normal, pcv, pg, prevAlpha, prevCgAlpha, prevCgFillStyle, prevCgStrokeStyle, prevFillStyle, prevPgAlpha, prevPgFillStyle, prevPgStrokeStyle, prevStrokeStyle, strength, uvList, v, vertexList, w1, w2, w3, width, wireframeColor, x1, x2, x3, y1, y2, y3, z, z1, z2, z3, _Ax, _Ay, _Az, _Bx, _By, _Bz, __Ax, __Ay, __Bx, __By, _a, _b, _g, _i, _j, _k, _len, _len1, _len2, _r, _results;
+      var Ax, Ay, Bx, By, L, N, a, b, c, ccv, cg, color, d, data, factor, fog, fogColor, fogEnd, fogStart, fogStrength, height, hvh, hvw, i, img, l, lighting, m, me, mi, mie, normal, pcv, pg, prevAlpha, prevCgAlpha, prevCgFillStyle, prevCgStrokeStyle, prevFillStyle, prevPgAlpha, prevPgFillStyle, prevPgStrokeStyle, prevStrokeStyle, strength, temp, uvList, v, vertexList, w1, w2, w3, width, wireframeColor, x1, x2, x3, y1, y2, y3, z, z1, z2, z3, _Ax, _Ay, _Az, _Bx, _By, _Bz, __Ax, __Ay, __Bx, __By, _a, _b, _g, _i, _j, _k, _len, _len1, _len2, _r, _results;
       fogColor = this.fogColor;
       fogStart = this.fogStart;
       fogEnd = this.fogEnd;
@@ -1576,9 +1595,13 @@ var __hasProp = {}.hasOwnProperty,
                   strength += l.strength;
                 } else if (l instanceof DirectionalLight) {
                   L = l.direction;
-                  N = normal.clone().add(L);
+                  N = normal;
                   factor = N.dot(L);
-                  strength += l.strength * factor;
+                  if (factor > 0) {
+                    strength += l.strength * factor;
+                  }
+                } else if (l instanceof DiffuseLight) {
+                  console.log;
                 }
               }
               color.a -= strength;
@@ -1629,10 +1652,18 @@ var __hasProp = {}.hasOwnProperty,
                   L = l.direction;
                   N = normal;
                   factor = N.dot(L);
-                  if (factor < 0) {
-                    factor = 0;
+                  if (factor > 0) {
+                    strength += l.strength * factor;
                   }
-                  strength += l.strength * factor;
+                } else if (l instanceof DiffuseLight) {
+                  L = l.position.clone().normalize();
+                  N = normal.clone();
+                  factor = N.dot(L);
+                  temp = (N.sub(l.position).norm() - l.attenuation) / l.attenuation;
+                  if (temp > 0 && factor > 0) {
+                    debugger;
+                    strength += l.strength * temp * factor;
+                  }
                 }
               }
               color.a -= strength;
@@ -1821,4 +1852,5 @@ var __hasProp = {}.hasOwnProperty,
   exports.Quaternion = Quaternion;
   exports.AmbientLight = AmbientLight;
   exports.DirectionalLight = DirectionalLight;
+  exports.DiffuseLight = DiffuseLight;
 })(window, window.document, window.S3D || (window.S3D = {}));
