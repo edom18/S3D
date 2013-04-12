@@ -1576,9 +1576,13 @@ var __hasProp = {}.hasOwnProperty,
                   strength += l.strength;
                 } else if (l instanceof DirectionalLight) {
                   L = l.direction;
-                  N = normal.clone().add(L);
+                  N = normal;
                   factor = N.dot(L);
-                  strength += l.strength * factor;
+                  if (factor > 0) {
+                    strength += l.strength * factor;
+                  }
+                } else if (l instanceof DiffuseLight) {
+                  console.log;
                 }
               }
               color.a -= strength;
@@ -1629,10 +1633,11 @@ var __hasProp = {}.hasOwnProperty,
                   L = l.direction;
                   N = normal;
                   factor = N.dot(L);
-                  if (factor < 0) {
-                    factor = 0;
+                  if (factor > 0) {
+                    strength += l.strength * factor;
                   }
-                  strength += l.strength * factor;
+                } else if (l instanceof DiffuseLight) {
+                  console.log;
                 }
               }
               color.a -= strength;
