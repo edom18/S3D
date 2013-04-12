@@ -1388,9 +1388,12 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
 
                                 else if l instanceof DirectionalLight
                                     L = l.direction
-                                    N = normal.clone().add(L)
+                                    N = normal
                                     factor = N.dot(L)
-                                    strength += l.strength * factor
+                                    strength += l.strength * factor if factor > 0
+
+                                else if l instanceof DiffuseLight
+                                    console.log
                                     
                             color.a -= strength
 
@@ -1451,11 +1454,12 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
 
                                 else if l instanceof DirectionalLight
                                     L = l.direction
-                                    #N = normal.clone().add(L)
                                     N = normal
                                     factor = N.dot(L)
-                                    factor = 0 if factor < 0
-                                    strength += l.strength * factor
+                                    strength += l.strength * factor if factor > 0
+
+                                else if l instanceof DiffuseLight
+                                    console.log
                                     
                             color.a -= strength
 
