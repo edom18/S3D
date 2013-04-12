@@ -114,7 +114,6 @@ do (win = window, doc = window.document, exports = window) ->
                 dummy.position.y = sin(angle * DEG_TO_RAD) * 150
                 pointLight.position.y = sin(angle * DEG_TO_RAD) * 150
                 pointLight.position.x = cos(angle * DEG_TO_RAD) * 150
-                #dirLight.direction.z = 0
 
                 renderer.render scene, camera
                 requestAnimFrame _loop
