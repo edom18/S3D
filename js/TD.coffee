@@ -731,8 +731,6 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
             else
                 if force or @parent.needUpdateMatrix
                     @matrixWorld.multiplyMatrices @parent.matrixWorld, @matrix
-                else
-                    debugger
 
             c.updateMatrixWorld() for c in @children
             return
