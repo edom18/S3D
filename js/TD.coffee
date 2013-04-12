@@ -722,6 +722,7 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
                 @needUpdateMatrix = false
 
             c.updateMatrix() for c in @children
+            return
 
         updateMatrixWorld: (force) ->
 
@@ -734,6 +735,7 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
                     debugger
 
             c.updateMatrixWorld() for c in @children
+            return
 
         getVerticesByProjectionMatrix: (m) ->
 
