@@ -1333,9 +1333,38 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
 
                     continue if (__Ax * __By) - (__Ay * __Bx) < 0
 
-                    color = new Color 0, 0, 0, 1
+                    lightingColor = new Color 0, 0, 0, 1
                     _Ax = x2 - x1; _Ay = y2 - y1; _Az = z2 - z1
                     _Bx = x3 - x1; _By = y3 - y1; _Bz = z3 - z1
+
+                    if lighting
+                        strength = 0
+
+                        for l in lights
+                            if l instanceof AmbientLight
+                                strength += l.strength
+
+                            else if l instanceof DirectionalLight
+                                L = l.direction
+                                N = normal
+                                factor = N.dot(L)
+                                strength += l.strength * factor if factor > 0
+
+                            else if l instanceof PointLight
+                                distance = l.position.clone().sub(v.center).norm()
+                                L = l.position.clone().normalize()
+                                N = normal
+                                factor = N.dot(L)
+
+                                if l.attenuation < distance
+                                    str = 0
+                                else
+                                    str = (l.attenuation - distance) / l.attenuation
+
+                                if factor > 0 and str > 0
+                                    strength += l.strength * str * factor
+                                
+                        lightingColor.a -= strength
 
                     if v.uvData
                         img    = v.uvData
@@ -1402,38 +1431,10 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
 
                         pg.drawImage(img, 0, 0)
 
-                        if lighting
-                            strength = 0
 
-                            for l in lights
-                                if l instanceof AmbientLight
-                                    strength += l.strength
-
-                                else if l instanceof DirectionalLight
-                                    L = l.direction
-                                    N = normal
-                                    factor = N.dot(L)
-                                    strength += l.strength * factor if factor > 0
-
-                                else if l instanceof PointLight
-                                    distance = l.position.clone().sub(v.center).norm()
-                                    L = l.position.clone().normalize()
-                                    N = normal
-                                    factor = N.dot(L)
-
-                                    if l.attenuation < distance
-                                        str = 0
-                                    else
-                                        str = (l.attenuation - distance) / l.attenuation
-
-                                    if factor > 0 and str > 0
-                                        strength += l.strength * str * factor
-                                    
-                            color.a -= strength
-
-                            if color.a > 0
-                                cg.fillStyle = color.toString()
-                                cg.fillRect 0, 0, 1, 1
+                        if lightingColor.a > 0
+                            cg.fillStyle = lightingColor.toString()
+                            cg.fillRect 0, 0, 1, 1
 
                         if fog
                             fogStrength = 1 - ((fogEnd - z) / (fogEnd - fogStart))
@@ -1479,38 +1480,9 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
                         cg.fillStyle = v.color.toString()
                         cg.fillRect 0, 0, 1, 1
 
-                        if lighting
-                            strength = 0
-
-                            for l in lights
-                                if l instanceof AmbientLight
-                                    strength += l.strength
-
-                                else if l instanceof DirectionalLight
-                                    L = l.direction
-                                    N = normal
-                                    factor = N.dot(L)
-                                    strength += l.strength * factor if factor > 0
-
-                                else if l instanceof PointLight
-                                    distance = l.position.clone().sub(v.center).norm()
-                                    L = l.position.clone().normalize()
-                                    N = normal
-                                    factor = N.dot(L)
-
-                                    if l.attenuation < distance
-                                        str = 0
-                                    else
-                                        str = (l.attenuation - distance) / l.attenuation
-
-                                    if factor > 0 and str > 0
-                                        strength += l.strength * str * factor
-                                    
-                            color.a -= strength
-
-                            if color.a > 0
-                                cg.fillStyle = color.toString()
-                                cg.fillRect 0, 0, 1, 1
+                        if lightingColor.a > 0
+                            cg.fillStyle = lightingColor.toString()
+                            cg.fillRect 0, 0, 1, 1
 
                         if fog
                             fogStrength = 1 - ((fogEnd - z) / (fogEnd - fogStart))
