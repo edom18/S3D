@@ -1486,10 +1486,11 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
 
                         if fog
                             fogStrength = 1 - ((fogEnd - z) / (fogEnd - fogStart))
-                            fogStrength = 0 if fogStrength < 0
-                            cg.globalAlpha = fogStrength
-                            cg.fillStyle   = fogColor
-                            cg.fillRect 0, 0, 1, 1
+
+                            if fogStrength > 0
+                                cg.globalAlpha = fogStrength
+                                cg.fillStyle   = fogColor
+                                cg.fillRect 0, 0, 1, 1
 
                         data = cg.getImageData(0, 0, 1, 1).data
 
