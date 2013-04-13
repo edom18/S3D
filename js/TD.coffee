@@ -658,24 +658,22 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
 
         updateScale: do ->
             sm = new Matrix4
-            previous = null
 
             return ->
-                return false if previous and @scale.equal previous
+                return false if @prevScale and @scale.equal(@prevScale)
 
-                previous = @scale.clone()
+                @prevScale = @scale.clone()
                 @matrixScale = sm.clone().scale(@scale)
 
                 return true
 
         updateTranslate: do ->
             tm = new Matrix4
-            previous = null
 
             return ->
-                return false if previous and @position.equal previous
+                return false if @prevPosition and @position.equal(@prevPosition)
 
-                previous = @position.clone()
+                @prevPosition = @position.clone()
                 @matrixTranslate = tm.clone().translate(@position)
 
                 return true
@@ -684,11 +682,10 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
             rmx = new Matrix4
             rmy = new Matrix4
             rmz = new Matrix4
-            previous = null
 
             return ->
 
-                return false if previous and @rotation.equal previous
+                return false if @prevRotation and @rotation.equal(@prevRotation)
 
                 x = @rotation.x * DEG_TO_RAD
                 y = @rotation.y * DEG_TO_RAD
@@ -702,7 +699,7 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
                 tmp.multiplyMatrices rmx, rmy
                 tmp.multiply rmz
 
-                previous = @rotation.clone()
+                @prevRotation = @rotation.clone()
                 @matrixRotation = tmp
 
                 return true
@@ -729,8 +726,11 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
             if not @parent
                 @matrixWorld.copy @matrix
             else
-                if force or @parent.needUpdateMatrix
+                if force or @parent.needUpdateMatrix or @needUpdateMatrix or @parent.needUpdateMatrixWorld
                     @matrixWorld.multiplyMatrices @parent.matrixWorld, @matrix
+                    @needUpdateMatrixWorld = true
+                else
+                    @needUpdateMatrixWorld = false
 
             c.updateMatrixWorld() for c in @children
             return
