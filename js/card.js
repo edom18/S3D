@@ -49,7 +49,7 @@
     win.camera = camera;
     create = function() {
       var ambLight, angle, container, dirLight, i, line, line1, line2, line3, plate1, size, x, z, _i, _j, _loop, _ref1, _ref2;
-      plate1 = new Plate(500, 339, 5, 5, photoImage, photoImage);
+      plate1 = new Plate(500, 339, 10, 10, photoImage, photoImage);
       plate1.rotation.z = 45;
       plate1.position.set(0, 40, 0);
       plate1.scale.set(0.1, 0.1, 0.1);
@@ -91,7 +91,7 @@
     prevX = 0;
     prevY = 0;
     win.addEventListener('mousewheel', function(e) {
-      camera.position.z += e.wheelDelta / 100;
+      camera.position.z += e.wheelDelta / 10;
       renderer.render(scene, camera);
       return e.preventDefault();
     }, false);
@@ -124,8 +124,8 @@
       }
       pageX = isTouch ? e.touches[0].pageX : e.pageX;
       pageY = isTouch ? e.touches[0].pageY : e.pageY;
-      moveX -= prevX - pageX;
-      moveY += prevY - pageY;
+      moveX -= (prevX - pageX) * 3;
+      moveY += (prevY - pageY) * 3;
       camera.position.y = moveY;
       camera.position.x = moveX;
       prevX = pageX;

@@ -47,7 +47,7 @@ do (win = window, doc = window.document, exports = window) ->
         camera.lookAtLock = true
         scene    = new Scene
         renderer = new Renderer cv, '#111'
-        renderer.fogEnd = 10000
+        renderer.fogEnd = 1000
         #renderer.fog      = false
         #renderer.lighting = false
         #renderer.wireframe = true

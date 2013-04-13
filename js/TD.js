@@ -779,42 +779,39 @@ var __hasProp = {}.hasOwnProperty,
     }
 
     Object3D.prototype.updateScale = (function() {
-      var previous, sm;
+      var sm;
       sm = new Matrix4;
-      previous = null;
       return function() {
-        if (previous && this.scale.equal(previous)) {
+        if (this.prevScale && this.scale.equal(this.prevScale)) {
           return false;
         }
-        previous = this.scale.clone();
+        this.prevScale = this.scale.clone();
         this.matrixScale = sm.clone().scale(this.scale);
         return true;
       };
     })();
 
     Object3D.prototype.updateTranslate = (function() {
-      var previous, tm;
+      var tm;
       tm = new Matrix4;
-      previous = null;
       return function() {
-        if (previous && this.position.equal(previous)) {
+        if (this.prevPosition && this.position.equal(this.prevPosition)) {
           return false;
         }
-        previous = this.position.clone();
+        this.prevPosition = this.position.clone();
         this.matrixTranslate = tm.clone().translate(this.position);
         return true;
       };
     })();
 
     Object3D.prototype.updateRotation = (function() {
-      var previous, rmx, rmy, rmz;
+      var rmx, rmy, rmz;
       rmx = new Matrix4;
       rmy = new Matrix4;
       rmz = new Matrix4;
-      previous = null;
       return function() {
         var tmp, x, y, z;
-        if (previous && this.rotation.equal(previous)) {
+        if (this.prevRotation && this.rotation.equal(this.prevRotation)) {
           return false;
         }
         x = this.rotation.x * DEG_TO_RAD;
@@ -826,7 +823,7 @@ var __hasProp = {}.hasOwnProperty,
         rmz.rotationZ(z);
         tmp.multiplyMatrices(rmx, rmy);
         tmp.multiply(rmz);
-        previous = this.rotation.clone();
+        this.prevRotation = this.rotation.clone();
         this.matrixRotation = tmp;
         return true;
       };
@@ -856,8 +853,11 @@ var __hasProp = {}.hasOwnProperty,
       if (!this.parent) {
         this.matrixWorld.copy(this.matrix);
       } else {
-        if (force || this.parent.needUpdateMatrix) {
+        if (force || this.parent.needUpdateMatrix || this.needUpdateMatrix || this.parent.needUpdateMatrixWorld) {
           this.matrixWorld.multiplyMatrices(this.parent.matrixWorld, this.matrix);
+          this.needUpdateMatrixWorld = true;
+        } else {
+          this.needUpdateMatrixWorld = false;
         }
       }
       _ref = this.children;
@@ -1487,7 +1487,7 @@ var __hasProp = {}.hasOwnProperty,
     };
 
     Renderer.prototype.drawMaterials = function(g, vertecies, lights, vw, vh) {
-      var Ax, Ay, Bx, By, L, N, a, b, c, ccv, cg, color, d, data, distance, factor, fog, fogColor, fogEnd, fogStart, fogStrength, height, hvh, hvw, i, img, l, lighting, m, me, mi, mie, normal, pcv, pg, prevAlpha, prevCgAlpha, prevCgFillStyle, prevCgStrokeStyle, prevFillStyle, prevPgAlpha, prevPgFillStyle, prevPgStrokeStyle, prevStrokeStyle, str, strength, uvList, v, vertexList, w1, w2, w3, width, wireframeColor, x1, x2, x3, y1, y2, y3, z, z1, z2, z3, _Ax, _Ay, _Az, _Bx, _By, _Bz, __Ax, __Ay, __Bx, __By, _a, _b, _g, _i, _j, _k, _len, _len1, _len2, _r, _results;
+      var Ax, Ay, Bx, By, L, N, a, b, c, ccv, cg, d, data, distance, factor, fog, fogColor, fogEnd, fogStart, fogStrength, height, hvh, hvw, i, img, l, lighting, lightingColor, m, me, mi, mie, normal, pcv, pg, prevAlpha, prevCgAlpha, prevCgFillStyle, prevCgStrokeStyle, prevFillStyle, prevPgAlpha, prevPgFillStyle, prevPgStrokeStyle, prevStrokeStyle, str, strength, uvList, v, vertexList, w1, w2, w3, width, wireframeColor, x1, x2, x3, y1, y2, y3, z, z1, z2, z3, _Ax, _Ay, _Az, _Bx, _By, _Bz, __Ax, __Ay, __Bx, __By, _a, _b, _g, _i, _j, _len, _len1, _r, _results;
       fogColor = this.fogColor;
       fogStart = this.fogStart;
       fogEnd = this.fogEnd;
@@ -1563,13 +1563,43 @@ var __hasProp = {}.hasOwnProperty,
           if ((__Ax * __By) - (__Ay * __Bx) < 0) {
             continue;
           }
-          color = new Color(0, 0, 0, 1);
+          lightingColor = new Color(0, 0, 0, 1);
           _Ax = x2 - x1;
           _Ay = y2 - y1;
           _Az = z2 - z1;
           _Bx = x3 - x1;
           _By = y3 - y1;
           _Bz = z3 - z1;
+          if (lighting) {
+            strength = 0;
+            for (_j = 0, _len1 = lights.length; _j < _len1; _j++) {
+              l = lights[_j];
+              if (l instanceof AmbientLight) {
+                strength += l.strength;
+              } else if (l instanceof DirectionalLight) {
+                L = l.direction;
+                N = normal;
+                factor = N.dot(L);
+                if (factor > 0) {
+                  strength += l.strength * factor;
+                }
+              } else if (l instanceof PointLight) {
+                distance = l.position.clone().sub(v.center).norm();
+                L = l.position.clone().normalize();
+                N = normal;
+                factor = N.dot(L);
+                if (l.attenuation < distance) {
+                  str = 0;
+                } else {
+                  str = (l.attenuation - distance) / l.attenuation;
+                }
+                if (factor > 0 && str > 0) {
+                  strength += l.strength * str * factor;
+                }
+              }
+            }
+            lightingColor.a -= strength;
+          }
           if (v.uvData) {
             img = v.uvData;
             uvList = v.uvList;
@@ -1592,39 +1622,9 @@ var __hasProp = {}.hasOwnProperty,
             d = mie[1] * _Ay + mie[3] * _By;
             g.save();
             pg.drawImage(img, 0, 0);
-            if (lighting) {
-              strength = 0;
-              for (_j = 0, _len1 = lights.length; _j < _len1; _j++) {
-                l = lights[_j];
-                if (l instanceof AmbientLight) {
-                  strength += l.strength;
-                } else if (l instanceof DirectionalLight) {
-                  L = l.direction;
-                  N = normal;
-                  factor = N.dot(L);
-                  if (factor > 0) {
-                    strength += l.strength * factor;
-                  }
-                } else if (l instanceof PointLight) {
-                  distance = l.position.clone().sub(v.center).norm();
-                  L = l.position.clone().normalize();
-                  N = normal;
-                  factor = N.dot(L);
-                  if (l.attenuation < distance) {
-                    str = 0;
-                  } else {
-                    str = (l.attenuation - distance) / l.attenuation;
-                  }
-                  if (factor > 0 && str > 0) {
-                    strength += l.strength * str * factor;
-                  }
-                }
-              }
-              color.a -= strength;
-              if (color.a > 0) {
-                cg.fillStyle = color.toString();
-                cg.fillRect(0, 0, 1, 1);
-              }
+            if (lightingColor.a > 0) {
+              cg.fillStyle = lightingColor.toString();
+              cg.fillRect(0, 0, 1, 1);
             }
             if (fog) {
               fogStrength = 1 - ((fogEnd - z) / (fogEnd - fogStart));
@@ -1658,48 +1658,17 @@ var __hasProp = {}.hasOwnProperty,
           } else if (v.color) {
             cg.fillStyle = v.color.toString();
             cg.fillRect(0, 0, 1, 1);
-            if (lighting) {
-              strength = 0;
-              for (_k = 0, _len2 = lights.length; _k < _len2; _k++) {
-                l = lights[_k];
-                if (l instanceof AmbientLight) {
-                  strength += l.strength;
-                } else if (l instanceof DirectionalLight) {
-                  L = l.direction;
-                  N = normal;
-                  factor = N.dot(L);
-                  if (factor > 0) {
-                    strength += l.strength * factor;
-                  }
-                } else if (l instanceof PointLight) {
-                  distance = l.position.clone().sub(v.center).norm();
-                  L = l.position.clone().normalize();
-                  N = normal;
-                  factor = N.dot(L);
-                  if (l.attenuation < distance) {
-                    str = 0;
-                  } else {
-                    str = (l.attenuation - distance) / l.attenuation;
-                  }
-                  if (factor > 0 && str > 0) {
-                    strength += l.strength * str * factor;
-                  }
-                }
-              }
-              color.a -= strength;
-              if (color.a > 0) {
-                cg.fillStyle = color.toString();
-                cg.fillRect(0, 0, 1, 1);
-              }
+            if (lightingColor.a > 0) {
+              cg.fillStyle = lightingColor.toString();
+              cg.fillRect(0, 0, 1, 1);
             }
             if (fog) {
               fogStrength = 1 - ((fogEnd - z) / (fogEnd - fogStart));
-              if (fogStrength < 0) {
-                fogStrength = 0;
+              if (fogStrength > 0) {
+                cg.globalAlpha = fogStrength;
+                cg.fillStyle = fogColor;
+                cg.fillRect(0, 0, 1, 1);
               }
-              cg.globalAlpha = fogStrength;
-              cg.fillStyle = fogColor;
-              cg.fillRect(0, 0, 1, 1);
             }
             data = cg.getImageData(0, 0, 1, 1).data;
             _r = data[0];

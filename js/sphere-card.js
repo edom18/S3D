@@ -40,7 +40,7 @@
     camera.lookAtLock = true;
     scene = new Scene;
     renderer = new Renderer(cv, '#111');
-    renderer.fogEnd = 10000;
+    renderer.fogEnd = 1000;
     create = function() {
       var ambLight, angle, container, dirLight, dummy, i, line, line1, line2, line3, plate, pointLight, r, s, size, t, x, y, z, _i, _j, _k, _l, _loop, _ref1, _ref2, _s, _t;
       size = 200;

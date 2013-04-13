@@ -193,7 +193,7 @@ do (win = window, doc = window.document, exports = window) ->
 
         # Events
         win.addEventListener 'mousewheel', (e) ->
-            camera.position.z += (e.wheelDelta / 100)
+            camera.position.z += (e.wheelDelta / 10)
             renderer.render scene, camera
             e.preventDefault()
         , false
@@ -229,8 +229,8 @@ do (win = window, doc = window.document, exports = window) ->
             pageX = if isTouch then e.touches[0].pageX else e.pageX
             pageY = if isTouch then e.touches[0].pageY else e.pageY
 
-            moveX -= (prevX - pageX)# / 100
-            moveY += (prevY - pageY)# / 100
+            moveX -= (prevX - pageX) * 3
+            moveY += (prevY - pageY) * 3
 
             camera.position.y = moveY
             camera.position.x = moveX

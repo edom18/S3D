@@ -63,7 +63,7 @@ do (win = window, doc = window.document, exports = window) ->
         win.camera = camera
 
         create = ->
-            plate1 = new Plate 500, 339, 5, 5, photoImage, photoImage
+            plate1 = new Plate 500, 339, 10, 10, photoImage, photoImage
             #plate1 = new Plate 500, 339, 10, 10, new Color(255, 0, 0, 1), new Color(255, 0, 0, 1), new Color(0, 0, 255, 1), new Color(0, 0, 255, 1)
             plate1.rotation.z = 45
             plate1.position.set 0, 40, 0
@@ -116,7 +116,7 @@ do (win = window, doc = window.document, exports = window) ->
 
         # Events
         win.addEventListener 'mousewheel', (e) ->
-            camera.position.z += (e.wheelDelta / 100)
+            camera.position.z += (e.wheelDelta / 10)
             renderer.render scene, camera
             e.preventDefault()
         , false
@@ -152,8 +152,8 @@ do (win = window, doc = window.document, exports = window) ->
             pageX = if isTouch then e.touches[0].pageX else e.pageX
             pageY = if isTouch then e.touches[0].pageY else e.pageY
 
-            moveX -= (prevX - pageX)# / 100
-            moveY += (prevY - pageY)# / 100
+            moveX -= (prevX - pageX) * 3
+            moveY += (prevY - pageY) * 3
 
             camera.position.y = moveY
             camera.position.x = moveX
