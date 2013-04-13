@@ -95,7 +95,6 @@ do (win = window, doc = window.document, exports = window) ->
                     plate.rotation.z = t
                     plate.rotation.x = s
                     scene.add plate
-                    scene.add new Particle(new Vector3(x, y, z), 500)
 
             scene.add container
             scene.add line1
@@ -108,8 +107,6 @@ do (win = window, doc = window.document, exports = window) ->
             scene.add dummy
             do _loop = ->
                 angle = ((angle += 1) % 360)
-                #dirLight.direction.x = cos(angle * DEG_TO_RAD)
-                #dirLight.direction.y = sin(angle * DEG_TO_RAD)
                 dummy.position.x = cos(angle * DEG_TO_RAD) * 150
                 dummy.position.y = sin(angle * DEG_TO_RAD) * 150
                 pointLight.position.y = sin(angle * DEG_TO_RAD) * 150

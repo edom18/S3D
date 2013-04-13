@@ -833,7 +833,7 @@ var __hasProp = {}.hasOwnProperty,
     })();
 
     Object3D.prototype.updateMatrix = function() {
-      var c, updatedRotation, updatedScale, updatedTranslate, _i, _len, _ref, _results;
+      var c, updatedRotation, updatedScale, updatedTranslate, _i, _len, _ref;
       updatedScale = this.updateScale();
       updatedRotation = this.updateRotation();
       updatedTranslate = this.updateTranslate();
@@ -845,32 +845,26 @@ var __hasProp = {}.hasOwnProperty,
         this.needUpdateMatrix = false;
       }
       _ref = this.children;
-      _results = [];
       for (_i = 0, _len = _ref.length; _i < _len; _i++) {
         c = _ref[_i];
-        _results.push(c.updateMatrix());
+        c.updateMatrix();
       }
-      return _results;
     };
 
     Object3D.prototype.updateMatrixWorld = function(force) {
-      var c, _i, _len, _ref, _results;
+      var c, _i, _len, _ref;
       if (!this.parent) {
         this.matrixWorld.copy(this.matrix);
       } else {
         if (force || this.parent.needUpdateMatrix) {
           this.matrixWorld.multiplyMatrices(this.parent.matrixWorld, this.matrix);
-        } else {
-          debugger;
         }
       }
       _ref = this.children;
-      _results = [];
       for (_i = 0, _len = _ref.length; _i < _len; _i++) {
         c = _ref[_i];
-        _results.push(c.updateMatrixWorld());
+        c.updateMatrixWorld();
       }
-      return _results;
     };
 
     Object3D.prototype.getVerticesByProjectionMatrix = function(m) {

@@ -79,7 +79,6 @@
           plate.rotation.z = t;
           plate.rotation.x = s;
           scene.add(plate);
-          scene.add(new Particle(new Vector3(x, y, z), 500));
         }
       }
       scene.add(container);
