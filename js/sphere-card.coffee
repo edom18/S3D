@@ -113,7 +113,8 @@ do (win = window, doc = window.document, exports = window) ->
                 pointLight.position.x = cos(angle * DEG_TO_RAD) * 150
 
                 renderer.render scene, camera
-                requestAnimFrame _loop
+                setTimeout _loop, 16
+                #requestAnimFrame _loop
 
         create()
 
