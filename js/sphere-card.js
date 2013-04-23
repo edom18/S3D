@@ -95,7 +95,7 @@
         pointLight.position.y = sin(angle * DEG_TO_RAD) * 150;
         pointLight.position.x = cos(angle * DEG_TO_RAD) * 150;
         renderer.render(scene, camera);
-        return requestAnimFrame(_loop);
+        return setTimeout(_loop, 16);
       })();
     };
     create();
