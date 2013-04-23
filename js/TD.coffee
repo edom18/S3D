@@ -658,24 +658,22 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
 
         updateScale: do ->
             sm = new Matrix4
-            previous = null
 
             return ->
-                return false if previous and @scale.equal previous
+                return false if @prevScale and @scale.equal(@prevScale)
 
-                previous = @scale.clone()
+                @prevScale = @scale.clone()
                 @matrixScale = sm.clone().scale(@scale)
 
                 return true
 
         updateTranslate: do ->
             tm = new Matrix4
-            previous = null
 
             return ->
-                return false if previous and @position.equal previous
+                return false if @prevPosition and @position.equal(@prevPosition)
 
-                previous = @position.clone()
+                @prevPosition = @position.clone()
                 @matrixTranslate = tm.clone().translate(@position)
 
                 return true
@@ -684,11 +682,10 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
             rmx = new Matrix4
             rmy = new Matrix4
             rmz = new Matrix4
-            previous = null
 
             return ->
 
-                return false if previous and @rotation.equal previous
+                return false if @prevRotation and @rotation.equal(@prevRotation)
 
                 x = @rotation.x * DEG_TO_RAD
                 y = @rotation.y * DEG_TO_RAD
@@ -702,7 +699,7 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
                 tmp.multiplyMatrices rmx, rmy
                 tmp.multiply rmz
 
-                previous = @rotation.clone()
+                @prevRotation = @rotation.clone()
                 @matrixRotation = tmp
 
                 return true
@@ -716,16 +713,27 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
             if updatedRotation or updatedTranslate or updatedScale
                 @matrix.multiplyMatrices @matrixTranslate, @matrixRotation
                 @matrix.multiply @matrixScale
+                @needUpdateMatrix = true
+
+            else
+                @needUpdateMatrix = false
 
             c.updateMatrix() for c in @children
+            return
 
         updateMatrixWorld: (force) ->
+
             if not @parent
                 @matrixWorld.copy @matrix
             else
-                @matrixWorld.multiplyMatrices @parent.matrixWorld, @matrix
+                if force or @parent.needUpdateMatrix or @needUpdateMatrix or @parent.needUpdateMatrixWorld
+                    @matrixWorld.multiplyMatrices @parent.matrixWorld, @matrix
+                    @needUpdateMatrixWorld = true
+                else
+                    @needUpdateMatrixWorld = false
 
             c.updateMatrixWorld() for c in @children
+            return
 
         getVerticesByProjectionMatrix: (m) ->
 
@@ -870,6 +878,15 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
                 b.subVectors(@vertices[2], @vertices[0])
                 
                 return a.clone().cross(b).applyMatrix4(@matrixWorld).normalize()
+
+        getCenter: do ->
+            result = new Vector3
+
+            return ->
+                result.addVectors(@vertices[1], @vertices[0])
+                ret = result.clone().add(@vertices[2])
+                return ret.multiplyScalar(1 / 3)
+
 
         setTexture: (texture) ->
             return false if not texture instanceof Texture
@@ -1152,9 +1169,11 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
 
 # -------------------------------------------------------------------------------
 
-    class DiffuseLight extends Light
-        constructor: (strength, vector) ->
+    class PointLight extends Light
+        constructor: (strength, attenuation, position) ->
             super
+            @position = position
+            @attenuation = attenuation
 
 # -------------------------------------------------------------------------------
 
@@ -1171,7 +1190,6 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
             @materials = []
 
         add: (material) ->
-
             if material instanceof Light
                 @lights.push material
 
@@ -1182,6 +1200,11 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
             for m in @materials
                 m.updateMatrix()
                 m.updateMatrixWorld()
+
+            for l in @lights
+                if l instanceof PointLight
+                    l.updateMatrix()
+                    l.updateMatrixWorld()
 
 # -------------------------------------------------------------------------------
 
@@ -1310,9 +1333,38 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
 
                     continue if (__Ax * __By) - (__Ay * __Bx) < 0
 
-                    color = new Color 0, 0, 0, 1
+                    lightingColor = new Color 0, 0, 0, 1
                     _Ax = x2 - x1; _Ay = y2 - y1; _Az = z2 - z1
                     _Bx = x3 - x1; _By = y3 - y1; _Bz = z3 - z1
+
+                    if lighting
+                        strength = 0
+
+                        for l in lights
+                            if l instanceof AmbientLight
+                                strength += l.strength
+
+                            else if l instanceof DirectionalLight
+                                L = l.direction
+                                N = normal
+                                factor = N.dot(L)
+                                strength += l.strength * factor if factor > 0
+
+                            else if l instanceof PointLight
+                                distance = l.position.clone().sub(v.center).norm()
+                                L = l.position.clone().normalize()
+                                N = normal
+                                factor = N.dot(L)
+
+                                if l.attenuation < distance
+                                    str = 0
+                                else
+                                    str = (l.attenuation - distance) / l.attenuation
+
+                                if factor > 0 and str > 0
+                                    strength += l.strength * str * factor
+                                
+                        lightingColor.a -= strength
 
                     if v.uvData
                         img    = v.uvData
@@ -1379,27 +1431,10 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
 
                         pg.drawImage(img, 0, 0)
 
-                        if lighting
-                            strength = 0
 
-                            for l in lights
-                                if l instanceof AmbientLight
-                                    strength += l.strength
-
-                                else if l instanceof DirectionalLight
-                                    L = l.direction
-                                    N = normal
-                                    factor = N.dot(L)
-                                    strength += l.strength * factor if factor > 0
-
-                                else if l instanceof DiffuseLight
-                                    console.log
-                                    
-                            color.a -= strength
-
-                            if color.a > 0
-                                cg.fillStyle = color.toString()
-                                cg.fillRect 0, 0, 1, 1
+                        if lightingColor.a > 0
+                            cg.fillStyle = lightingColor.toString()
+                            cg.fillRect 0, 0, 1, 1
 
                         if fog
                             fogStrength = 1 - ((fogEnd - z) / (fogEnd - fogStart))
@@ -1445,34 +1480,17 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
                         cg.fillStyle = v.color.toString()
                         cg.fillRect 0, 0, 1, 1
 
-                        if lighting
-                            strength = 0
-
-                            for l in lights
-                                if l instanceof AmbientLight
-                                    strength += l.strength
-
-                                else if l instanceof DirectionalLight
-                                    L = l.direction
-                                    N = normal
-                                    factor = N.dot(L)
-                                    strength += l.strength * factor if factor > 0
-
-                                else if l instanceof DiffuseLight
-                                    console.log
-                                    
-                            color.a -= strength
-
-                            if color.a > 0
-                                cg.fillStyle = color.toString()
-                                cg.fillRect 0, 0, 1, 1
+                        if lightingColor.a > 0
+                            cg.fillStyle = lightingColor.toString()
+                            cg.fillRect 0, 0, 1, 1
 
                         if fog
                             fogStrength = 1 - ((fogEnd - z) / (fogEnd - fogStart))
-                            fogStrength = 0 if fogStrength < 0
-                            cg.globalAlpha = fogStrength
-                            cg.fillStyle   = fogColor
-                            cg.fillRect 0, 0, 1, 1
+
+                            if fogStrength > 0
+                                cg.globalAlpha = fogStrength
+                                cg.fillStyle   = fogColor
+                                cg.fillRect 0, 0, 1, 1
 
                         data = cg.getImageData(0, 0, 1, 1).data
 
@@ -1527,6 +1545,7 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
                         vertex.color = m.color
 
                     vertex.normal = m.getNormal()
+                    vertex.center = m.getCenter()
                     results.push vertex
 
                 else if m instanceof Line
@@ -1655,5 +1674,6 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
     exports.Quaternion = Quaternion
     exports.AmbientLight = AmbientLight
     exports.DirectionalLight = DirectionalLight
+    exports.PointLight = PointLight
 
     return

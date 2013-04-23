@@ -2,7 +2,7 @@ do (win = window, doc = window.document, exports = window) ->
 
     #Import
     {atan2, random, tan, cos, sin, PI} = Math
-    {Face2, Object3D, Line, Color, AmbientLight, DirectionalLight, Plate, Face, Cube, Texture, Triangle, Matrix4, Camera, Renderer, Scene, Vector3, Particle} = window.S3D
+    {PointLight, Face2, Object3D, Line, Color, AmbientLight, DirectionalLight, Plate, Face, Cube, Texture, Triangle, Matrix4, Camera, Renderer, Scene, Vector3, Particle} = window.S3D
 
     $ = (selector) ->
         doc.querySelector selector
@@ -47,7 +47,7 @@ do (win = window, doc = window.document, exports = window) ->
         camera.lookAtLock = true
         scene    = new Scene
         renderer = new Renderer cv, '#111'
-        renderer.fogEnd = 10000
+        renderer.fogEnd = 1000
         #renderer.fog      = false
         #renderer.lighting = false
         #renderer.wireframe = true
@@ -74,16 +74,16 @@ do (win = window, doc = window.document, exports = window) ->
                 container.add line
 
             ambLight = new AmbientLight(0.1)
-            dirLight = new DirectionalLight(0.8, (new Vector3(1, 0, 1)).normalize())
+            dirLight = new DirectionalLight(0.1, (new Vector3(1, 0, 1)).normalize())
+            pointLight = new PointLight(1.0, 200, (new Vector3(0, 100, 0)))
             
             scene.add ambLight
             scene.add dirLight
+            scene.add pointLight
 
             r = 100
-            step = 60
-            start = 0
-            for s in [start...360] by step
-                for t in [start...360] by step
+            for s in [60...360] by 60
+                for t in [60...180] by 20
                     _s = s * DEG_TO_RAD
                     _t = t * DEG_TO_RAD
                     x = r * cos(_s) * sin(_t)
@@ -92,10 +92,9 @@ do (win = window, doc = window.document, exports = window) ->
 
                     plate = new Plate(20, 20, 1, 1, new Color(255, 0, 0, 1), new Color(255, 0, 0, 1), new Color(0, 0, 255, 1), new Color(0, 0, 255, 1))
                     plate.position.set x, y, z
-                    plate.rotation.y = y
-                    plate.rotation.x = x
+                    plate.rotation.z = t
+                    plate.rotation.x = s
                     scene.add plate
-                    #scene.add new Particle(new Vector3(x, y, z), 500)
 
             scene.add container
             scene.add line1
@@ -104,10 +103,17 @@ do (win = window, doc = window.document, exports = window) ->
 
             angle = 0
 
+            dummy = new Particle(new Vector3(0, 0, 0), 5000)
+            scene.add dummy
             do _loop = ->
-                angle = ((angle += 2) % 360)
+                angle = ((angle += 1) % 360)
+                dummy.position.x = cos(angle * DEG_TO_RAD) * 150
+                dummy.position.y = sin(angle * DEG_TO_RAD) * 150
+                pointLight.position.y = sin(angle * DEG_TO_RAD) * 150
+                pointLight.position.x = cos(angle * DEG_TO_RAD) * 150
 
                 renderer.render scene, camera
+                setTimeout _loop, 16
                 #requestAnimFrame _loop
 
         create()
@@ -118,7 +124,7 @@ do (win = window, doc = window.document, exports = window) ->
 
         # Events
         win.addEventListener 'mousewheel', (e) ->
-            camera.position.z += (e.wheelDelta / 100)
+            camera.position.z += (e.wheelDelta / 10)
             renderer.render scene, camera
             e.preventDefault()
         , false
@@ -154,8 +160,8 @@ do (win = window, doc = window.document, exports = window) ->
             pageX = if isTouch then e.touches[0].pageX else e.pageX
             pageY = if isTouch then e.touches[0].pageY else e.pageY
 
-            moveX -= (prevX - pageX)# / 100
-            moveY += (prevY - pageY)# / 100
+            moveX -= (prevX - pageX) * 3
+            moveY += (prevY - pageY) * 3
 
             camera.position.y = moveY
             camera.position.x = moveX

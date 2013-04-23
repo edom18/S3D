@@ -138,7 +138,7 @@
     prevX = 0;
     prevY = 0;
     win.addEventListener('mousewheel', function(e) {
-      camera.position.z += e.wheelDelta / 100;
+      camera.position.z += e.wheelDelta / 10;
       renderer.render(scene, camera);
       return e.preventDefault();
     }, false);
@@ -171,8 +171,8 @@
       }
       pageX = isTouch ? e.touches[0].pageX : e.pageX;
       pageY = isTouch ? e.touches[0].pageY : e.pageY;
-      moveX -= prevX - pageX;
-      moveY += prevY - pageY;
+      moveX -= (prevX - pageX) * 3;
+      moveY += (prevY - pageY) * 3;
       camera.position.y = moveY;
       camera.position.x = moveX;
       prevX = pageX;
