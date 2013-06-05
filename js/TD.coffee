@@ -142,7 +142,7 @@ do (win = window, doc = window.document, exports = window.S3D or (window.S3D = {
 
             @x = e[0] * x + e[4] * y + e[8]  * z + e[12]
             @y = e[1] * x + e[5] * y + e[9]  * z + e[13]
-            @z = e[2] * x + e[5] * y + e[10] * z + e[14]
+            @z = e[2] * x + e[6] * y + e[10] * z + e[14]
 
             return @
 
